@@ -2,46 +2,52 @@
   "schema": 1,
   "applicationId": "com.angelonmx.reloquence.lite",
   "edition": "lite",
-  "versionName": "2.4",
-  "versionCode": 2400,
-  "publishedAt": "2026-10-27T22:39:39Z",
+  "versionName": "2.4.1",
+  "versionCode": 2401,
+  "publishedAt": "2026-10-27T23:47:51Z",
   "minSdk": 23,
   "notes": {
     "es": [
-      "Nuevo apartado Actualizaciones en Ajustes, con búsqueda manual y comprobación automática.",
-      "Descarga e instalación desde GitHub Releases, con verificación de tamaño, SHA-256, paquete, versión y certificado de firma.",
-      "La comprobación automática se puede programar cada 2, 6, 12, 24, 48 o 72 horas.",
-      "Los cambios de la versión instalada se pueden consultar sin conexión.",
-      "La app avisa de una versión nueva con una notificación, pero nunca descarga ni instala sin que el usuario lo pida.",
-      "Mejoras de estabilidad y correcciones internas."
+      "La voz empieza antes y las paradas llegan antes: menos audio por delante y entregas más cortas.",
+      "Corregido el habla duplicada: una regla del diccionario ya no se aplica dos veces sobre su propia pronunciación.",
+      "Corregida la prosodia: la velocidad, el tono y el volumen de los ajustes se respetan antes de cada sustitución, sin cambios de tono no deseados.",
+      "Nuevo modo de ultrabaja latencia en Lectura, apagado de fábrica y pensado solo para aparatos con recursos de sobra.",
+      "La copia de seguridad guarda todo menos los registros: ajustes, perfiles, diagnósticos, preferencias de actualizaciones y la biblioteca entera de diccionarios.",
+      "Importar una copia reconstruye todos los diccionarios en esta instalación y deja activo el que corresponda.",
+      "Al instalar una versión nueva se muestra una vez su registro de cambios, con fecha y botón Cerrar.",
+      "Si falta el permiso para instalar apps desconocidas, se pide después de descargar y verificar el APK; al concederlo se abre el instalador sin volver a descargar.",
+      "Las versiones pasan a escribirse siempre con tres números: mayor, importante y parche."
     ],
     "en": [
-      "New Updates section in Settings, with manual search and automatic checks.",
-      "Download and install from GitHub Releases, with size, SHA-256, package, version, and signing certificate verification.",
-      "Automatic checks can run every 2, 6, 12, 24, 48, or 72 hours.",
-      "The changelog for the installed version can be viewed offline.",
-      "The app notifies you about a new version, but never downloads or installs anything without your request.",
-      "Stability improvements and internal fixes."
+      "Speech starts sooner and stops arrive sooner: less audio queued ahead and shorter deliveries.",
+      "Fixed duplicated speech: a dictionary rule is no longer applied twice to its own pronunciation.",
+      "Fixed prosody: the speed, pitch, and volume from settings are applied before each substitution, with no unwanted tone changes.",
+      "New ultra-low latency mode under Reading, off by default and intended only for devices with resources to spare.",
+      "Backups now keep everything except logs: settings, profiles, diagnostics, update preferences, and the whole dictionary library.",
+      "Importing a backup rebuilds every dictionary for this installation and activates the right one.",
+      "After installing a new version, its changelog is shown once with the release date and a Close button.",
+      "If the install-unknown-apps permission is missing, it is requested after the APK is downloaded and verified; once granted, the installer opens without downloading again.",
+      "Versions now always use three numbers: major, minor, and patch."
     ]
   },
   "apks": [
     {
       "abi": "arm64-v8a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4/reloquence-lite-2.4-2400-arm64-v8a-release.apk",
-      "sha256": "d2833de7fac44e4f17c9647e483a0529869572670fd1032d272d39e7f348ac4b",
-      "size": 7220361
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.1/reloquence-lite-2.4.1-2401-arm64-v8a-release.apk",
+      "sha256": "70496ac1c88bcb07ea9bf1b4dd3ac820368727134f793ae628b3b647b1d48e8e",
+      "size": 7230873
     },
     {
       "abi": "armeabi-v7a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4/reloquence-lite-2.4-2400-armeabi-v7a-release.apk",
-      "sha256": "e9fe6dc9f9f6f2617cbcbb1c57046f2c0b443108e0ab73e11bdca0bc4dcbfa46",
-      "size": 6788566
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.1/reloquence-lite-2.4.1-2401-armeabi-v7a-release.apk",
+      "sha256": "6d54e2e82290f6f33b8b6a6246550518c7230cd847837c750112bbcbf45b8ada",
+      "size": 6799074
     },
     {
       "abi": "universal",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4/reloquence-lite-2.4-2400-universal-release.apk",
-      "sha256": "8f0c2d5f03c949db14067fb7ee2873697f190a3b521b7b65ae7d7658902bf97f",
-      "size": 9174073
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.1/reloquence-lite-2.4.1-2401-universal-release.apk",
+      "sha256": "958a3355c8a837d3da2d99aaa5ef7f29e71cfef22908e6f0d2ec4531867d1243",
+      "size": 9184589
     }
   ]
 }
