@@ -4,7 +4,7 @@
   "edition": "lite",
   "versionName": "2.4",
   "versionCode": 2400,
-  "publishedAt": "2026-10-27T00:00:00Z",
+  "publishedAt": "2026-10-27T22:39:39Z",
   "minSdk": 23,
   "notes": {
     "es": [
@@ -24,5 +24,24 @@
       "Stability improvements and internal fixes."
     ]
   },
-  "apks": []
+  "apks": [
+    {
+      "abi": "arm64-v8a",
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4/reloquence-lite-2.4-2400-arm64-v8a-release.apk",
+      "sha256": "d2833de7fac44e4f17c9647e483a0529869572670fd1032d272d39e7f348ac4b",
+      "size": 7220361
+    },
+    {
+      "abi": "armeabi-v7a",
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4/reloquence-lite-2.4-2400-armeabi-v7a-release.apk",
+      "sha256": "e9fe6dc9f9f6f2617cbcbb1c57046f2c0b443108e0ab73e11bdca0bc4dcbfa46",
+      "size": 6788566
+    },
+    {
+      "abi": "universal",
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4/reloquence-lite-2.4-2400-universal-release.apk",
+      "sha256": "8f0c2d5f03c949db14067fb7ee2873697f190a3b521b7b65ae7d7658902bf97f",
+      "size": 9174073
+    }
+  ]
 }

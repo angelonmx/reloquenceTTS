@@ -4,7 +4,7 @@
   "edition": "full",
   "versionName": "5.4",
   "versionCode": 5400,
-  "publishedAt": "2026-10-27T00:00:00Z",
+  "publishedAt": "2026-10-27T22:39:39Z",
   "minSdk": 23,
   "notes": {
     "es": [
@@ -24,5 +24,24 @@
       "Stability improvements and internal fixes."
     ]
   },
-  "apks": []
+  "apks": [
+    {
+      "abi": "arm64-v8a",
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4/reloquence-full-5.4-5400-arm64-v8a-release.apk",
+      "sha256": "94246b0182e0229d5a3cac9a97ce71ebe308a1e5df10b3566fa33e1c9cee7130",
+      "size": 20650895
+    },
+    {
+      "abi": "armeabi-v7a",
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4/reloquence-full-5.4-5400-armeabi-v7a-release.apk",
+      "sha256": "ded4d56bd35fc2bbba9400ebe5bf8e8ae5a73c150933a314965b5172998273dd",
+      "size": 18270466
+    },
+    {
+      "abi": "universal",
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4/reloquence-full-5.4-5400-universal-release.apk",
+      "sha256": "c39ded11464cb5d86c014b0d39aa614a1c3adc4d7dfbc54f61ac2f804491d1a1",
+      "size": 33742409
+    }
+  ]
 }
