@@ -26,6 +26,11 @@ La app rechaza cualquier URL que no sea HTTPS.
 
 ## 2. Crear el repositorio y subir el código
 
+El repositorio remoto ya está creado en `angelonmx/reloquenceTTS` y la copia
+local ya tiene `origin`. Esta sección solo se necesita si se crea otro
+repositorio desde cero; para publicar la siguiente versión, ir directamente a
+la sección 4.
+
 Si no tienes GitHub CLI:
 
 ```powershell
@@ -33,8 +38,8 @@ winget install --id GitHub.cli --exact
 ```
 
 En esta copia el repositorio local ya está inicializado, en `main` y con el
-primer commit hecho. Si vienes de ahí, salta directamente a `gh repo create`.
-Si partes de una copia sin `.git`, ejecuta antes estas cuatro líneas:
+primer commit hecho. Si partes de una copia sin `.git`, ejecuta antes estas
+cuatro líneas:
 
 ```powershell
 git init

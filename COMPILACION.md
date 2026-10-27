@@ -11,6 +11,47 @@ alias `angelonmxGMZBestCreator`, cuyos datos están en
 Si `keystore.properties` no apunta ahí, se corrige antes de compilar.
 Separación: `evvdroid.abiSplits` es `true` por defecto, sin recortar idiomas.
 
+## El repositorio y la sesión de GitHub
+
+Al día de hoy, el repositorio ya existe y está configurado:
+
+- https://github.com/angelonmx/reloquenceTTS — público, rama `main`.
+- La app lee los manifiestos de `https://raw.githubusercontent.com/angelonmx/reloquenceTTS/main/updates/`.
+- Los cuatro secretos de firma (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) ya están cargados en el repositorio.
+- La última release publicada es la 5.4 (Lite 2.4) y los manifiestos están al día.
+
+La sesión de GitHub CLI ya está iniciada en esta máquina. `gh auth login` guarda el token en el Administrador de credenciales de Windows, así que sobrevive a cerrar la terminal y a reiniciar el equipo. **No es permanente en sentido absoluto:** el token se puede revocar, caducar o perderse al cambiar de usuario o de máquina. Antes de publicar, comprobar:
+
+```powershell
+gh auth status
+```
+
+Debe decir `Logged in to github.com account angelonmx` y mostrar los scopes `repo` y `workflow`. Si falta `workflow` (lo necesita el flujo para crear la release y escribir los manifiestos):
+
+```powershell
+gh auth refresh -h github.com -s workflow
+```
+
+Para confirmar que el repositorio sigue público y en `main`:
+
+```powershell
+gh repo view angelonmx/reloquenceTTS --json name,visibility,defaultBranchRef
+```
+
+Debe responder `"visibility": "PUBLIC"` y `"name": "main"`.
+
+Si no hay sesión, iniciarla de nuevo:
+
+```powershell
+gh auth login
+```
+
+Elegir GitHub.com, HTTPS y el inicio de sesión por navegador. No pegar el token en el chat ni en ningún archivo del repositorio: los flujos usan el token propio de GitHub Actions y los secretos de firma.
+
+`gh` suele estar en `C:\Program Files\GitHub CLI\gh.exe`. Si una terminal recién abierta no lo encuentra en el `PATH`, cerrarla y volver a abrirla, o llamarlo con esa ruta completa.
+
+El repositorio debe seguir siendo **público**: `raw.githubusercontent.com` no sirve los manifiestos de un repositorio privado y la app no lleva token. Si algún día se hace privado, hay que cambiar `reloquence.updateBaseUrl` o servir los JSON desde GitHub Pages o un servidor propio con HTTPS.
+
 ## Las dos ediciones: 5.4
 
 Hay dos ediciones y se compilan por separado:
@@ -64,6 +105,44 @@ Los APKs finales se copian automáticamente a `dist/<edition>/release/` por la t
 **Orden de compilación:**
 1. `full` (compila, renombra y publica a `dist/full/`)
 2. `lite` (compila, renombra y publica a `dist/lite/`)
+
+## Compilar en esta máquina
+
+La compilación de publicación la hace GitHub Actions en Linux. En Windows se compila igual para probar, pero los APK resultantes **no son los mismos bytes** que los publicados y no deben subirse a mano: la release y los manifiestos los genera el flujo.
+
+Hace falta JDK 17 y el SDK de Android 37 con `build-tools;37.0.0`. El NDK `26.1.10909125` solo se usa cuando se compila el motor nativo.
+
+Receta rápida, con las versiones actuales:
+
+```powershell
+# Ver qué versiones se van a compilar
+.\gradlew.bat :app:printVersions
+
+# Full, reutilizando el motor ya compilado
+.\gradlew.bat assembleRelease "-Pevvdroid.skipNative=true"
+
+# Lite, reutilizando el motor ya compilado
+.\gradlew.bat assembleRelease "-Pevvdroid.edition=lite" "-Pevvdroid.skipNative=true"
+```
+
+`-Pevvdroid.skipNative=true` evita recompilar el motor nativo y solo es válido si `app/build/full/native/jniLibs` y `app/build/lite/native/jniLibs` ya tienen las bibliotecas. Por eso estas órdenes **no llevan `clean`**: `clean` borra `app/build/<edición>` y se llevaría por delante las bibliotecas. Si hace falta una compilación limpia o se tocó el motor, usar `clean assembleRelease` sin `skipNative` y dejar que el NDK lo compile; tarda varios minutos por ABI.
+
+Los APK quedan en:
+
+- `dist\full\release\reloquence-full-5.4-5400-<abi>-release.apk`
+- `dist\lite\release\reloquence-lite-2.4-2400-<abi>-release.apk`
+
+`dist/` está ignorado por Git. Antes de instalar o repartir un APK local, comprobar firma y paquete:
+
+```powershell
+$sdk = "$env:LOCALAPPDATA\Android\Sdk\build-tools\37.0.0"
+$apk = "dist\full\release\reloquence-full-5.4-5400-universal-release.apk"
+
+& "$sdk\apksigner.bat" verify --verbose --print-certs $apk
+& "$sdk\aapt2.exe" dump badging $apk | Select-String "^package:"
+```
+
+Debe aparecer `V3.0 Signer`, la huella `4e516988538b3d20a8fe9bf40a14edd4e277feee97275aac874f0de495578717` y el paquete `com.angelonmx.reloquence` (o `com.angelonmx.reloquence.lite` para Lite). La comprobación completa de las dos ediciones está en la sección siguiente.
 
 ## Firma: full y lite por separado
 
@@ -186,6 +265,103 @@ La URL base de las actualizaciones se inyecta al compilar:
 ```
 
 El valor por defecto está en `gradle.properties`. Tiene que ser HTTPS: la app rechaza cualquier otra cosa antes de descargar nada.
+
+## Siguiente versión: qué se modifica
+
+El proceso completo, con la creación del repositorio, los secretos y los problemas frecuentes, está en [PUBLICAR.md](PUBLICAR.md). Esta es la lista corta para cada versión.
+
+Ejemplo: pasar de 5.4 / Lite 2.4 a 5.5 / Lite 2.5. Para preparar la versión solo se tocan dos archivos; todo lo demás lo hace el flujo de publicación.
+
+| archivo | qué se cambia |
+| --- | --- |
+| `version.properties` | `versionName` y `versionCode` de `full` y de `lite` |
+| `app/src/main/assets/changelog.json` | una entrada nueva por edición, con las notas |
+| `updates/full.json`, `updates/lite.json` | **nada**: los genera el flujo con URL, tamaño y SHA-256 |
+| `app/build.gradle.kts`, firma, `applicationId` | **nada**: las versiones ya no viven ahí y la firma no se cambia entre versiones |
+
+### 1. Subir las versiones
+
+Editar `version.properties`:
+
+```properties
+full.versionName=5.5
+full.versionCode=5500
+lite.versionName=2.5
+lite.versionCode=2500
+```
+
+`versionCode` siempre sube: es lo que Android compara para aceptar una actualización. `versionName` es solo el texto que se muestra. Cada edición mantiene su propia serie (full va por 54xx, Lite por 24xx). No cambiar el `applicationId` ni la clave de firma: Android rechazaría la actualización.
+
+### 2. Añadir las notas
+
+En `app/src/main/assets/changelog.json`, añadir al principio de `editions.full` y de `editions.lite` una entrada con el `versionCode` nuevo:
+
+```json
+{
+  "versionName": "5.5",
+  "versionCode": 5500,
+  "date": "2026-11-15",
+  "notes": {
+    "es": ["Lo que cambia en esta versión."],
+    "en": ["What changes in this version."]
+  }
+}
+```
+
+Para Lite, el bloque equivalente usa `"versionName": "2.5"` y `"versionCode": 2500`; la fecha es la del día. La release busca la entrada por `versionCode`, no por posición, pero las más nuevas van primero. De ahí salen las notas del diálogo de la app y las de GitHub Releases. Si falta la entrada, la release se publica con esa sección vacía.
+
+### 3. Commit, push y esperar al CI
+
+```powershell
+git add version.properties app/src/main/assets/changelog.json
+git commit -m "Preparar la versión 5.5"
+git push origin main
+
+gh run list --repo angelonmx/reloquenceTTS --limit 5
+```
+
+El CI ejecuta las 167 pruebas y compila Lite en cada push que toque código o configuración. Los cambios que solo afectan a `**/*.md` o `updates/**` no lo lanzan. No lanzar la release hasta que el CI esté en verde.
+
+### 4. Lanzar la publicación
+
+Antes de lanzar, `gh auth status` debe seguir mostrando la sesión de `angelonmx` y el scope `workflow`.
+
+```powershell
+gh workflow run release.yml --repo angelonmx/reloquenceTTS
+gh run watch --repo angelonmx/reloquenceTTS
+```
+
+Si hay más de un flujo en cola, `gh run watch` puede pedir elegir; el de la release se llama **Publicar**. También se puede lanzar desde Actions > **Publicar** > **Run workflow**.
+
+La etiqueta por defecto es `v<versión full>`, en el ejemplo `v5.5`. Para usar otra:
+
+```powershell
+gh workflow run release.yml --repo angelonmx/reloquenceTTS -f tag=v5.5
+```
+
+También se puede publicar empujando una etiqueta:
+
+```powershell
+git tag v5.5
+git push origin v5.5
+```
+
+El flujo compila el motor nativo y los seis APK (full y Lite; arm64-v8a, armeabi-v7a y universal), comprueba la firma, crea o actualiza la release y escribe los manifiestos en `main`. La primera vez tarda más por el motor; las siguientes reutilizan la caché. Si hay que repetirlo, volver a lanzarlo es seguro: actualiza los APK de la release y vuelve a generar los manifiestos.
+
+### 5. Comprobar el resultado
+
+```powershell
+gh release view v5.5 --repo angelonmx/reloquenceTTS
+```
+
+Deben aparecer los seis APK y las notas de las dos ediciones. Después, comprobar los manifiestos:
+
+```powershell
+Invoke-RestMethod https://raw.githubusercontent.com/angelonmx/reloquenceTTS/main/updates/full.json | ConvertTo-Json -Depth 6
+Invoke-RestMethod https://raw.githubusercontent.com/angelonmx/reloquenceTTS/main/updates/lite.json | ConvertTo-Json -Depth 6
+```
+
+Tienen que mostrar la versión nueva y, en `apks`, una entrada por arquitectura con su `sha256`. `raw.githubusercontent.com` puede tardar unos minutos en servir la versión nueva por la caché; no es un fallo de la app. Por último, en el teléfono: **Ajustes > Actualizaciones > Buscar actualizaciones**. Android pedirá confirmación antes de instalar; no hay instalación silenciosa.
 
 Solo si se pide debug:
 
