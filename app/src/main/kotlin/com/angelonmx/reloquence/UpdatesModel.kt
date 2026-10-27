@@ -91,16 +91,32 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 	}
 
 	/**
+	 * 5.4.1: el APK ya descargado y verificado que espera a que el
+	 * usuario conceda el permiso de instalar apps desconocidas.
+	 * Después de concederlo se abre el instalador sin volver a
+	 * descargar nada.
+	 */
+	private var pendingApk: File? = null
+
+	/**
 	 * Descargar, comprobar y abrir el instalador. Si falta el
-	 * permiso de instalar apps desconocidas, se abre su pantalla y
-	 * el diálogo se queda abierto para poder reintentar al volver.
+	 * permiso de instalar apps desconocidas, se pide al terminar la
+	 * descarga; al volver con el permiso concedido, [onScreenResumed]
+	 * abre el instalador con el mismo APK.
 	 */
 	fun install() {
 		val info = available ?: return
 		if (busy) return
-		if (!UpdateInstaller.canInstall(app)) {
-			status = UpdateStatus.Permission
-			UpdateInstaller.requestInstallPermission(app)
+		// Si ya hay un APK verificado esperando permiso, se usa ese.
+		val waiting = pendingApk
+		if (waiting != null && waiting.isFile && waiting.length() > 0L) {
+			if (!UpdateInstaller.canInstall(app)) {
+				status = UpdateStatus.Permission
+				UpdateInstaller.requestInstallPermission(app)
+				return
+			}
+			showDialog = false
+			openInstaller(waiting)
 			return
 		}
 		showDialog = false
@@ -129,18 +145,64 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 				withContext(Dispatchers.IO) {
 					UpdateChecker.verifyApk(app, downloaded, info)
 				}
+				pendingApk = downloaded
+				if (!UpdateInstaller.canInstall(app)) {
+					status = UpdateStatus.Permission
+					UpdateInstaller.requestInstallPermission(app)
+					return@launch
+				}
 				status = UpdateStatus.Installing
 				withContext(Dispatchers.IO) {
 					UpdateInstaller.install(app, downloaded)
 				}
+				pendingApk = null
 			} catch (e: CancellationException) {
 				throw e
 			} catch (e: UpdateException) {
+				pendingApk = null
 				status = UpdateStatus.Failed(e.failure)
 			} catch (e: Exception) {
+				pendingApk = null
 				status = UpdateStatus.Failed(UpdateFailure.Unknown)
 			} finally {
-				file?.delete()
+				// Con el permiso pendiente el archivo se conserva: es
+				// lo que se instala al volver, sin descargar otra vez.
+				if (status !is UpdateStatus.Permission) {
+					file?.delete()
+					if (pendingApk === file) pendingApk = null
+				}
+			}
+		}
+	}
+
+	/** Abre el instalador con un APK ya verificado. */
+	private fun openInstaller(file: File) {
+		status = UpdateStatus.Installing
+		viewModelScope.launch {
+			try {
+				withContext(Dispatchers.IO) {
+					UpdateInstaller.install(app, file)
+				}
+				pendingApk = null
+			} catch (e: CancellationException) {
+				throw e
+			} catch (e: UpdateException) {
+				if (e.failure == UpdateFailure.Permission) {
+					// El permiso se revocó entre la comprobación y la
+					// instalación: se pide otra vez y se conserva el APK.
+					status = UpdateStatus.Permission
+					UpdateInstaller.requestInstallPermission(app)
+				} else {
+					pendingApk = null
+					status = UpdateStatus.Failed(e.failure)
+				}
+			} catch (e: Exception) {
+				pendingApk = null
+				status = UpdateStatus.Failed(UpdateFailure.Unknown)
+			} finally {
+				if (status !is UpdateStatus.Permission) {
+					file.delete()
+				}
 			}
 		}
 	}
@@ -166,6 +228,12 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 	 */
 	fun onScreenResumed() {
 		if (status is UpdateStatus.Installing) status = UpdateStatus.Idle
+		// 5.4.1: al volver del apartado de permisos con "instalar
+		// apps desconocidas" ya concedido, se abre el instalador con
+		// el APK que quedó descargado y verificado.
+		if (status == UpdateStatus.Permission && UpdateInstaller.canInstall(app)) {
+			install()
+		}
 	}
 
 	fun openChangelog() {

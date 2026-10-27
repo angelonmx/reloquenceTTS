@@ -3,6 +3,35 @@
   "editions": {
     "full": [
       {
+        "versionName": "5.4.1",
+        "versionCode": 5401,
+        "date": "2026-10-27",
+        "notes": {
+          "es": [
+            "La voz empieza antes y las paradas llegan antes: menos audio por delante y entregas más cortas.",
+            "Corregido el habla duplicada: una regla del diccionario ya no se aplica dos veces sobre su propia pronunciación.",
+            "Corregida la prosodia: la velocidad, el tono y el volumen de los ajustes se respetan antes de cada sustitución, sin cambios de tono no deseados.",
+            "Nuevo modo de ultrabaja latencia en Lectura, apagado de fábrica y pensado solo para aparatos con recursos de sobra.",
+            "La copia de seguridad guarda todo menos los registros: ajustes, perfiles, diagnósticos, preferencias de actualizaciones y la biblioteca entera de diccionarios.",
+            "Importar una copia reconstruye todos los diccionarios en esta instalación y deja activo el que corresponda.",
+            "Al instalar una versión nueva se muestra una vez su registro de cambios, con fecha y botón Cerrar.",
+            "Si falta el permiso para instalar apps desconocidas, se pide después de descargar y verificar el APK; al concederlo se abre el instalador sin volver a descargar.",
+            "Las versiones pasan a escribirse siempre con tres números: mayor, importante y parche."
+          ],
+          "en": [
+            "Speech starts sooner and stops arrive sooner: less audio queued ahead and shorter deliveries.",
+            "Fixed duplicated speech: a dictionary rule is no longer applied twice to its own pronunciation.",
+            "Fixed prosody: the speed, pitch, and volume from settings are applied before each substitution, with no unwanted tone changes.",
+            "New ultra-low latency mode under Reading, off by default and intended only for devices with resources to spare.",
+            "Backups now keep everything except logs: settings, profiles, diagnostics, update preferences, and the whole dictionary library.",
+            "Importing a backup rebuilds every dictionary for this installation and activates the right one.",
+            "After installing a new version, its changelog is shown once with the release date and a Close button.",
+            "If the install-unknown-apps permission is missing, it is requested after the APK is downloaded and verified; once granted, the installer opens without downloading again.",
+            "Versions now always use three numbers: major, minor, and patch."
+          ]
+        }
+      },
+      {
         "versionName": "5.4",
         "versionCode": 5400,
         "date": "2026-10-27",
@@ -108,6 +137,35 @@
       }
     ],
     "lite": [
+      {
+        "versionName": "2.4.1",
+        "versionCode": 2401,
+        "date": "2026-10-27",
+        "notes": {
+          "es": [
+            "La voz empieza antes y las paradas llegan antes: menos audio por delante y entregas más cortas.",
+            "Corregido el habla duplicada: una regla del diccionario ya no se aplica dos veces sobre su propia pronunciación.",
+            "Corregida la prosodia: la velocidad, el tono y el volumen de los ajustes se respetan antes de cada sustitución, sin cambios de tono no deseados.",
+            "Nuevo modo de ultrabaja latencia en Lectura, apagado de fábrica y pensado solo para aparatos con recursos de sobra.",
+            "La copia de seguridad guarda todo menos los registros: ajustes, perfiles, diagnósticos, preferencias de actualizaciones y la biblioteca entera de diccionarios.",
+            "Importar una copia reconstruye todos los diccionarios en esta instalación y deja activo el que corresponda.",
+            "Al instalar una versión nueva se muestra una vez su registro de cambios, con fecha y botón Cerrar.",
+            "Si falta el permiso para instalar apps desconocidas, se pide después de descargar y verificar el APK; al concederlo se abre el instalador sin volver a descargar.",
+            "Las versiones pasan a escribirse siempre con tres números: mayor, importante y parche."
+          ],
+          "en": [
+            "Speech starts sooner and stops arrive sooner: less audio queued ahead and shorter deliveries.",
+            "Fixed duplicated speech: a dictionary rule is no longer applied twice to its own pronunciation.",
+            "Fixed prosody: the speed, pitch, and volume from settings are applied before each substitution, with no unwanted tone changes.",
+            "New ultra-low latency mode under Reading, off by default and intended only for devices with resources to spare.",
+            "Backups now keep everything except logs: settings, profiles, diagnostics, update preferences, and the whole dictionary library.",
+            "Importing a backup rebuilds every dictionary for this installation and activates the right one.",
+            "After installing a new version, its changelog is shown once with the release date and a Close button.",
+            "If the install-unknown-apps permission is missing, it is requested after the APK is downloaded and verified; once granted, the installer opens without downloading again.",
+            "Versions now always use three numbers: major, minor, and patch."
+          ]
+        }
+      },
       {
         "versionName": "2.4",
         "versionCode": 2400,

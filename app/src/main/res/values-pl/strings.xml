@@ -42,6 +42,8 @@
 	<string name="milliseconds">%1$d ms</string>
 	<string name="phrase_prediction_label">Przewidywanie fraz</string>
 	<string name="abbreviations_label">Rozwijaj skróty</string>
+	<string name="low_latency_label">Tryb ultraniskiej latencji</string>
+	<string name="low_latency_hint">Przekazuje mniej dźwięku z wyprzedzeniem, więc mowa zaczyna się i zatrzymuje szybciej. Może zużywać znacznie więcej procesora, ale nie unieruchamia telefonu. (Przydatne tylko wtedy, gdy urządzenie nie jest z niższej półki i nie ma ograniczonych zasobów)</string>
 	<string name="emoji_label">Czytaj emoji</string>
 	<string name="unicode_symbols_label">Czytaj znaki Unicode i symbole specjalne</string>
 	<string name="punct_process_label">Czytaj interpunkcję</string>
@@ -152,6 +154,7 @@
 	<string name="backup_do_import">Importuj</string>
 	<string name="backup_do_keep">Nie importuj</string>
 	<string name="backup_info_profiles">Profile efektów</string>
+	<string name="backup_info_dictionaries">Słowniki</string>
 	<string name="voice_mix_label">Mieszaj głosy</string>
 	<string name="voice_mix_partner">Głos do mieszania</string>
 
@@ -415,7 +418,8 @@
 	<string name="update_error_download">Nie można pobrać aktualizacji.</string>
 	<string name="update_error_install">Nie można otworzyć instalatora.</string>
 	<string name="update_error_unknown">Nie można sprawdzić aktualizacji.</string>
-	<string name="update_changelog_title">Zmiany w wersji %1$s</string>
+	<string name="update_changelog_title">Dziennik zmian wersji %1$s</string>
+	<string name="update_changelog_date">Data publikacji: %1$s</string>
 	<string name="update_changelog_empty">Brak wymienionych zmian dla tej wersji.</string>
 	<string name="update_notification_channel">Aktualizacje</string>
 	<string name="update_notification_channel_hint">Powiadomienia o nowych wersjach</string>

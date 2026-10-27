@@ -52,12 +52,66 @@ class BackupFormatTest {
 
 	@Test
 	fun `una version futura se avisa y no se puede importar`() {
-		val future = """{"format":"reloqbkp","version":3,"prefs":{"volume":{"type":"I","value":50}}}"""
+		val future = """{"format":"reloqbkp","version":4,"prefs":{"volume":{"type":"I","value":50}}}"""
 		val parsed = BackupStore.parseJsonBackup(future)
 		assertNotNull(parsed)
 		assertFalse(parsed!!.compatible)
 		assertTrue(parsed.prefs.isEmpty())
 		assertEquals(BackupStore.IssueKind.FUTURE_VERSION, parsed.issues.single().kind)
+	}
+
+	@Test
+	fun `una copia v3 trae la biblioteca y las preferencias de actualizaciones`() {
+		val v3 = """
+			{
+			  "format": "reloqbkp",
+			  "version": 3,
+			  "name": "completa",
+			  "prefs": {
+			    "low_latency": {"type": "B", "value": true},
+			    "dictionary_language": {"type": "I", "value": 3}
+			  },
+			  "dictionaries": [],
+			  "updates": {
+			    "auto_check": {"type": "B", "value": false},
+			    "interval_hours": {"type": "I", "value": 12},
+			    "last_check_at": {"type": "L", "value": 1700000000000},
+			    "clave_inventada": {"type": "B", "value": true}
+			  }
+			}
+		""".trimIndent()
+		val parsed = BackupStore.parseJsonBackup(v3)
+		assertNotNull(parsed)
+		assertEquals("completa", parsed!!.name)
+		assertEquals(3, parsed.version)
+		assertEquals(true, parsed.prefs["low_latency"])
+		assertEquals(3, parsed.prefs["dictionary_language"])
+		assertTrue("la sección dictionaries existe aunque venga vacía", parsed.libraryPresent)
+		assertTrue("la sección updates existe", parsed.updatesPresent)
+		assertEquals(false, parsed.updatePrefs["auto_check"])
+		assertEquals(12, parsed.updatePrefs["interval_hours"])
+		assertEquals(1700000000000L, parsed.updatePrefs["last_check_at"])
+		assertTrue("una clave de actualizaciones desconocida no entra", "clave_inventada" !in parsed.updatePrefs)
+		assertTrue(parsed.issues.any { it.kind == BackupStore.IssueKind.UNKNOWN_PREF_KEYS })
+	}
+
+	@Test
+	fun `una actualizacion fuera de rango se descarta y se avisa`() {
+		val v3 = """
+			{
+			  "format": "reloqbkp",
+			  "version": 3,
+			  "prefs": {"volume": {"type": "I", "value": 50}},
+			  "updates": {
+			    "interval_hours": {"type": "I", "value": 7},
+			    "last_check_at": {"type": "L", "value": -1}
+			  }
+			}
+		""".trimIndent()
+		val parsed = BackupStore.parseJsonBackup(v3)
+		assertNotNull(parsed)
+		assertTrue(parsed!!.updatePrefs.isEmpty())
+		assertTrue(parsed.issues.any { it.kind == BackupStore.IssueKind.OUT_OF_RANGE_PREFS })
 	}
 
 	@Test

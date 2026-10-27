@@ -43,6 +43,8 @@
 	<string name="milliseconds">%1$dミリ秒</string>
 	<string name="phrase_prediction_label">フレーズ予測</string>
 	<string name="abbreviations_label">略語を展開する</string>
+	<string name="low_latency_label">超低遅延モード</string>
+	<string name="low_latency_hint">音声を先に送る量を減らし、読み上げの開始と停止を早くします。CPU 使用量はかなり増えることがありますが、スマートフォンが使えなくなることはありません。(低価格帯やリソースの限られた端末でない場合にのみ有効です)</string>
 	<string name="emoji_label">絵文字を読む</string>
 	<string name="unicode_symbols_label">Unicode文字と特殊記号を読む</string>
 	<string name="punct_process_label">句読点を読む</string>
@@ -153,6 +155,7 @@
 	<string name="backup_do_import">読み込む</string>
 	<string name="backup_do_keep">読み込まない</string>
 	<string name="backup_info_profiles">効果プロファイル</string>
+	<string name="backup_info_dictionaries">辞書</string>
 	<string name="voice_mix_label">声を混ぜる</string>
 	<string name="voice_mix_partner">混ぜる声</string>
 
@@ -415,7 +418,8 @@
 	<string name="update_error_download">アップデートをダウンロードできませんでした。</string>
 	<string name="update_error_install">インストーラーを開けませんでした。</string>
 	<string name="update_error_unknown">アップデートを確認できませんでした。</string>
-	<string name="update_changelog_title">バージョン %1$s の変更点</string>
+	<string name="update_changelog_title">バージョン %1$s の変更履歴</string>
+	<string name="update_changelog_date">公開日: %1$s</string>
 	<string name="update_changelog_empty">このバージョンの変更点はありません。</string>
 	<string name="update_notification_channel">アップデート</string>
 	<string name="update_notification_channel_hint">新しいバージョンのお知らせ</string>

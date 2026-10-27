@@ -43,6 +43,8 @@
 	<string name="milliseconds">%1$d ms</string>
 	<string name="phrase_prediction_label">Phrasenvorhersage</string>
 	<string name="abbreviations_label">Abkürzungen auflösen</string>
+	<string name="low_latency_label">Modus für ultraniedrige Latenz</string>
+	<string name="low_latency_hint">Liefert weniger Audio im Voraus, damit die Stimme früher beginnt und stoppt. Kann deutlich mehr CPU beanspruchen, ohne das Telefon unbrauchbar zu machen. (Nur sinnvoll, wenn dein Gerät kein Einsteigergerät und nicht ressourcenbeschränkt ist)</string>
 	<string name="emoji_label">Emojis vorlesen</string>
 	<string name="unicode_symbols_label">Unicode-Zeichen und Sonderzeichen vorlesen</string>
 	<string name="punct_process_label">Satzzeichen sprechen</string>
@@ -153,6 +155,7 @@
 	<string name="backup_do_import">Importieren</string>
 	<string name="backup_do_keep">Nicht importieren</string>
 	<string name="backup_info_profiles">Effektprofile</string>
+	<string name="backup_info_dictionaries">Wörterbücher</string>
 	<string name="voice_mix_label">Stimmen mischen</string>
 	<string name="voice_mix_partner">Stimme zum Mischen</string>
 
@@ -416,7 +419,8 @@
 	<string name="update_error_download">Die Aktualisierung konnte nicht heruntergeladen werden.</string>
 	<string name="update_error_install">Das Installationsprogramm konnte nicht geöffnet werden.</string>
 	<string name="update_error_unknown">Die Aktualisierung konnte nicht geprüft werden.</string>
-	<string name="update_changelog_title">Änderungen in Version %1$s</string>
+	<string name="update_changelog_title">Änderungsprotokoll Version %1$s</string>
+	<string name="update_changelog_date">Veröffentlichungsdatum: %1$s</string>
 	<string name="update_changelog_empty">Für diese Version sind keine Änderungen aufgeführt.</string>
 	<string name="update_notification_channel">Aktualisierungen</string>
 	<string name="update_notification_channel_hint">Hinweise auf neue Versionen</string>

@@ -116,6 +116,11 @@ class SettingsModel(private val app: Application) : ViewModel() {
 	var ignoreVoiceTags by mutableStateOf(settings.ignoreVoiceTags)
 		private set
 
+	/** 5.4.1: si el servicio entrega audio con menos margen para
+	 *  reducir la latencia. Apagado de fábrica. */
+	var lowLatency by mutableStateOf(settings.lowLatency)
+		private set
+
 	var sampleRateHz by mutableStateOf(settings.sampleRateHz)
 		private set
 
@@ -335,6 +340,23 @@ class SettingsModel(private val app: Application) : ViewModel() {
 	 */
 	var diagnosticsEnabled by mutableStateOf(Diagnostics.isEnabled(app))
 		private set
+
+	/**
+	 * 5.4.1: el registro de cambios que se enseña una sola vez
+	 * después de instalar una versión nueva. Nulo cuando no hay
+	 * nada pendiente. Se consulta al crear la pantalla: si esta
+	 * instalación es más nueva que la última que abrió la app, se
+	 * enseña; en una instalación nueva no hay nada que contar.
+	 */
+	var postUpdateChangelog by mutableStateOf<ChangelogEntry?>(
+		PostUpdateChangelog.pending(app)
+	)
+		private set
+
+	fun closePostUpdateChangelog() {
+		PostUpdateChangelog.acknowledge(app)
+		postUpdateChangelog = null
+	}
 
 	fun chooseDiagnostics(on: Boolean) {
 		diagnosticsEnabled = on
@@ -586,6 +608,17 @@ class SettingsModel(private val app: Application) : ViewModel() {
 		ignoreVoiceTags = on
 		settings.ignoreVoiceTags = on
 		diag("settings", "event" to "ignore_voice_tags", "on" to on.toString())
+	}
+
+	/**
+	 * 5.4.1: el modo de ultrabaja latencia cambia el ritmo con el
+	 * que el servicio entrega audio, no la voz. Se oye en la
+	 * siguiente emisión sin reiniciar el motor.
+	 */
+	fun chooseLowLatency(on: Boolean) {
+		lowLatency = on
+		settings.lowLatency = on
+		diag("settings", "event" to "low_latency", "on" to on.toString())
 	}
 
 	// ---- diccionario ----------------------------------------------------
@@ -1327,7 +1360,7 @@ class SettingsModel(private val app: Application) : ViewModel() {
 		val diagnosticsPrefs = Diagnostics.dumpPrefs(app)
 		viewModelScope.launch(Dispatchers.IO) {
 			val bytes = runCatching {
-				BackupStore.buildBackup(name, settings, diagnosticsPrefs)
+				BackupStore.buildBackup(name, settings, diagnosticsPrefs, app)
 			}.getOrNull()
 			val target = bytes?.let {
 				Share.prepare(app, "backups", fileName, "application/json", it)
@@ -1358,7 +1391,7 @@ class SettingsModel(private val app: Application) : ViewModel() {
 		val diagnosticsPrefs = Diagnostics.dumpPrefs(app)
 		viewModelScope.launch(Dispatchers.IO) {
 			val bytes = runCatching {
-				BackupStore.buildBackup(name, settings, diagnosticsPrefs)
+				BackupStore.buildBackup(name, settings, diagnosticsPrefs, app)
 			}.getOrNull()
 			var ok = false
 			if (bytes != null) {
@@ -1514,25 +1547,36 @@ class SettingsModel(private val app: Application) : ViewModel() {
 			out.add(app.getString(R.string.labelled_value,
 				app.getString(R.string.backup_info_voice_profiles), count.toString()))
 		}
-		val bytes = parsed.dictBytes
-		if (bytes != null && !parsed.dictExt.isNullOrEmpty()) {
-			val count = runCatching {
-				val tmp = java.io.File.createTempFile("bkp", ".${parsed.dictExt}", app.cacheDir)
-				try {
-					tmp.writeBytes(bytes)
-					Dictionaries.entries(tmp).size
-				} finally {
-					tmp.delete()
-				}
-			}.getOrDefault(-1)
-			val label = if (count >= 0) app.getString(R.string.dictionary_entries, parsed.dictName.ifEmpty { "dict" }, count)
-			else parsed.dictName.ifEmpty { "dict" }
+		if (parsed.libraryPresent) {
+			// 5.4.1: la copia trae la biblioteca entera. El detalle de
+			// cada archivo se ve al importar; aquí basta con el total.
 			out.add(app.getString(R.string.labelled_value,
-				app.getString(R.string.category_dictionary), label))
+				app.getString(R.string.backup_info_dictionaries),
+				parsed.dictionaries.size.toString()))
 		} else {
-			out.add(app.getString(R.string.labelled_value,
-				app.getString(R.string.category_dictionary),
-				app.getString(R.string.dictionary_none)))
+			val bytes = parsed.dictBytes
+			if (bytes != null && !parsed.dictExt.isNullOrEmpty()) {
+				val count = runCatching {
+					val tmp = java.io.File.createTempFile("bkp", ".${parsed.dictExt}", app.cacheDir)
+					try {
+						tmp.writeBytes(bytes)
+						Dictionaries.entries(tmp).size
+					} finally {
+						tmp.delete()
+					}
+				}.getOrDefault(-1)
+				val label = if (count >= 0) {
+					app.getString(R.string.dictionary_entries, parsed.dictName.ifEmpty { "dict" }, count)
+				} else {
+					parsed.dictName.ifEmpty { "dict" }
+				}
+				out.add(app.getString(R.string.labelled_value,
+					app.getString(R.string.category_dictionary), label))
+			} else {
+				out.add(app.getString(R.string.labelled_value,
+					app.getString(R.string.category_dictionary),
+					app.getString(R.string.dictionary_none)))
+			}
 		}
 		(prefs["app_locale"] as? String)?.let { tag ->
 			val name = if (tag.isEmpty()) app.getString(R.string.app_language_system)
@@ -1566,6 +1610,7 @@ class SettingsModel(private val app: Application) : ViewModel() {
 		voice = settings.voice
 		abbreviations = settings.abbreviations
 		ignoreVoiceTags = settings.ignoreVoiceTags
+		lowLatency = settings.lowLatency
 		sampleRateHz = settings.sampleRateHz
 		pauses = settings.pauses
 		pauseDurationMs = settings.pauseDurationMs
@@ -3030,13 +3075,38 @@ object BackupStore {
 		val dictName: String,
 		val dictBytes: ByteArray?,
 		val issues: List<Issue> = emptyList(),
-		val compatible: Boolean = true
+		val compatible: Boolean = true,
+		/** 5.4.1: preferencias del apartado de actualizaciones. */
+		val updatePrefs: Map<String, Any?> = emptyMap(),
+		/** 5.4.1: todos los diccionarios de la biblioteca. */
+		val dictionaries: List<BackupDictionary> = emptyList(),
+		/** 2 para el JSON de 5.1-5.4; 3 desde 5.4.1. */
+		val version: Int = 2,
+		/** 5.4.1: la copia trae la sección `dictionaries`, aunque
+		 *  venga vacía. Solo entonces se reemplaza la biblioteca. */
+		val libraryPresent: Boolean = false,
+		/** 5.4.1: la copia trae la sección `updates`. */
+		val updatesPresent: Boolean = false
+	)
+
+	/**
+	 * 5.4.1: un diccionario de la copia, con sus datos y sin la ruta
+	 * del aparato que lo guardó. Al importar se reconstruye en la
+	 * carpeta propia de esta instalación.
+	 */
+	data class BackupDictionary(
+		val id: String,
+		val name: String,
+		val language: Int,
+		val active: Boolean,
+		val ext: String,
+		val bytes: ByteArray
 	)
 
 	/** El formato viejo sigue leyéndose: una copia de 4.x/5.0. */
 	const val HEADER = "# reloqbkp v1"
 	const val JSON_FORMAT = "reloqbkp"
-	const val JSON_VERSION = 2
+	const val JSON_VERSION = 3
 	/** 5.0: extensión propia; el contenido sigue siendo JSON. */
 	const val EXTENSION = "reloqbkp"
 	private const val LEGACY_EXTENSION = "json"
@@ -3056,9 +3126,14 @@ object BackupStore {
 		return "${base.ifBlank { "copia" }}.$EXTENSION"
 	}
 	/** 4.0: la copia viaja en texto Base64; más de esto es
-	 *  basura o ataque, no diccionario real. */
-	const val MAX_BACKUP_BYTES = 15 * 1024 * 1024
+	 *  basura o ataque, no diccionario real. 5.4.1: la copia lleva
+	 *  la biblioteca entera, así que el tope sube para que varios
+	 *  diccionarios quepan. */
+	const val MAX_BACKUP_BYTES = 64 * 1024 * 1024
 	const val MAX_DICT_BYTES = 10 * 1024 * 1024
+	/** 5.4.1: tope de diccionarios en una copia; más es un archivo
+	 *  manipulado, no una biblioteca real. */
+	const val MAX_BACKUP_DICTS = 100
 
 	/**
 	 * Arma la copia en memoria para guardarla y compartirla.
@@ -3073,64 +3148,49 @@ object BackupStore {
 	fun buildBackup(
 		name: String,
 		settings: Settings,
-		diagnosticsPrefs: Map<String, Any?> = emptyMap()
+		diagnosticsPrefs: Map<String, Any?> = emptyMap(),
+		app: android.content.Context? = null
 	): ByteArray {
 		val prefs = kotlinx.serialization.json.buildJsonObject {
 			for ((key, value) in settings.dumpPrefs()) {
-				// 5.1: la copia guarda solo el diccionario activo; la
-				// biblioteca con rutas del aparato no se lleva.
+				// 5.4.1: la biblioteca viaja como archivos, no como
+				// rutas de este aparato. [Settings.KEY_DICTIONARY_PATH]
+				// y [Settings.KEY_DICTIONARY_NAME] se guardan como
+				// información, pero la importación las reconstruye.
 				if (key == Settings.KEY_DICTIONARY_LIBRARY) continue
-				val typed = when (value) {
-					is Int -> "I" to kotlinx.serialization.json.JsonPrimitive(value)
-					is Long -> "L" to kotlinx.serialization.json.JsonPrimitive(value)
-					is Float -> "F" to kotlinx.serialization.json.JsonPrimitive(value)
-					is Boolean -> "B" to kotlinx.serialization.json.JsonPrimitive(value)
-					is String -> "S" to kotlinx.serialization.json.JsonPrimitive(value)
-					is Set<*> -> "SS" to kotlinx.serialization.json.buildJsonArray {
-						for (one in value) add(kotlinx.serialization.json.JsonPrimitive(one.toString()))
-					}
-					else -> continue
-				}
-				put(key, kotlinx.serialization.json.buildJsonObject {
-					put("type", kotlinx.serialization.json.JsonPrimitive(typed.first))
-					put("value", typed.second)
-				})
+				putTyped(key, value)
 			}
 			// 5.4: el estado del registro (casilla activa/inactiva) viaja
 			// en la copia para que, al importar, la app arranque con el
 			// mismo ajuste de registro que tenía. Los archivos de registro
-			// nunca se incluyen: solo el interruptor.
-			for ((key, value) in diagnosticsPrefs) {
-				val typed = when (value) {
-					is Int -> "I" to kotlinx.serialization.json.JsonPrimitive(value)
-					is Long -> "L" to kotlinx.serialization.json.JsonPrimitive(value)
-					is Float -> "F" to kotlinx.serialization.json.JsonPrimitive(value)
-					is Boolean -> "B" to kotlinx.serialization.json.JsonPrimitive(value)
-					is String -> "S" to kotlinx.serialization.json.JsonPrimitive(value)
-					is Set<*> -> "SS" to kotlinx.serialization.json.buildJsonArray {
-						for (one in value) add(kotlinx.serialization.json.JsonPrimitive(one.toString()))
-					}
-					else -> continue
-				}
-				put(key, kotlinx.serialization.json.buildJsonObject {
-					put("type", kotlinx.serialization.json.JsonPrimitive(typed.first))
-					put("value", typed.second)
+			// nunca se incluyen: solo el interruptor y sus marcas.
+			for ((key, value) in diagnosticsPrefs) putTyped(key, value)
+		}
+		val dictionaries = kotlinx.serialization.json.buildJsonArray {
+			for ((entry, file) in dictionaryFiles(settings, app)) {
+				val bytes = runCatching { file.readBytes() }.getOrNull() ?: continue
+				if (bytes.isEmpty() || bytes.size > MAX_DICT_BYTES) continue
+				add(kotlinx.serialization.json.buildJsonObject {
+					put("id", kotlinx.serialization.json.JsonPrimitive(entry.id))
+					put("name", kotlinx.serialization.json.JsonPrimitive(entry.name.take(200)))
+					put("language", kotlinx.serialization.json.JsonPrimitive(entry.language))
+					put("active", kotlinx.serialization.json.JsonPrimitive(entry.active))
+					put("ext", kotlinx.serialization.json.JsonPrimitive(dictionaryExt(file)))
+					put(
+						"data",
+						kotlinx.serialization.json.JsonPrimitive(
+							android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+						)
+					)
 				})
 			}
 		}
-		val dictionary = kotlinx.serialization.json.buildJsonObject {
-			val active = settings.dictionaryForLanguage(settings.activeDictionaryLanguage)
-			val path = active?.path
-			val file = path?.let { java.io.File(it) }
-			if (file != null && file.exists()) {
-				put("ext", kotlinx.serialization.json.JsonPrimitive(file.extension.lowercase(java.util.Locale.ROOT)))
-				put("name", kotlinx.serialization.json.JsonPrimitive(active.name.ifEmpty { file.name }))
-				put(
-					"data",
-					kotlinx.serialization.json.JsonPrimitive(
-						android.util.Base64.encodeToString(file.readBytes(), android.util.Base64.NO_WRAP)
-					)
-				)
+		// 5.4.1: también viajan las preferencias de actualizaciones
+		// (frecuencia, última comprobación, versión omitida y la
+		// última versión abierta). No hay archivos de registro aquí.
+		val updates = kotlinx.serialization.json.buildJsonObject {
+			if (app != null) {
+				for ((key, value) in UpdatePrefs(app).dumpPrefs()) putTyped(key, value)
 			}
 		}
 		val root = kotlinx.serialization.json.buildJsonObject {
@@ -3138,18 +3198,84 @@ object BackupStore {
 			put("version", kotlinx.serialization.json.JsonPrimitive(JSON_VERSION))
 			put("name", kotlinx.serialization.json.JsonPrimitive(name))
 			put("prefs", prefs)
-			put("dictionary", dictionary)
+			put("dictionaries", dictionaries)
+			put("updates", updates)
 		}
 		return root.toString().toByteArray(Charsets.UTF_8)
+	}
+
+	/** Un valor con su tipo, como lo lee [parseJsonBackup]. */
+	private fun kotlinx.serialization.json.JsonObjectBuilder.putTyped(key: String, value: Any?) {
+		val typed = when (value) {
+			is Int -> "I" to kotlinx.serialization.json.JsonPrimitive(value)
+			is Long -> "L" to kotlinx.serialization.json.JsonPrimitive(value)
+			is Float -> "F" to kotlinx.serialization.json.JsonPrimitive(value)
+			is Boolean -> "B" to kotlinx.serialization.json.JsonPrimitive(value)
+			is String -> "S" to kotlinx.serialization.json.JsonPrimitive(value)
+			is Set<*> -> "SS" to kotlinx.serialization.json.buildJsonArray {
+				for (one in value) add(kotlinx.serialization.json.JsonPrimitive(one.toString()))
+			}
+			else -> return
+		}
+		put(key, kotlinx.serialization.json.buildJsonObject {
+			put("type", kotlinx.serialization.json.JsonPrimitive(typed.first))
+			put("value", typed.second)
+		})
+	}
+
+	/**
+	 * 5.4.1: todos los diccionarios que la app conoce, sin repetir
+	 * archivos. La biblioteca manda; además se miran los archivos de
+	 * la carpeta propia por si alguno quedó fuera de la lista.
+	 */
+	private fun dictionaryFiles(
+		settings: Settings,
+		app: android.content.Context?
+	): List<Pair<Settings.DictionaryEntry, java.io.File>> {
+		val out = LinkedHashMap<String, Pair<Settings.DictionaryEntry, java.io.File>>()
+		fun add(entry: Settings.DictionaryEntry) {
+			val file = java.io.File(entry.path)
+			if (!file.isFile || file.length() <= 0L) return
+			out.putIfAbsent(file.absolutePath, entry to file)
+		}
+		settings.dictionaries.forEach { add(it) }
+		settings.dictionaryForLanguage(settings.activeDictionaryLanguage)?.let { add(it) }
+		if (app != null) {
+			val dir = DirectBoot.dictionaries(app)
+			val activePath = settings.dictionaryForLanguage(settings.activeDictionaryLanguage)?.path
+			for (file in dir.listFiles().orEmpty()) {
+				if (!file.isFile || file.length() <= 0L) continue
+				val ext = file.extension.lowercase(java.util.Locale.ROOT)
+				if (ext != "cfd" && ext != "reloqdic") continue
+				if (out.containsKey(file.absolutePath)) continue
+				val entry = Settings.DictionaryEntry(
+					id = "file-${file.name}",
+					name = file.nameWithoutExtension,
+					language = settings.activeDictionaryLanguage,
+					path = file.absolutePath,
+					active = file.absolutePath == activePath
+				)
+				out[file.absolutePath] = entry to file
+			}
+		}
+		return out.values.toList()
+	}
+
+	/** El formato que se guarda para [file], por extensión o por
+	 *  contenido. */
+	private fun dictionaryExt(file: java.io.File): String {
+		val ext = file.extension.lowercase(java.util.Locale.ROOT)
+		return if (ext == "cfd" || ext == "reloqdic") ext else Dictionaries.formatOf(file)
 	}
 
 	fun exportTo(
 		resolver: android.content.ContentResolver,
 		uri: android.net.Uri,
 		name: String,
-		settings: Settings
+		settings: Settings,
+		app: android.content.Context? = null
 	): Boolean = runCatching {
-		val bytes = buildBackup(name, settings)
+		val bytes = buildBackup(name, settings, app = app)
 		resolver.openOutputStream(uri)?.use { it.write(bytes) } ?: return false
 		true
 	}.getOrDefault(false)
@@ -3172,7 +3298,7 @@ object BackupStore {
 		if (text.startsWith("{")) parseJsonBackup(text) else parseLegacyBackup(text)
 	}.getOrNull()
 
-	/** El JSON de 5.0: ajustes con su tipo y diccionario en Base64. */
+	/** El JSON de 5.0 y el de 5.4.1 (con biblioteca y actualizaciones). */
 	internal fun parseJsonBackup(text: String): ParsedBackup? {
 		val root = kotlinx.serialization.json.Json.parseToJsonElement(text)
 			 as? kotlinx.serialization.json.JsonObject ?: return null
@@ -3190,24 +3316,135 @@ object BackupStore {
 			return ParsedBackup(
 				name, emptyMap(), null, "", null,
 				listOf(Issue(IssueKind.FUTURE_VERSION, version)),
-				compatible = false
+				compatible = false, version = version
 			)
 		}
 		val issues = ArrayList<Issue>()
+		val prefs = LinkedHashMap<String, Any?>()
+		val prefElement = root["prefs"]
+		if (prefElement != null) {
+			if (prefElement !is kotlinx.serialization.json.JsonObject) {
+				issues += Issue(IssueKind.BAD_PREFS)
+			} else {
+				prefs.putAll(
+					readTypedPrefs(
+						prefElement,
+						known = { isKnownPrefKey(it) },
+						expected = { expectedType(it) },
+						sane = { key, value -> isSanePref(key, value) },
+						issues = issues
+					)
+				)
+			}
+		}
+		var dictExt: String? = null
+		var dictName = ""
+		var bytes: ByteArray? = null
+		val dictElement = root["dictionary"]
+		if (dictElement != null && dictElement !is kotlinx.serialization.json.JsonObject) {
+			issues += Issue(IssueKind.DICT_DATA)
+		} else {
+			val dict = dictElement as? kotlinx.serialization.json.JsonObject
+			val extRaw = (dict?.get("ext") as? kotlinx.serialization.json.JsonPrimitive)
+				?.content.orEmpty().lowercase(java.util.Locale.ROOT).take(12)
+			val ext = if (extRaw == "cfd" || extRaw == "reloqdic") extRaw else null
+			dictName = (dict?.get("name") as? kotlinx.serialization.json.JsonPrimitive)
+				?.content.orEmpty().take(200)
+			val data = (dict?.get("data") as? kotlinx.serialization.json.JsonPrimitive)?.content
+			val wantsDictionary = extRaw.isNotEmpty() || !data.isNullOrEmpty() || dictName.isNotEmpty()
+			if (wantsDictionary && ext == null) {
+				issues += Issue(IssueKind.DICT_FORMAT)
+			} else if (ext != null && !data.isNullOrEmpty()) {
+				val decoded = decodeDictionary(data, issues)
+				if (decoded != null) {
+					dictExt = ext
+					bytes = decoded
+				}
+			}
+		}
+		// 5.4.1: la biblioteca entera, con un archivo por entrada. La
+		// sección puede venir vacía: eso significa que el aparato de
+		// origen no tenía diccionarios, y al importar se reemplaza la
+		// biblioteca por esa lista vacía.
+		var libraryPresent = false
+		val dictionaries = ArrayList<BackupDictionary>()
+		val dictsElement = root["dictionaries"]
+		if (dictsElement != null) {
+			libraryPresent = true
+			if (dictsElement !is kotlinx.serialization.json.JsonArray) {
+				issues += Issue(IssueKind.DICT_DATA)
+			} else {
+				if (dictsElement.size > MAX_BACKUP_DICTS) {
+					issues += Issue(
+						IssueKind.DICT_DATA,
+						dictsElement.size - MAX_BACKUP_DICTS
+					)
+				}
+				var decodedBytes = 0L
+				for (index in 0 until minOf(dictsElement.size, MAX_BACKUP_DICTS)) {
+					val one = readBackupDictionary(dictsElement[index], issues) ?: continue
+					if (decodedBytes + one.bytes.size > MAX_BACKUP_BYTES) {
+						issues += Issue(IssueKind.DICT_TOO_LARGE)
+						continue
+					}
+					decodedBytes += one.bytes.size
+					dictionaries += one
+				}
+			}
+		}
+		// 5.4.1: frecuencia, última comprobación y versiones omitidas.
+		var updatesPresent = false
+		val updates = LinkedHashMap<String, Any?>()
+		val updatesElement = root["updates"]
+		if (updatesElement != null) {
+			updatesPresent = true
+			if (updatesElement !is kotlinx.serialization.json.JsonObject) {
+				issues += Issue(IssueKind.BAD_PREFS)
+			} else {
+				updates.putAll(
+					readTypedPrefs(
+						updatesElement,
+						known = { isKnownUpdateKey(it) },
+						expected = { updateExpectedType(it) },
+						sane = { key, value -> isSaneUpdatePref(key, value) },
+						issues = issues
+					)
+				)
+			}
+		}
+		if (prefs.isEmpty() && bytes == null && dictionaries.isEmpty() && updates.isEmpty()) return null
+		return ParsedBackup(
+			name, prefs, dictExt, dictName, bytes, issues,
+			version = version,
+			updatePrefs = updates,
+			dictionaries = dictionaries,
+			libraryPresent = libraryPresent,
+			updatesPresent = updatesPresent
+		)
+	}
+
+	/**
+	 * 5.4.1: lee un mapa `{clave: {type, value}}` con la misma puerta
+	 * que los ajustes: clave conocida, tipo exacto y valor en rango.
+	 * Se reutiliza para las preferencias de actualizaciones.
+	 */
+	private fun readTypedPrefs(
+		source: kotlinx.serialization.json.JsonObject,
+		known: (String) -> Boolean,
+		expected: (String) -> Char?,
+		sane: (String, Any?) -> Boolean,
+		issues: MutableList<Issue>
+	): LinkedHashMap<String, Any?> {
+		val out = LinkedHashMap<String, Any?>()
 		var unknownKeys = 0
 		var invalidEntries = 0
 		var outOfRange = 0
-		val prefs = LinkedHashMap<String, Any?>()
-		val prefObject = root["prefs"] as? kotlinx.serialization.json.JsonObject
-		if (prefObject == null && root.containsKey("prefs")) {
-			issues += Issue(IssueKind.BAD_PREFS)
-		}
-		prefObject?.forEach { (key, element) ->
-			if (prefs.size > 600) {
+		source.forEach { (key, element) ->
+			if (out.size > 600) {
 				invalidEntries++
 				return@forEach
 			}
-			if (!isKnownPrefKey(key)) {
+			if (!known(key)) {
 				unknownKeys++
 				return@forEach
 			}
@@ -3222,7 +3459,7 @@ object BackupStore {
 				invalidEntries++
 				return@forEach
 			}
-			if (expectedType(key)?.toString() != type) {
+			if (expected(key)?.toString() != type) {
 				invalidEntries++
 				return@forEach
 			}
@@ -3243,49 +3480,74 @@ object BackupStore {
 				invalidEntries++
 				return@forEach
 			}
-			if (!isSanePref(key, value)) {
+			if (!sane(key, value)) {
 				outOfRange++
 				return@forEach
 			}
-			prefs[key] = value
+			out[key] = value
 		}
 		if (unknownKeys > 0) issues += Issue(IssueKind.UNKNOWN_PREF_KEYS, unknownKeys)
 		if (invalidEntries > 0) issues += Issue(IssueKind.INVALID_PREF_ENTRIES, invalidEntries)
 		if (outOfRange > 0) issues += Issue(IssueKind.OUT_OF_RANGE_PREFS, outOfRange)
-		var dictExt: String? = null
-		var dictName = ""
-		var bytes: ByteArray? = null
-		val dictElement = root["dictionary"]
-		if (dictElement != null && dictElement !is kotlinx.serialization.json.JsonObject) {
-			issues += Issue(IssueKind.DICT_DATA)
-		} else {
-			val dict = dictElement as? kotlinx.serialization.json.JsonObject
-			val extRaw = (dict?.get("ext") as? kotlinx.serialization.json.JsonPrimitive)
-				?.content.orEmpty().lowercase(java.util.Locale.ROOT).take(12)
-			val ext = if (extRaw == "cfd" || extRaw == "reloqdic") extRaw else null
-			dictName = (dict?.get("name") as? kotlinx.serialization.json.JsonPrimitive)
-				?.content.orEmpty().take(200)
-			val data = (dict?.get("data") as? kotlinx.serialization.json.JsonPrimitive)?.content
-			val wantsDictionary = extRaw.isNotEmpty() || !data.isNullOrEmpty() || dictName.isNotEmpty()
-			if (wantsDictionary && ext == null) {
-				issues += Issue(IssueKind.DICT_FORMAT)
-			} else if (ext != null && !data.isNullOrEmpty()) {
-				val decoded = runCatching {
-					android.util.Base64.decode(data, android.util.Base64.DEFAULT)
-				}.getOrNull()
-				when {
-					decoded == null -> issues += Issue(IssueKind.DICT_DATA)
-					decoded.isEmpty() -> issues += Issue(IssueKind.DICT_DATA)
-					decoded.size > MAX_DICT_BYTES -> issues += Issue(IssueKind.DICT_TOO_LARGE)
-					else -> {
-						dictExt = ext
-						bytes = decoded
-					}
-				}
+		return out
+	}
+
+	/** Decodifica el Base64 de un diccionario y avisa si no sirve. */
+	private fun decodeDictionary(data: String, issues: MutableList<Issue>): ByteArray? {
+		val decoded = runCatching {
+			android.util.Base64.decode(data, android.util.Base64.DEFAULT)
+		}.getOrNull()
+		return when {
+			decoded == null || decoded.isEmpty() -> {
+				issues += Issue(IssueKind.DICT_DATA)
+				null
 			}
+			decoded.size > MAX_DICT_BYTES -> {
+				issues += Issue(IssueKind.DICT_TOO_LARGE)
+				null
+			}
+			else -> decoded
 		}
-		if (prefs.isEmpty() && bytes == null) return null
-		return ParsedBackup(name, prefs, dictExt, dictName, bytes, issues)
+	}
+
+	/**
+	 * 5.4.1: una entrada de la biblioteca. El nombre y el idioma son
+	 * informativos; los bytes y la extensión son lo que se escribe.
+	 */
+	private fun readBackupDictionary(
+		element: kotlinx.serialization.json.JsonElement,
+		issues: MutableList<Issue>
+	): BackupDictionary? {
+		if (element !is kotlinx.serialization.json.JsonObject) {
+			issues += Issue(IssueKind.DICT_DATA)
+			return null
+		}
+		val extRaw = (element["ext"] as? kotlinx.serialization.json.JsonPrimitive)
+			?.content.orEmpty().lowercase(java.util.Locale.ROOT).take(12)
+		val ext = if (extRaw == "cfd" || extRaw == "reloqdic") extRaw else null
+		val data = (element["data"] as? kotlinx.serialization.json.JsonPrimitive)?.content
+		val language = (element["language"] as? kotlinx.serialization.json.JsonPrimitive)
+			?.content?.toIntOrNull()
+		if (ext == null) {
+			issues += Issue(IssueKind.DICT_FORMAT)
+			return null
+		}
+		if (language == null || language < 0 || data.isNullOrEmpty()) {
+			issues += Issue(IssueKind.DICT_DATA)
+			return null
+		}
+		val bytes = decodeDictionary(data, issues) ?: return null
+		return BackupDictionary(
+			id = (element["id"] as? kotlinx.serialization.json.JsonPrimitive)
+				?.content.orEmpty().take(200),
+			name = (element["name"] as? kotlinx.serialization.json.JsonPrimitive)
+				?.content.orEmpty().take(200),
+			language = language,
+			active = (element["active"] as? kotlinx.serialization.json.JsonPrimitive)
+				?.content?.toBooleanStrictOrNull() ?: false,
+			ext = ext,
+			bytes = bytes
+		)
 	}
 
 	/** Tipo que [Settings.dumpPrefs] escribe para [key]. Un tipo
@@ -3323,6 +3585,33 @@ object BackupStore {
 		is Float -> value.isFinite() && value >= -1_000_000f && value <= 1_000_000f
 		is Long -> true
 		is Int -> isSaneInt(key, value)
+		else -> false
+	}
+
+	/** 5.4.1: claves de [UpdatePrefs], con su tipo y su rango. No
+	 *  comparten lista con los ajustes de voz porque viven en otro
+	 *  archivo y se restauran aparte. */
+	private fun isKnownUpdateKey(key: String): Boolean =
+		key in UpdatePrefs.BOOL_KEYS || key in UpdatePrefs.INT_KEYS ||
+			key in UpdatePrefs.LONG_KEYS
+
+	private fun updateExpectedType(key: String): Char? = when (key) {
+		in UpdatePrefs.BOOL_KEYS -> 'B'
+		in UpdatePrefs.INT_KEYS -> 'I'
+		in UpdatePrefs.LONG_KEYS -> 'L'
+		else -> null
+	}
+
+	private fun isSaneUpdatePref(key: String, value: Any?): Boolean = when (value) {
+		is Boolean -> key in UpdatePrefs.BOOL_KEYS
+		is Int -> when (key) {
+			UpdatePrefs.KEY_INTERVAL -> value in UpdatePrefs.INTERVALS
+			UpdatePrefs.KEY_NOTIFIED,
+			UpdatePrefs.KEY_SKIPPED,
+			UpdatePrefs.KEY_LAST_SEEN -> value >= 0
+			else -> false
+		}
+		is Long -> key == UpdatePrefs.KEY_LAST_CHECK && value >= 0L
 		else -> false
 	}
 
@@ -3465,6 +3754,8 @@ object BackupStore {
 		Settings.KEY_MIX_MIGRATED, Settings.KEY_PHASER, Settings.KEY_TELEPHONE,
 		Settings.KEY_NORMALIZER, Settings.KEY_HIGHPASS, Settings.KEY_DRIVE,
 		Settings.KEY_BODY,
+		// 5.4.1: modo de ultrabaja latencia.
+		Settings.KEY_LOW_LATENCY,
 		// 5.4: el interruptor de registro viaja en la copia y se restaura
 		// al importar, para que la app arranque con el mismo estado.
 		Diagnostics.KEY_ENABLED
@@ -3521,7 +3812,8 @@ object BackupStore {
 		Settings.KEY_PHASER, Settings.KEY_VIBRATO, Settings.KEY_RINGMOD, Settings.KEY_FUZZ,
 		Settings.KEY_WAH, Settings.KEY_MAXIMIZER, Settings.KEY_TELEPHONE,
 		Settings.KEY_NORMALIZER, Settings.KEY_HIGHPASS, Settings.KEY_DRIVE,
-		Settings.KEY_BODY, Settings.KEY_DICTIONARY_PATH, Settings.KEY_DICTIONARY_NAME,
+		Settings.KEY_BODY, Settings.KEY_LOW_LATENCY,
+		Settings.KEY_DICTIONARY_PATH, Settings.KEY_DICTIONARY_NAME,
 		Settings.KEY_DICTIONARY_WORDS, Settings.KEY_DICTIONARY_LIBRARY,
 		Settings.KEY_DICTIONARY_LANGUAGE,
 		// 4.3: estos cinco se perdían al importar. La lista de aquí
@@ -3590,48 +3882,165 @@ object BackupStore {
 				settings.restorePrefs(normalPrefs)
 				// 5.1: la copia solo lleva el diccionario activo. La
 				// biblioteca del aparato se queda como estaba y la
-				// copia añade su diccionario arriba.
-				settings.dictionaries = libraryBefore
+				// copia añade su diccionario arriba. 5.4.1 cambia eso
+				// para las copias v3, que sí llevan la biblioteca.
+				if (!parsed.libraryPresent) settings.dictionaries = libraryBefore
 			}
 			if (diagnosticsPrefs.isNotEmpty()) {
 				Diagnostics.restorePrefs(app, diagnosticsPrefs)
 			}
 		}
+		// 5.4.1: frecuencia y versiones del apartado de actualizaciones.
+		if (parsed.updatesPresent) {
+			val updates = parsed.updatePrefs.filterKeys { key ->
+				val value = parsed.updatePrefs[key]
+				isKnownUpdateKey(key) && updateExpectedType(key) == typeOf(value) &&
+					isSaneUpdatePref(key, value)
+			}
+			val prefs = UpdatePrefs(app)
+			prefs.restorePrefs(updates)
+			// Importar una copia no es instalar una versión nueva: la
+			// marca de "ya abrí esta versión" vuelve a la instalada
+			// para no enseñar un registro de cambios ajeno al volver
+			// a abrir la app.
+			prefs.lastSeenVersionCode = BuildConfig.VERSION_CODE
+		}
 		val language = (parsed.prefs[Settings.KEY_DICTIONARY_LANGUAGE] as? Int)
 			?.takeIf { it >= 0 } ?: settings.activeDictionaryLanguage
-		val bytes = parsed.dictBytes
-		val ext = parsed.dictExt?.lowercase(java.util.Locale.ROOT)
-		if (bytes != null && (ext == "cfd" || ext == "reloqdic") && bytes.size <= MAX_DICT_BYTES) {
-			runCatching {
-				val into = DirectBoot.dictionaries(app).apply { mkdirs() }
-				val file = java.io.File(
-					into,
-					"dict-${System.currentTimeMillis()}-${java.util.UUID.randomUUID().toString().take(8)}.$ext"
-				)
-				file.writeBytes(bytes)
-				// Verifica que lo guardado sí parsea como diccionario.
-				if (Dictionaries.entries(file).isNotEmpty() || bytes.size < 4096) {
-					settings.addDictionary(
-						parsed.dictName.ifEmpty { file.name },
-						file.absolutePath, language, active = true
+		if (parsed.libraryPresent) {
+			restoreLibrary(parsed.dictionaries, language, settings, app, libraryBefore)
+		} else {
+			val bytes = parsed.dictBytes
+			val ext = parsed.dictExt?.lowercase(java.util.Locale.ROOT)
+			if (bytes != null && (ext == "cfd" || ext == "reloqdic") && bytes.size <= MAX_DICT_BYTES) {
+				runCatching {
+					val into = DirectBoot.dictionaries(app).apply { mkdirs() }
+					val file = java.io.File(
+						into,
+						"dict-${System.currentTimeMillis()}-${java.util.UUID.randomUUID().toString().take(8)}.$ext"
 					)
-				} else {
-					file.delete()
+					file.writeBytes(bytes)
+					// Verifica que lo guardado sí parsea como diccionario.
+					if (Dictionaries.entries(file).isNotEmpty() || bytes.size < 4096) {
+						settings.addDictionary(
+							parsed.dictName.ifEmpty { file.name },
+							file.absolutePath, language, active = true
+						)
+					} else {
+						file.delete()
+					}
 				}
+			} else if (libraryBefore.isNotEmpty()) {
+				// Sin diccionario en la copia: deja activo el de la
+				// biblioteca que corresponda al idioma restaurado.
+				val current = libraryBefore.lastOrNull {
+					it.language == language && it.active
+				} ?: libraryBefore.lastOrNull { it.language == language }
+				if (current != null) settings.setActiveDictionary(current.id)
+				else settings.activeDictionaryLanguage = language
 			}
-		} else if (libraryBefore.isNotEmpty()) {
-			// Sin diccionario en la copia: deja activo el de la
-			// biblioteca que corresponda al idioma restaurado.
-			val current = libraryBefore.lastOrNull {
-				it.language == language && it.active
-			} ?: libraryBefore.lastOrNull { it.language == language }
-			if (current != null) settings.setActiveDictionary(current.id)
-			else settings.activeDictionaryLanguage = language
 		}
 		return ImportResult(
 			app.getString(R.string.backup_ok, parsed.name.ifEmpty { "backup" }),
 			settings.appLocale != beforeLocale
 		)
+	}
+
+	/**
+	 * 5.4.1: escribe en la carpeta propia de esta instalación todos
+	 * los diccionarios de la copia y reemplaza la biblioteca entera.
+	 *
+	 * Las rutas del aparato de origen no sirven aquí, así que cada
+	 * archivo se escribe con un nombre nuevo y la entrada se rearma
+	 * con esa ruta. Después se borran los archivos de esta carpeta
+	 * que la copia no traiga: si no, una copia con la biblioteca
+	 * vacía dejaría los archivos viejos ocupando sitio y fuera de la
+	 * biblioteca. Los diccionarios elegidos fuera de esta carpeta no
+	 * se tocan; solo se reemplaza lo que la app administra.
+	 */
+	private fun restoreLibrary(
+		source: List<BackupDictionary>,
+		language: Int,
+		settings: Settings,
+		app: android.content.Context,
+		fallback: List<Settings.DictionaryEntry>
+	) {
+		val into = DirectBoot.dictionaries(app).apply { mkdirs() }
+		val written = HashSet<String>()
+		val usedIds = HashSet<String>()
+		val restored = ArrayList<Settings.DictionaryEntry>()
+		for (entry in source) {
+			val ext = entry.ext.lowercase(java.util.Locale.ROOT)
+			if (ext != "cfd" && ext != "reloqdic") continue
+			if (entry.bytes.isEmpty() || entry.bytes.size > MAX_DICT_BYTES) continue
+			if (entry.language < 0) continue
+			val file = java.io.File(
+				into,
+				"dict-${System.currentTimeMillis()}-" +
+					"${java.util.UUID.randomUUID().toString().take(8)}.$ext"
+			)
+			val ok = runCatching {
+				file.writeBytes(entry.bytes)
+				// Un diccionario de verdad trae entradas. Los archivos
+				// diminutos se aceptan igual porque un diccionario
+				// personalizado puede tener dos o tres palabras.
+				Dictionaries.entries(file).isNotEmpty() || entry.bytes.size < 4096
+			}.getOrDefault(false)
+			if (!ok) {
+				runCatching { file.delete() }
+				continue
+			}
+			written += file.absolutePath
+			var id = entry.id.trim().take(200)
+			if (id.isEmpty() || !usedIds.add(id)) {
+				id = java.util.UUID.randomUUID().toString()
+				usedIds.add(id)
+			}
+			restored += Settings.DictionaryEntry(
+				id = id,
+				name = entry.name.trim().take(60)
+					.ifEmpty { file.nameWithoutExtension },
+				language = entry.language,
+				path = file.absolutePath,
+				active = entry.active
+			)
+		}
+		// Si la copia decía traer diccionarios y ninguno sirvió, no
+		// se borra la biblioteca que ya había: una copia dañada no
+		// debe llevarse por delante la única que funciona.
+		if (source.isNotEmpty() && restored.isEmpty()) {
+			settings.dictionaries = fallback
+			return
+		}
+		// Un solo activo por idioma, como en la biblioteca normal.
+		val activeLanguages = HashSet<Int>()
+		val normalized = restored.map {
+			if (it.language in activeLanguages) {
+				it.copy(active = false)
+			} else {
+				if (it.active) activeLanguages += it.language
+				it
+			}
+		}
+		settings.dictionaries = normalized
+		val target = normalized.firstOrNull { it.language == language && it.active }
+			?: normalized.firstOrNull { it.language == language }
+			?: normalized.firstOrNull { it.active }
+		if (target != null) {
+			settings.setActiveDictionary(target.id)
+		} else {
+			settings.activeDictionaryLanguage = language
+			settings.dictionaryPath = null
+			settings.dictionaryName = null
+		}
+		// Archivos de la carpeta que la copia no trajo. Se hace
+		// después de escribir todo, para que un fallo a mitad no deje
+		// la biblioteca apuntando a un archivo borrado.
+		for (file in into.listFiles().orEmpty()) {
+			if (!file.isFile || file.absolutePath in written) continue
+			val ext = file.extension.lowercase(java.util.Locale.ROOT)
+			if (ext == "cfd" || ext == "reloqdic") runCatching { file.delete() }
+		}
 	}
 
 	/** Aplica una copia de una vez (para el "Abrir con" de fuera).

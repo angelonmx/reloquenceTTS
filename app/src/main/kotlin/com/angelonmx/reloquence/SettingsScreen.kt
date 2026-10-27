@@ -196,6 +196,13 @@ fun SettingsScreen(
 			}
 		}
 	}
+	// 5.4.1: después de instalar una versión nueva se enseña una sola
+	// vez su registro de cambios, con la fecha y el botón Cerrar.
+	// Vive en la raíz para que aparezca sin importar en qué apartado
+	// se abra la app. En una instalación nueva no hay nada pendiente.
+	state.postUpdateChangelog?.let { entry ->
+		ChangelogDialog(entry, state::closePostUpdateChangelog)
+	}
 }
 
 /** Encabezado de apartado, igual en todos: atrás arriba a la
@@ -769,6 +776,19 @@ private fun PronScreen(state: SettingsModel, modifier: Modifier = Modifier, onBa
 			label = stringResource(R.string.abbreviations_label),
 			checked = state.abbreviations,
 			onChange = state::chooseAbbreviations
+		)
+		// 5.4.1: entrega menos audio por delante para que la voz
+		// empiece antes y una parada llegue antes. No cambia la voz
+		// ni la configuración de lectura.
+		SwitchRow(
+			label = stringResource(R.string.low_latency_label),
+			checked = state.lowLatency,
+			onChange = state::chooseLowLatency
+		)
+		Text(
+			text = stringResource(R.string.low_latency_hint),
+			style = MaterialTheme.typography.bodyMedium,
+			modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
 		)
 		// 4.3: apagar los códigos de voz. Va aquí y no en la
 		// sección de sonido porque no es un efecto: es si el texto
@@ -2635,6 +2655,18 @@ private fun UpdateAvailableDialog(updates: UpdatesModel, info: UpdateInfo) {
 private fun ChangelogDialog(entry: ChangelogEntry?, onDismiss: () -> Unit) {
 	val language = java.util.Locale.getDefault().language
 	val notes = ChangelogStore.notes(entry, language)
+	// 5.4.1: la fecha viaja como ISO en el changelog y se enseña en
+	// el formato del idioma del teléfono. Si no se puede leer, se
+	// deja tal cual en vez de esconderla.
+	val date = remember(entry?.date) {
+		val raw = entry?.date.orEmpty()
+		if (raw.isBlank()) null else runCatching {
+			val parser = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+			parser.isLenient = false
+			java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM)
+				.format(parser.parse(raw) ?: throw IllegalArgumentException(raw))
+		}.getOrDefault(raw)
+	}
 	AlertDialog(
 		onDismissRequest = onDismiss,
 		title = {
@@ -2646,14 +2678,22 @@ private fun ChangelogDialog(entry: ChangelogEntry?, onDismiss: () -> Unit) {
 			)
 		},
 		text = {
-			if (notes.isEmpty()) {
-				Text(stringResource(R.string.update_changelog_empty))
-			} else {
-				Column(
-					modifier = Modifier
-						.heightIn(max = 420.dp)
-						.verticalScroll(rememberScrollState())
-				) {
+			Column(
+				modifier = Modifier
+					.heightIn(max = 420.dp)
+					.verticalScroll(rememberScrollState())
+			) {
+				if (date != null) {
+					Text(
+						text = stringResource(R.string.update_changelog_date, date),
+						style = MaterialTheme.typography.bodyMedium,
+						color = MaterialTheme.colorScheme.onSurfaceVariant,
+						modifier = Modifier.padding(bottom = 8.dp)
+					)
+				}
+				if (notes.isEmpty()) {
+					Text(stringResource(R.string.update_changelog_empty))
+				} else {
 					notes.forEach { note ->
 						Text(
 							text = "• $note",

@@ -67,6 +67,40 @@ class UpdatePrefs(context: Context) {
 		prefs.edit().remove(KEY_SKIPPED).commit()
 	}
 
+	/**
+	 * 5.4.1: la última versión que ya abrió la app. Es lo que
+	 * distingue una instalación nueva (cero) de una actualización, y
+	 * lo que hace que el registro de cambios se enseñe una sola vez
+	 * después de instalar.
+	 */
+	var lastSeenVersionCode: Int
+		get() = prefs.getInt(KEY_LAST_SEEN, 0)
+		set(value) {
+			prefs.edit().putInt(KEY_LAST_SEEN, value).commit()
+		}
+
+	/** Todo lo que guarda este archivo, para la copia de seguridad. */
+	fun dumpPrefs(): Map<String, Any?> = prefs.all.toMap()
+
+	/**
+	 * Repone lo importado y borra lo que no venga: una copia es un
+	 * reemplazo, no una mezcla. Se espera al disco porque el
+	 * registro de cambios y el programador lo leen al arrancar.
+	 */
+	fun restorePrefs(values: Map<String, Any?>) {
+		val editor = prefs.edit().clear()
+		for ((key, value) in values) {
+			when (value) {
+				is Boolean -> editor.putBoolean(key, value)
+				is Int -> editor.putInt(key, value)
+				is Long -> editor.putLong(key, value)
+				is Float -> editor.putFloat(key, value)
+				is String -> editor.putString(key, value)
+			}
+		}
+		editor.commit()
+	}
+
 	companion object {
 		const val PREFS = "reloquence_updates"
 		const val KEY_AUTO = "auto_check"
@@ -74,6 +108,12 @@ class UpdatePrefs(context: Context) {
 		const val KEY_LAST_CHECK = "last_check_at"
 		const val KEY_NOTIFIED = "last_notified_version_code"
 		const val KEY_SKIPPED = "skipped_version_code"
+		const val KEY_LAST_SEEN = "last_seen_version_code"
+
+		/** Claves y tipos que una copia puede traer de este archivo. */
+		val BOOL_KEYS = setOf(KEY_AUTO)
+		val INT_KEYS = setOf(KEY_INTERVAL, KEY_NOTIFIED, KEY_SKIPPED, KEY_LAST_SEEN)
+		val LONG_KEYS = setOf(KEY_LAST_CHECK)
 
 		/** El mínimo de WorkManager son 15 minutos, pero una
 		 *  actualización cada dos horas ya es más de lo que

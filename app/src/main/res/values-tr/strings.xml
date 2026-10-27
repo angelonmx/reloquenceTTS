@@ -43,6 +43,8 @@
 	<string name="milliseconds">%1$d ms</string>
 	<string name="phrase_prediction_label">Cümle tahmini</string>
 	<string name="abbreviations_label">Kısaltmaları aç</string>
+	<string name="low_latency_label">Ultra düşük gecikme modu</string>
+	<string name="low_latency_hint">Sesi daha az önden göndererek konuşmanın daha çabuk başlayıp durmasını sağlar. Çok daha fazla CPU kullanabilir ama telefonu kullanılamaz hâle getirmez. (Yalnızca cihazınız giriş seviyesi veya kaynakları kısıtlı değilse yararlıdır)</string>
 	<string name="emoji_label">Emojileri oku</string>
 	<string name="unicode_symbols_label">Unicode karakterleri ve özel simgeleri oku</string>
 	<string name="punct_process_label">Noktalamayı oku</string>
@@ -153,6 +155,7 @@
 	<string name="backup_do_import">İçe aktar</string>
 	<string name="backup_do_keep">İçe aktarma</string>
 	<string name="backup_info_profiles">Efekt profilleri</string>
+	<string name="backup_info_dictionaries">Sözlükler</string>
 	<string name="voice_mix_label">Sesleri karıştır</string>
 	<string name="voice_mix_partner">Karıştırılacak ses</string>
 
@@ -415,7 +418,8 @@
 	<string name="update_error_download">Güncelleme indirilemedi.</string>
 	<string name="update_error_install">Yükleyici açılamadı.</string>
 	<string name="update_error_unknown">Güncellemeler denetlenemedi.</string>
-	<string name="update_changelog_title">%1$s sürümündeki değişiklikler</string>
+	<string name="update_changelog_title">%1$s sürümü değişiklik günlüğü</string>
+	<string name="update_changelog_date">Yayın tarihi: %1$s</string>
 	<string name="update_changelog_empty">Bu sürüm için değişiklik belirtilmemiş.</string>
 	<string name="update_notification_channel">Güncellemeler</string>
 	<string name="update_notification_channel_hint">Yeni sürümler hakkında bildirimler</string>

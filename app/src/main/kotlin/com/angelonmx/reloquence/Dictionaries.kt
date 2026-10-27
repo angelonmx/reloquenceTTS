@@ -159,23 +159,82 @@ object Dictionaries {
 		// voz es otra y la alternancia se quedo armada con el
 		// reinicio de antes.
 
-		// 4.1: frases primero (largas, pocas), luego palabras por
-		// tokens (lineal). Antes una sola alternancia gigante con
-		// miles de claves mezclaba todo y tardaba segundos; ahora
-		// las frases van en cubos por largo, que es lo mismo de
-		// rápido sin el tope que se comía media entrada.
-		var out = substitutePhrases(text, cached, reset)
-		if (!cached.hasWords) return out
-		// Claves de pura palabra van por tokens: lineal en textos
-		// larguísimos en vez de una alternancia gigante.
-		return TOKENS.replace(out) { m ->			val rule = cached.byLower[normKey(m.value)] ?: return@replace m.value
-			// Solo reglas de una palabra entran por aquí; las frases
-			// ya se resolvieron arriba.
-			if (rule.trimmed.any { !it.isLetterOrDigit() && it != '_' }) return@replace m.value
-			if (!ruleAccept(rule, m.value, m.range.first, m.range.last + 1, out)) return@replace m.value
-			withReset(rule.say, reset)
-		}
+		// 4.1: frases y palabras se buscan sobre el texto original y
+		// se sustituyen en una sola pasada. Antes se sustituían las
+		// frases y luego se volvía a pasar por las palabras sobre el
+		// resultado: la pronunciación de una frase podía contener una
+		// clave de palabra y se sustituía otra vez, así que la voz
+		// decía palabras de más o cambiaba de tono. Ahora lo que sale
+		// de una regla no se vuelve a mirar.
+		return substituteOnce(text, cached, reset)
 	}
+
+	/**
+	 * 5.4.1: las dos clases de acierto (frase y palabra) se juntan,
+	 * se ordenan por posición y se aplican sin solaparse. A igual
+	 * comienzo manda la frase y, dentro de cada clase, la más larga.
+	 * El texto que sale de una regla no se recorre otra vez.
+	 */
+	private fun substituteOnce(text: String, cached: Hit, reset: String): String {
+		val found = ArrayList<Candidate>()
+		if (cached.buckets.isNotEmpty()) {
+			var phrases = 0
+			for (bucket in cached.buckets) {
+				if (phrases >= MAX_PHRASES) break
+				if (!bucket.mayAppearIn(text)) continue
+				for (m in bucket.regex.findAll(text)) {
+					if (phrases >= MAX_PHRASES) break
+					val say = ruleFor(cached, m.value, m.range.first, m.range.last + 1, text)
+						?: continue
+					found.add(
+						Candidate(
+							m.range.first, m.range.last + 1, phrase = true, say = say
+						)
+					)
+					phrases++
+				}
+			}
+		}
+		if (cached.hasWords) {
+			for (m in TOKENS.findAll(text)) {
+				val rule = cached.byLower[normKey(m.value)] ?: continue
+				// Solo reglas de una palabra entran por aquí; las
+				// frases ya se resolvieron arriba.
+				if (rule.trimmed.any { !it.isLetterOrDigit() && it != '_' }) continue
+				if (!ruleAccept(rule, m.value, m.range.first, m.range.last + 1, text)) continue
+				found.add(
+					Candidate(
+						m.range.first, m.range.last + 1, phrase = false,
+						say = withReset(rule.say, reset)
+					)
+				)
+			}
+		}
+		if (found.isEmpty()) return text
+		// Primero por dónde empieza; a igual comienzo la frase y la
+		// más larga. Así ninguna sustitución pisa a otra y la que
+		// gana donde dos casan es la que el usuario espera.
+		found.sortWith(
+			compareBy<Candidate>({ it.start }, { if (it.phrase) 0 else 1 }, { -(it.end - it.start) })
+		)
+		val out = StringBuilder(text.length + 64)
+		var at = 0
+		for (c in found) {
+			if (c.start < at) continue
+			out.append(text, at, c.start).append(c.say)
+			at = c.end
+		}
+		if (at == 0) return text
+		out.append(text, at, text.length)
+		return out.toString()
+	}
+
+	private class Candidate(
+		val start: Int,
+		val end: Int,
+		val phrase: Boolean,
+		val say: String
+	)
 
 	/**
 	 * Una clave de diccionario tal como se va a buscar y como se
@@ -273,55 +332,6 @@ object Dictionaries {
 	 *  el de ancho fijo. */
 	private const val EXOTIC_BLANKS = "\u00A0\u2007\u202F\u3000\u2009"
 
-	/**
-	 * Las frases de [text], de la más larga a la más corta y sin
-	 * solaparse: donde dos casan, manda la más larga, que es lo
-	 * que hace una alternancia con las alternativas ordenadas de
-	 * más larga a más corta.
-	 *
-	 * 4.1: antes era una alternancia de todas las claves de frase
-	 * con un tope de mil, y el tope se llevaba por delante las
-	 * claves útiles (en un diccionario de horas, todas las claves
-	 * de frase miden lo mismo, así que se las comía enteras). Aquí
-	 * no hay tope: [SubCache] las parte en cubos por largo, cada
-	 * uno con su alternancia, y todos se recorren. Un tope de
-	 * seguridad queda para el caso absurdo de un archivo con
-	 * millones de entradas, y entonces lo que se deja fuera es lo
-	 * más corto, que es lo menos probable que se diga.
-	 */
-	private fun substitutePhrases(text: String, cached: Hit, reset: String): String {
-		val buckets = cached.buckets
-		if (buckets.isEmpty()) return text
-		// El ajuste de la ventana que se está procesando: una clave
-		// más larga que la ventana no puede casar, y eso lo mira
-		// [PhraseBucket.mayAppearIn] con el largo más corto.
-		val found = ArrayList<HitRange>()
-		for (bucket in buckets) {
-			if (!bucket.mayAppearIn(text)) continue
-			for (m in bucket.regex.findAll(text)) {
-				found.add(HitRange(m.range.first, m.range.last + 1, m.value))
-			}
-		}
-		if (found.isEmpty()) return text
-		// Primero por dónde empieza, y a igual comienzo la más
-		// larga: así la larga se pone y la corta se salta por
-		// solapada, que es lo mismo que gana la larga.
-		found.sortWith(compareBy({ it.start }, { -(it.end - it.start) }))
-		val out = StringBuilder(text.length + 64)
-		var at = 0
-		var used = 0
-		for (h in found) {
-			if (h.start < at) continue
-			val say = ruleFor(cached, h.matched, h.start, h.end, text) ?: continue
-			out.append(text, at, h.start).append(say)
-			at = h.end
-			if (++used >= MAX_PHRASES) break
-		}
-		if (used == 0) return text
-		out.append(text, at, text.length)
-		return out.toString()
-	}
-
 	/** La regla que corresponde a lo que casó, o nada si ninguna. */
 	private fun ruleFor(cached: Hit, matched: String, start: Int, end: Int, text: String): String? {
 		// 4.1: dos formas de buscar la misma regla, porque el patrón
@@ -343,8 +353,6 @@ object Dictionaries {
 	/** La pronunciación con el reset detrás si trae anotaciones. */
 	private fun withReset(say: String, reset: String): String =
 		if (reset.isNotEmpty() && '`' in say) "$say $reset" else say
-
-	private class HitRange(val start: Int, val end: Int, val matched: String)
 
 	/** Una clave toda en mayúsculas ("ESA", "BMW", "SL") solo vale
 	 *  en mayúsculas: así "esa" no se deletrea como E S A. Dos

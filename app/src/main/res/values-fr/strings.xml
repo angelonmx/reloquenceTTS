@@ -43,6 +43,8 @@
 	<string name="milliseconds">%1$d ms</string>
 	<string name="phrase_prediction_label">Prédiction de phrases</string>
 	<string name="abbreviations_label">Développer les abréviations</string>
+	<string name="low_latency_label">Mode ultra-basse latence</string>
+	<string name="low_latency_hint">Fournit moins d’audio à l’avance pour que la voix démarre et s’arrête plus tôt. Peut consommer nettement plus de CPU sans rendre le téléphone inutilisable. (Utile uniquement si votre appareil n’est pas d’entrée de gamme ou limité en ressources)</string>
 	<string name="emoji_label">Lire les émojis</string>
 	<string name="unicode_symbols_label">Lire les caractères Unicode et les symboles spéciaux</string>
 	<string name="punct_process_label">Dire la ponctuation</string>
@@ -152,7 +154,8 @@
 	<string name="backup_preview_question">Remplacer les réglages actuels par ceux de la sauvegarde ?</string>
 	<string name="backup_do_import">Importer</string>
 	<string name="backup_do_keep">Ne pas importer</string>
-	<string name="backup_info_profiles">Profils d’effets</string>
+	<string name="backup_info_profiles">Profils d\'effets</string>
+	<string name="backup_info_dictionaries">Dictionnaires</string>
 	<string name="voice_mix_label">Mélanger les voix</string>
 	<string name="voice_mix_partner">Voix à mélanger</string>
 
@@ -416,7 +419,8 @@
 	<string name="update_error_download">Impossible de télécharger la mise à jour.</string>
 	<string name="update_error_install">Impossible d\'ouvrir l\'installateur.</string>
 	<string name="update_error_unknown">Impossible de vérifier les mises à jour.</string>
-	<string name="update_changelog_title">Changements de la version %1$s</string>
+	<string name="update_changelog_title">Journal des modifications version %1$s</string>
+	<string name="update_changelog_date">Date de publication : %1$s</string>
 	<string name="update_changelog_empty">Aucun changement indiqué pour cette version.</string>
 	<string name="update_notification_channel">Mises à jour</string>
 	<string name="update_notification_channel_hint">Avis de nouvelles versions disponibles</string>

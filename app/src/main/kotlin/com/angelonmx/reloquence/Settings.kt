@@ -182,6 +182,20 @@ class Settings(context: Context) {
 		get() = prefs.getBoolean(KEY_IGNORE_VOICE_TAGS, false)
 		set(value) = write { putBoolean(KEY_IGNORE_VOICE_TAGS, value) }
 
+	/**
+	 * 5.4.1: modo de ultrabaja latencia.
+	 *
+	 * Apagado de fábrica. Encendido, el servicio encola menos audio
+	 * por delante del habla, entrega trozos más pequeños y despierta
+	 * más a menudo para vaciar la cola. Eso reduce el retardo y sube
+	 * el uso de CPU; no toca la voz, el diccionario, los efectos ni
+	 * ninguna otra preferencia. En un aparato de gama baja el coste
+	 * puede notarse, por eso la descripción avisa.
+	 */
+	var lowLatency: Boolean
+		get() = prefs.getBoolean(KEY_LOW_LATENCY, false)
+		set(value) = write { putBoolean(KEY_LOW_LATENCY, value) }
+
 	// ---- volumen -----------------------------------------------------
 
 	/** Si el volumen lo manda el sistema (volumen multimedia), sin
@@ -766,6 +780,7 @@ class Settings(context: Context) {
 				.putInt(KEY_PAUSE_DURATION_MS, DEFAULT_PAUSE_MS)
 				.putBoolean(KEY_ABBREVIATIONS, false)
 				.putBoolean(KEY_IGNORE_VOICE_TAGS, false)
+				.putBoolean(KEY_LOW_LATENCY, false)
 				.putBoolean(KEY_AUTO_DETECT, false)
 				.putInt(KEY_AUTO_VARIANT_EN, 0)
 				.putInt(KEY_AUTO_VARIANT_ES, 0)
@@ -1226,6 +1241,8 @@ class Settings(context: Context) {
 		/** 4.3: ignorar los códigos de voz (`` `v ``) del texto y de
 		 *  los diccionarios. Apagado es lo de fábrica. */
 		const val KEY_IGNORE_VOICE_TAGS = "ignore_voice_tags"
+		/** 5.4.1: menos audio por delante y trozos más pequeños. */
+		const val KEY_LOW_LATENCY = "low_latency"
 		const val KEY_AUTO_DETECT = "auto_detect_language"
 		const val KEY_AUTO_VARIANT_EN = "auto_variant_en"
 		const val KEY_AUTO_VARIANT_ES = "auto_variant_es"

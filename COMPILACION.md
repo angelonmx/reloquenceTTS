@@ -11,6 +11,24 @@ alias `angelonmxGMZBestCreator`, cuyos datos están en
 Si `keystore.properties` no apunta ahí, se corrige antes de compilar.
 Separación: `evvdroid.abiSplits` es `true` por defecto, sin recortar idiomas.
 
+## Versiones: siempre `mayor.importante.parche`
+
+Las dos ediciones usan tres números y nunca se abrevian a dos. El tercero es el parche, el segundo la actualización importante y el primero la actualización mayor:
+
+| tipo | qué sube | ejemplo | `versionCode` |
+| --- | --- | --- | --- |
+| parche | correcciones, latencia, estabilidad; sin funciones nuevas grandes | 5.4.0 → 5.4.1 | 5400 → 5401 |
+| importante | funciones nuevas compatibles | 5.4.0 → 5.5.0 | 5400 → 5500 |
+| mayor | cambio grande o incompatible | 5.4.0 → 6.0.0 | 5400 → 6000 |
+
+Reglas:
+
+- Siempre se escriben los tres números en `versionName` (`5.4.1`, no `5.4` ni `5.4.1-beta`).
+- El parche va de 0 a 99. Al llegar a 99, se sube el importante y el parche vuelve a 0.
+- `versionCode = mayor * 1000 + importante * 100 + parche`. Así 5.4.1 es 5401 y 2.4.1 es 2401. Android solo acepta una actualización si este número sube.
+- Full y Lite mantienen series propias: full va por 54xx y Lite por 24xx. Las dos ediciones de una misma publicación suben el mismo tipo de número.
+- El único archivo donde se cambian es `version.properties`.
+
 ## El repositorio y la sesión de GitHub
 
 Al día de hoy, el repositorio ya existe y está configurado:
@@ -18,7 +36,7 @@ Al día de hoy, el repositorio ya existe y está configurado:
 - https://github.com/angelonmx/reloquenceTTS — público, rama `main`.
 - La app lee los manifiestos de `https://raw.githubusercontent.com/angelonmx/reloquenceTTS/main/updates/`.
 - Los cuatro secretos de firma (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) ya están cargados en el repositorio.
-- La última release publicada es la 5.4 (Lite 2.4) y los manifiestos están al día.
+- La última release publicada es la 5.4.1 (Lite 2.4.1) y los manifiestos están al día.
 
 La sesión de GitHub CLI ya está iniciada en esta máquina. `gh auth login` guarda el token en el Administrador de credenciales de Windows, así que sobrevive a cerrar la terminal y a reiniciar el equipo. **No es permanente en sentido absoluto:** el token se puede revocar, caducar o perderse al cambiar de usuario o de máquina. Antes de publicar, comprobar:
 
@@ -52,24 +70,24 @@ Elegir GitHub.com, HTTPS y el inicio de sesión por navegador. No pegar el token
 
 El repositorio debe seguir siendo **público**: `raw.githubusercontent.com` no sirve los manifiestos de un repositorio privado y la app no lleva token. Si algún día se hace privado, hay que cambiar `reloquence.updateBaseUrl` o servir los JSON desde GitHub Pages o un servidor propio con HTTPS.
 
-## Las dos ediciones: 5.4
+## Las dos ediciones: 5.4.1
 
 Hay dos ediciones y se compilan por separado:
 
 | edición | versión | `applicationId` | idiomas |
 | --- | --- | --- | --- |
-| `full` (la de siempre) | 5.4 (5400) | `com.angelonmx.reloquence` | los nueve módulos |
-| `lite` | 2.4 (2400) | `com.angelonmx.reloquence.lite` | solo español (España y Latinoamérica) |
+| `full` (la de siempre) | 5.4.1 (5401) | `com.angelonmx.reloquence` | los nueve módulos |
+| `lite` | 2.4.1 (2401) | `com.angelonmx.reloquence.lite` | solo español (España y Latinoamérica) |
 
-5.1 comprime las bibliotecas nativas (`useLegacyPackaging = true`): el APK baja, y Android las extrae al instalar. Esa extracción es el precio de la compresión; no se toca el motor ni la voz. 5.4 añade el apartado de actualizaciones y centraliza las versiones en `version.properties`.
+5.1 comprime las bibliotecas nativas (`useLegacyPackaging = true`): el APK baja, y Android las extrae al instalar. Esa extracción es el precio de la compresión; no se toca el motor ni la voz. 5.4 añadió el apartado de actualizaciones y centralizó las versiones en `version.properties`; 5.4.1 es un parche de latencia, prosodia y copias de seguridad.
 
 Las versiones ya no se escriben en `app/build.gradle.kts`. El único sitio donde se cambian es `version.properties`, en la raíz:
 
 ```properties
-full.versionName=5.4
-full.versionCode=5400
-lite.versionName=2.4
-lite.versionCode=2400
+full.versionName=5.4.1
+full.versionCode=5401
+lite.versionName=2.4.1
+lite.versionCode=2401
 ```
 
 Gradle lo lee al configurar, y `renameApks`, `publishApks`, los manifiestos de `updates/` y los flujos de GitHub Actions usan el mismo valor. Para verlas sin compilar:
@@ -89,14 +107,15 @@ Cada `assembleRelease` ejecuta automáticamente `renameApks` y `publishApks`. **
 
 **Arquitecturas:** solo `arm64-v8a` y `armeabi-v7a` (móviles ARM). **No x86_64** (solo emulador/Chromebook; si distribuyes APK directo a móviles no sirve).
 
-**Nombrado de APK (5.4):** `reloquence-<edition>-<version>-<versionCode>-<abi>-release.apk`.  
+**Nombrado de APK (5.4.1):** `reloquence-<edition>-<version>-<versionCode>-<abi>-release.apk`.
+
 Ejemplos:
-- `reloquence-full-5.4-5400-arm64-v8a-release.apk`
-- `reloquence-full-5.4-5400-armeabi-v7a-release.apk`
-- `reloquence-full-5.4-5400-universal-release.apk`
-- `reloquence-lite-2.4-2400-arm64-v8a-release.apk`
-- `reloquence-lite-2.4-2400-armeabi-v7a-release.apk`
-- `reloquence-lite-2.4-2400-universal-release.apk`
+- `reloquence-full-5.4.1-5401-arm64-v8a-release.apk`
+- `reloquence-full-5.4.1-5401-armeabi-v7a-release.apk`
+- `reloquence-full-5.4.1-5401-universal-release.apk`
+- `reloquence-lite-2.4.1-2401-arm64-v8a-release.apk`
+- `reloquence-lite-2.4.1-2401-armeabi-v7a-release.apk`
+- `reloquence-lite-2.4.1-2401-universal-release.apk`
 
 **Renombrado in-place (5.4):** la tarea `renameApks` renombra los archivos originales **en su lugar** (`Files.move` con `REPLACE_EXISTING`), no crea copias. Los archivos `app-*-release.apk` pasan a llamarse `reloquence-<edition>-<version>-<code>-<abi>-release.apk` directamente en `build/<edition>/outputs/apk/release/`.
 
@@ -129,14 +148,14 @@ Receta rápida, con las versiones actuales:
 
 Los APK quedan en:
 
-- `dist\full\release\reloquence-full-5.4-5400-<abi>-release.apk`
-- `dist\lite\release\reloquence-lite-2.4-2400-<abi>-release.apk`
+- `dist\full\release\reloquence-full-5.4.1-5401-<abi>-release.apk`
+- `dist\lite\release\reloquence-lite-2.4.1-2401-<abi>-release.apk`
 
 `dist/` está ignorado por Git. Antes de instalar o repartir un APK local, comprobar firma y paquete:
 
 ```powershell
 $sdk = "$env:LOCALAPPDATA\Android\Sdk\build-tools\37.0.0"
-$apk = "dist\full\release\reloquence-full-5.4-5400-universal-release.apk"
+$apk = "dist\full\release\reloquence-full-5.4.1-5401-universal-release.apk"
 
 & "$sdk\apksigner.bat" verify --verbose --print-certs $apk
 & "$sdk\aapt2.exe" dump badging $apk | Select-String "^package:"
@@ -163,8 +182,8 @@ Cada ejecución firma sus propios APK con la configuración `release` y `enableV
 
 ```powershell
 $sdk = "$env:LOCALAPPDATA\Android\Sdk\build-tools\37.0.0"
-$full = "dist\full\release\reloquence-full-5.4-5400-universal-release.apk"
-$lite = "dist\lite\release\reloquence-lite-2.4-2400-universal-release.apk"
+$full = "dist\full\release\reloquence-full-5.4.1-5401-universal-release.apk"
+$lite = "dist\lite\release\reloquence-lite-2.4.1-2401-universal-release.apk"
 
 & "$sdk\apksigner.bat" verify --verbose --print-certs $full
 & "$sdk\apksigner.bat" verify --verbose --print-certs $lite
@@ -232,7 +251,7 @@ porque el source set `test` no sale en el informe de AGP 8.13 y
 registrarlo a mano deja la tarea en `NO-SOURCE`. Kotlin compila los
 `.kt` que encuentra ahí sin decir nada más.
 
-Son 167 y las de 4.5, 5.0, 5.1, 5.2 y 5.4 comprueban lo que aquí se cuenta:
+Son 173 y las de 4.5, 5.0, 5.1, 5.2, 5.4 y 5.4.1 comprueban lo que aquí se cuenta:
 
 | prueba | qué mira |
 | --- | --- |
@@ -244,7 +263,8 @@ Son 167 y las de 4.5, 5.0, 5.1, 5.2 y 5.4 comprueban lo que aquí se cuenta:
 | `PausesTest` | que los decimales, las horas y los nombres de archivo sigan sin ser puntuación, y que `¡`/`¿` no se hayan tocado |
 | `PronunciationTest` | que la `y` suelta se lea "y griega" pero la conjunción no, que `muay thai`, grados y enteros suenen como se pide, y que `$` se lea completo en pesos y centavos |
 | `CldrAssetsTest` | que las tablas CLDR y de nombres Unicode sigan generadas y empaquetadas |
-| `BackupFormatTest` | que el JSON conserve los tipos, avise y omita valores inválidos, rechace versiones futuras, valide el diccionario y siga leyendo el formato de líneas viejo |
+| `BackupFormatTest` | que el JSON conserve los tipos, avise y omita valores inválidos, rechace versiones futuras, valide el diccionario, restaure la biblioteca completa del formato v3 y siga leyendo el formato de líneas viejo |
+| `DictionariesTest` | que la sustitución sea de una sola pasada, que la frase gane a la palabra en el mismo inicio y que no se solapen ni se vuelvan a sustituir los reemplazos |
 | `BackupGateTest` | que la puerta de importación conozca todas las claves y que cada una tenga un solo tipo esperado |
 | `UpdateManifestTest` | que el manifiesto rechace otra app, otra edición, otra versión, URLs que no son HTTPS y huellas mal formadas, y que elija el APK de la ABI correcta |
 
@@ -270,7 +290,7 @@ El valor por defecto está en `gradle.properties`. Tiene que ser HTTPS: la app r
 
 El proceso completo, con la creación del repositorio, los secretos y los problemas frecuentes, está en [PUBLICAR.md](PUBLICAR.md). Esta es la lista corta para cada versión.
 
-Ejemplo: pasar de 5.4 / Lite 2.4 a 5.5 / Lite 2.5. Para preparar la versión solo se tocan dos archivos; todo lo demás lo hace el flujo de publicación.
+Ejemplo de parche: pasar de 5.4.0 / Lite 2.4.0 a 5.4.1 / Lite 2.4.1. Para preparar la versión solo se tocan dos archivos; todo lo demás lo hace el flujo de publicación.
 
 | archivo | qué se cambia |
 | --- | --- |
@@ -281,16 +301,29 @@ Ejemplo: pasar de 5.4 / Lite 2.4 a 5.5 / Lite 2.5. Para preparar la versión sol
 
 ### 1. Subir las versiones
 
-Editar `version.properties`:
+Editar `version.properties` según el tipo de publicación:
 
 ```properties
-full.versionName=5.5
-full.versionCode=5500
-lite.versionName=2.5
-lite.versionCode=2500
+# parche: 5.4.0 → 5.4.1
+full.versionName=5.4.1
+full.versionCode=5401
+lite.versionName=2.4.1
+lite.versionCode=2401
+
+# importante: 5.4.0 → 5.5.0
+# full.versionName=5.5.0
+# full.versionCode=5500
+# lite.versionName=2.5.0
+# lite.versionCode=2500
+
+# mayor: 5.4.0 → 6.0.0
+# full.versionName=6.0.0
+# full.versionCode=6000
+# lite.versionName=3.0.0
+# lite.versionCode=3000
 ```
 
-`versionCode` siempre sube: es lo que Android compara para aceptar una actualización. `versionName` es solo el texto que se muestra. Cada edición mantiene su propia serie (full va por 54xx, Lite por 24xx). No cambiar el `applicationId` ni la clave de firma: Android rechazaría la actualización.
+`versionCode` siempre sube: es lo que Android compara para aceptar una actualización. `versionName` es solo el texto que se muestra, pero también lleva los tres números. Cada edición mantiene su propia serie (full va por 54xx, Lite por 24xx) y las dos suben el mismo tipo de número. No cambiar el `applicationId` ni la clave de firma: Android rechazaría la actualización.
 
 ### 2. Añadir las notas
 
@@ -298,9 +331,9 @@ En `app/src/main/assets/changelog.json`, añadir al principio de `editions.full`
 
 ```json
 {
-  "versionName": "5.5",
-  "versionCode": 5500,
-  "date": "2026-11-15",
+  "versionName": "5.4.1",
+  "versionCode": 5401,
+  "date": "2026-10-27",
   "notes": {
     "es": ["Lo que cambia en esta versión."],
     "en": ["What changes in this version."]
@@ -308,19 +341,19 @@ En `app/src/main/assets/changelog.json`, añadir al principio de `editions.full`
 }
 ```
 
-Para Lite, el bloque equivalente usa `"versionName": "2.5"` y `"versionCode": 2500`; la fecha es la del día. La release busca la entrada por `versionCode`, no por posición, pero las más nuevas van primero. De ahí salen las notas del diálogo de la app y las de GitHub Releases. Si falta la entrada, la release se publica con esa sección vacía.
+Para Lite, el bloque equivalente usa `"versionName": "2.4.1"` y `"versionCode": 2401`; la fecha es la del día. La release busca la entrada por `versionCode`, no por posición, pero las más nuevas van primero. De ahí salen las notas del diálogo de la app, el registro que se enseña tras instalar una actualización y las notas de GitHub Releases. Si falta la entrada, la release se publica con esa sección vacía.
 
 ### 3. Commit, push y esperar al CI
 
 ```powershell
 git add version.properties app/src/main/assets/changelog.json
-git commit -m "Preparar la versión 5.5"
+git commit -m "Preparar la versión 5.4.1"
 git push origin main
 
 gh run list --repo angelonmx/reloquenceTTS --limit 5
 ```
 
-El CI ejecuta las 167 pruebas y compila Lite en cada push que toque código o configuración. Los cambios que solo afectan a `**/*.md` o `updates/**` no lo lanzan. No lanzar la release hasta que el CI esté en verde.
+El CI ejecuta las 173 pruebas y compila Lite en cada push que toque código o configuración. Los cambios que solo afectan a `**/*.md` o `updates/**` no lo lanzan. No lanzar la release hasta que el CI esté en verde.
 
 ### 4. Lanzar la publicación
 
@@ -333,17 +366,17 @@ gh run watch --repo angelonmx/reloquenceTTS
 
 Si hay más de un flujo en cola, `gh run watch` puede pedir elegir; el de la release se llama **Publicar**. También se puede lanzar desde Actions > **Publicar** > **Run workflow**.
 
-La etiqueta por defecto es `v<versión full>`, en el ejemplo `v5.5`. Para usar otra:
+La etiqueta por defecto es `v<versión full>`, en el ejemplo `v5.4.1`. Para usar otra:
 
 ```powershell
-gh workflow run release.yml --repo angelonmx/reloquenceTTS -f tag=v5.5
+gh workflow run release.yml --repo angelonmx/reloquenceTTS -f tag=v5.4.1
 ```
 
 También se puede publicar empujando una etiqueta:
 
 ```powershell
-git tag v5.5
-git push origin v5.5
+git tag v5.4.1
+git push origin v5.4.1
 ```
 
 El flujo compila el motor nativo y los seis APK (full y Lite; arm64-v8a, armeabi-v7a y universal), comprueba la firma, crea o actualiza la release y escribe los manifiestos en `main`. La primera vez tarda más por el motor; las siguientes reutilizan la caché. Si hay que repetirlo, volver a lanzarlo es seguro: actualiza los APK de la release y vuelve a generar los manifiestos.
@@ -351,7 +384,7 @@ El flujo compila el motor nativo y los seis APK (full y Lite; arm64-v8a, armeabi
 ### 5. Comprobar el resultado
 
 ```powershell
-gh release view v5.5 --repo angelonmx/reloquenceTTS
+gh release view v5.4.1 --repo angelonmx/reloquenceTTS
 ```
 
 Deben aparecer los seis APK y las notas de las dos ediciones. Después, comprobar los manifiestos:

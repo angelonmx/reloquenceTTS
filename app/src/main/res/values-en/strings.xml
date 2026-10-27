@@ -91,6 +91,8 @@
 	<string name="milliseconds">%1$d ms</string>
 	<string name="phrase_prediction_label">Phrase prediction</string>
 	<string name="abbreviations_label">Expand abbreviations</string>
+	<string name="low_latency_label">Ultra-low latency mode</string>
+	<string name="low_latency_hint">Hands over less audio ahead so speech starts and stops sooner. It may use noticeably more CPU without making the phone unusable. (Useful only if your device is not low-end or resource-limited)</string>
 	<string name="emoji_label">Read emojis</string>
 	<string name="unicode_symbols_label">Read Unicode characters and special symbols</string>
 	<string name="punct_process_label">Speak punctuation</string>
@@ -265,6 +267,7 @@
 	<string name="backup_do_keep">Do not import</string>
 	<string name="backup_info_profiles">Effects profiles</string>
 	<string name="backup_info_voice_profiles">Voice profiles</string>
+	<string name="backup_info_dictionaries">Dictionaries</string>
 	<string name="profile_saved">Profile saved. What would you like to do?</string>
 	<string name="import_preview_question">Import this profile with these settings?</string>
 	<string name="import_wrong_title">Not compatible</string>
@@ -414,7 +417,8 @@
 	<string name="update_error_download">Could not download the update.</string>
 	<string name="update_error_install">Could not open the installer.</string>
 	<string name="update_error_unknown">Could not check for updates.</string>
-	<string name="update_changelog_title">Changes in version %1$s</string>
+	<string name="update_changelog_title">Changelog version %1$s</string>
+	<string name="update_changelog_date">Release date: %1$s</string>
 	<string name="update_changelog_empty">No changes are listed for this version.</string>
 	<string name="update_notification_channel">Updates</string>
 	<string name="update_notification_channel_hint">Notifications about new versions</string>
