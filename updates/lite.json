@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "applicationId": "com.angelonmx.reloquence.lite",
+  "edition": "lite",
+  "versionName": "2.4",
+  "versionCode": 2400,
+  "publishedAt": "2026-10-27T00:00:00Z",
+  "minSdk": 23,
+  "notes": {
+    "es": [
+      "Nuevo apartado Actualizaciones en Ajustes, con búsqueda manual y comprobación automática.",
+      "Descarga e instalación desde GitHub Releases, con verificación de tamaño, SHA-256, paquete, versión y certificado de firma.",
+      "La comprobación automática se puede programar cada 2, 6, 12, 24, 48 o 72 horas.",
+      "Los cambios de la versión instalada se pueden consultar sin conexión.",
+      "La app avisa de una versión nueva con una notificación, pero nunca descarga ni instala sin que el usuario lo pida.",
+      "Mejoras de estabilidad y correcciones internas."
+    ],
+    "en": [
+      "New Updates section in Settings, with manual search and automatic checks.",
+      "Download and install from GitHub Releases, with size, SHA-256, package, version, and signing certificate verification.",
+      "Automatic checks can run every 2, 6, 12, 24, 48, or 72 hours.",
+      "The changelog for the installed version can be viewed offline.",
+      "The app notifies you about a new version, but never downloads or installs anything without your request.",
+      "Stability improvements and internal fixes."
+    ]
+  },
+  "apks": []
+}

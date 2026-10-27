@@ -1,0 +1,209 @@
+{
+  "schema": 1,
+  "editions": {
+    "full": [
+      {
+        "versionName": "5.4",
+        "versionCode": 5400,
+        "date": "2026-10-27",
+        "notes": {
+          "es": [
+            "Nuevo apartado Actualizaciones en Ajustes, con búsqueda manual y comprobación automática.",
+            "Descarga e instalación desde GitHub Releases, con verificación de tamaño, SHA-256, paquete, versión y certificado de firma.",
+            "La comprobación automática se puede programar cada 2, 6, 12, 24, 48 o 72 horas.",
+            "Los cambios de la versión instalada se pueden consultar sin conexión.",
+            "La app avisa de una versión nueva con una notificación, pero nunca descarga ni instala sin que el usuario lo pida.",
+            "Mejoras de estabilidad y correcciones internas."
+          ],
+          "en": [
+            "New Updates section in Settings, with manual search and automatic checks.",
+            "Download and install from GitHub Releases, with size, SHA-256, package, version, and signing certificate verification.",
+            "Automatic checks can run every 2, 6, 12, 24, 48, or 72 hours.",
+            "The changelog for the installed version can be viewed offline.",
+            "The app notifies you about a new version, but never downloads or installs anything without your request.",
+            "Stability improvements and internal fixes."
+          ]
+        }
+      },
+      {
+        "versionName": "5.3",
+        "versionCode": 5300,
+        "date": "2026-08-12",
+        "notes": {
+          "es": [
+            "Correcciones de estabilidad del servicio y del motor.",
+            "Mejoras en la lectura de textos largos.",
+            "Ajustes de la interfaz y de las traducciones."
+          ],
+          "en": [
+            "Service and engine stability fixes.",
+            "Improvements for long texts.",
+            "Interface and translation fixes."
+          ]
+        }
+      },
+      {
+        "versionName": "5.2",
+        "versionCode": 5200,
+        "date": "2026-05-20",
+        "notes": {
+          "es": [
+            "La primera emisión tras reiniciar el servicio usa la voz configurada.",
+            "Corrección del recorte de memoria al volver a la pantalla de inicio.",
+            "Compilación reproducible desde un único número de versión."
+          ],
+          "en": [
+            "The first utterance after a service restart uses the configured voice.",
+            "Fixed the memory trim when returning to the home screen.",
+            "Reproducible build from a single version number."
+          ]
+        }
+      },
+      {
+        "versionName": "5.1",
+        "versionCode": 5100,
+        "date": "2026-03-04",
+        "notes": {
+          "es": [
+            "Las bibliotecas nativas viajan comprimidas y el APK ocupa menos.",
+            "Android las extrae al instalar; el motor y la voz no cambian."
+          ],
+          "en": [
+            "Native libraries now travel compressed, so the APK is smaller.",
+            "Android extracts them at install time; the engine and voice are unchanged."
+          ]
+        }
+      },
+      {
+        "versionName": "5.0",
+        "versionCode": 5000,
+        "date": "2026-01-15",
+        "notes": {
+          "es": [
+            "Nueva capa de motor con sesiones por emisión y vigilante de progreso.",
+            "El texto se transforma por ventanas para empezar a hablar antes.",
+            "Pantalla Acerca de con estado del motor y diagnóstico."
+          ],
+          "en": [
+            "New engine layer with per-utterance sessions and a progress watchdog.",
+            "Text is transformed in windows so speech starts sooner.",
+            "About screen with engine status and diagnostics."
+          ]
+        }
+      },
+      {
+        "versionName": "4.5",
+        "versionCode": 4500,
+        "date": "2025-11-02",
+        "notes": {
+          "es": [
+            "La voz española deja de sonar cantada al desactivar la predicción de frases.",
+            "Correcciones de estabilidad y de códigos de voz."
+          ],
+          "en": [
+            "The Spanish voice no longer sounds sung after disabling phrase prediction.",
+            "Stability and voice-code fixes."
+          ]
+        }
+      }
+    ],
+    "lite": [
+      {
+        "versionName": "2.4",
+        "versionCode": 2400,
+        "date": "2026-10-27",
+        "notes": {
+          "es": [
+            "Nuevo apartado Actualizaciones en Ajustes, con búsqueda manual y comprobación automática.",
+            "Descarga e instalación desde GitHub Releases, con verificación de tamaño, SHA-256, paquete, versión y certificado de firma.",
+            "La comprobación automática se puede programar cada 2, 6, 12, 24, 48 o 72 horas.",
+            "Los cambios de la versión instalada se pueden consultar sin conexión.",
+            "La app avisa de una versión nueva con una notificación, pero nunca descarga ni instala sin que el usuario lo pida.",
+            "Mejoras de estabilidad y correcciones internas."
+          ],
+          "en": [
+            "New Updates section in Settings, with manual search and automatic checks.",
+            "Download and install from GitHub Releases, with size, SHA-256, package, version, and signing certificate verification.",
+            "Automatic checks can run every 2, 6, 12, 24, 48, or 72 hours.",
+            "The changelog for the installed version can be viewed offline.",
+            "The app notifies you about a new version, but never downloads or installs anything without your request.",
+            "Stability improvements and internal fixes."
+          ]
+        }
+      },
+      {
+        "versionName": "2.3",
+        "versionCode": 2300,
+        "date": "2026-08-12",
+        "notes": {
+          "es": [
+            "Correcciones de estabilidad del servicio y del motor.",
+            "Mejoras de lectura y traducciones."
+          ],
+          "en": [
+            "Service and engine stability fixes.",
+            "Reading and translation improvements."
+          ]
+        }
+      },
+      {
+        "versionName": "2.2",
+        "versionCode": 2200,
+        "date": "2026-05-20",
+        "notes": {
+          "es": [
+            "La primera emisión tras reiniciar el servicio usa la voz configurada.",
+            "Corrección del recorte de memoria al volver a la pantalla de inicio."
+          ],
+          "en": [
+            "The first utterance after a service restart uses the configured voice.",
+            "Fixed the memory trim when returning to the home screen."
+          ]
+        }
+      },
+      {
+        "versionName": "2.1",
+        "versionCode": 2100,
+        "date": "2026-03-04",
+        "notes": {
+          "es": [
+            "Las bibliotecas nativas viajan comprimidas y el APK ocupa menos.",
+            "Android las extrae al instalar; el motor y la voz no cambian."
+          ],
+          "en": [
+            "Native libraries now travel compressed, so the APK is smaller.",
+            "Android extracts them at install time; the engine and voice are unchanged."
+          ]
+        }
+      },
+      {
+        "versionName": "2.0",
+        "versionCode": 2000,
+        "date": "2026-01-15",
+        "notes": {
+          "es": [
+            "Nueva capa de motor con sesiones por emisión y vigilante de progreso.",
+            "El texto se transforma por ventanas para empezar a hablar antes."
+          ],
+          "en": [
+            "New engine layer with per-utterance sessions and a progress watchdog.",
+            "Text is transformed in windows so speech starts sooner."
+          ]
+        }
+      },
+      {
+        "versionName": "1.0",
+        "versionCode": 1000,
+        "date": "2025-09-10",
+        "notes": {
+          "es": [
+            "Primera versión de la edición Lite, con los dos módulos de español."
+          ],
+          "en": [
+            "First release of the Lite edition, with the two Spanish modules."
+          ]
+        }
+      }
+    ]
+  }
+}

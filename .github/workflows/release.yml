@@ -1,0 +1,313 @@
+name: Publicar
+
+# Se lanza a mano desde Actions o al empujar una etiqueta v*.
+# Las versiones salen de version.properties; no se escriben aquí.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Etiqueta de la release (vacío = v<versión full>)"
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: APK ${{ matrix.edition }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: [full, lite]
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Permisos del wrapper
+        run: chmod +x gradlew
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: SDK de Android y NDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-37.0 build-tools;37.0.0 ndk;26.1.10909125"
+
+      - name: Ruta del NDK
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_NDK_HOME=$SDK/ndk/26.1.10909125" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$SDK/ndk/26.1.10909125" >> "$GITHUB_ENV"
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Commit del motor
+        id: engine
+        run: |
+          set -euo pipefail
+          echo "sha=$(git -C native/openevv rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # El motor tarda varios minutos por ABI y no cambia entre
+      # releases. La clave lleva el commit del submódulo, la edición
+      # y las ABI, así que un cambio en cualquiera invalida la caché.
+      - name: Caché del motor nativo
+        uses: actions/cache@v4
+        with:
+          path: |
+            native/openevv/build
+            app/build/${{ matrix.edition }}/native/jniLibs
+          key: native-${{ matrix.edition }}-${{ steps.engine.outputs.sha }}-${{ hashFiles('.gitmodules', 'native/patches/**', 'native/android.mk', 'native/build-native.sh') }}-arm64-v8a-armeabi-v7a
+          restore-keys: |
+            native-${{ matrix.edition }}-${{ steps.engine.outputs.sha }}-
+
+      - name: Leer la versión
+        id: version
+        env:
+          EDITION: ${{ matrix.edition }}
+        run: |
+          set -euo pipefail
+          get() { awk -F= -v key="$1" '$1==key {print $2; exit}' version.properties; }
+          if [ "$EDITION" = "lite" ]; then
+            echo "name=$(get lite.versionName)" >> "$GITHUB_OUTPUT"
+            echo "code=$(get lite.versionCode)" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=$(get full.versionName)" >> "$GITHUB_OUTPUT"
+            echo "code=$(get full.versionCode)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Preparar la firma
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_BASE64:-}" ]; then
+            echo "::error::Falta el secreto KEYSTORE_BASE64. Ver PUBLICAR.md."
+            exit 1
+          fi
+          for name in KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Falta el secreto $name. Ver PUBLICAR.md."
+              exit 1
+            fi
+          done
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          {
+            echo "storeFile=$RUNNER_TEMP/release.keystore"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+
+      - name: Compilar APK firmados
+        env:
+          EDITION: ${{ matrix.edition }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleRelease \
+            "-Pevvdroid.edition=$EDITION" \
+            "-Preloquence.updateBaseUrl=https://raw.githubusercontent.com/$REPO/main/updates" \
+            --stacktrace
+
+      - name: Comprobar la firma
+        env:
+          EDITION: ${{ matrix.edition }}
+          EXPECTED_NAME: ${{ steps.version.outputs.name }}
+          EXPECTED_CODE: ${{ steps.version.outputs.code }}
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          APKSIGNER="$SDK/build-tools/37.0.0/apksigner"
+          AAPT2="$SDK/build-tools/37.0.0/aapt2"
+          PACKAGE="com.angelonmx.reloquence"
+          if [ "$EDITION" = "lite" ]; then
+            PACKAGE="$PACKAGE.lite"
+          fi
+          # Huella de la clave de release de reloquenceTTS. Si algún día
+          # se cambia de almacén a propósito, hay que actualizarla aquí
+          # y en la documentación; si no, Android rechazaría la
+          # actualización por cambio de firma.
+          EXPECTED_CERT="4e516988538b3d20a8fe9bf40a14edd4e277feee97275aac874f0de495578717"
+          EXPECTED="package: name='$PACKAGE' versionCode='$EXPECTED_CODE' versionName='$EXPECTED_NAME'"
+          shopt -s nullglob
+          APKS=("dist/$EDITION/release"/*.apk)
+          if [ ${#APKS[@]} -eq 0 ]; then
+            echo "::error::No se generó ningún APK de $EDITION"
+            exit 1
+          fi
+          CERT=""
+          for APK in "${APKS[@]}"; do
+            echo "== $APK"
+            "$APKSIGNER" verify --print-certs "$APK"
+            BADGING=$("$AAPT2" dump badging "$APK")
+            printf '%s\n' "$BADGING" | grep '^package:'
+            printf '%s\n' "$BADGING" | grep -Fq "$EXPECTED" || {
+              echo "::error::$APK no es $PACKAGE $EXPECTED_NAME ($EXPECTED_CODE)"
+              exit 1
+            }
+            LINE=$("$APKSIGNER" verify --print-certs "$APK" | grep -m1 'certificate SHA-256 digest:')
+            if ! printf '%s\n' "$LINE" | grep -Fqi "$EXPECTED_CERT"; then
+              echo "::error::$APK no está firmado con la clave de release esperada"
+              echo "$LINE"
+              exit 1
+            fi
+            if [ -z "$CERT" ]; then
+              CERT="$LINE"
+            elif [ "$LINE" != "$CERT" ]; then
+              echo "::error::Los APK de $EDITION no están firmados con la misma clave"
+              exit 1
+            fi
+          done
+
+      - name: Guardar los APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: apks-${{ matrix.edition }}
+          path: dist/${{ matrix.edition }}/release/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Release y manifiestos
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Descargar el código de la versión
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Descargar APK full
+        uses: actions/download-artifact@v4
+        with:
+          name: apks-full
+          path: dist/full/release
+
+      - name: Descargar APK lite
+        uses: actions/download-artifact@v4
+        with:
+          name: apks-lite
+          path: dist/lite/release
+
+      - name: Leer versiones y etiqueta
+        id: meta
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          get() { awk -F= -v key="$1" '$1==key {print $2; exit}' version.properties; }
+          FULL_NAME=$(get full.versionName)
+          FULL_CODE=$(get full.versionCode)
+          LITE_NAME=$(get lite.versionName)
+          LITE_CODE=$(get lite.versionCode)
+          if [ "$EVENT" = "push" ]; then
+            TAG="$REF_NAME"
+          else
+            TAG="${INPUT_TAG:-v$FULL_NAME}"
+          fi
+          case "$TAG" in
+            v*) ;;
+            *) TAG="v$TAG" ;;
+          esac
+          if ! printf '%s' "$TAG" | grep -Eq '^v[0-9A-Za-z._-]+$'; then
+            echo "::error::Etiqueta no válida: $TAG"
+            exit 1
+          fi
+          {
+            echo "tag=$TAG"
+            echo "full_name=$FULL_NAME"
+            echo "full_code=$FULL_CODE"
+            echo "lite_name=$LITE_NAME"
+            echo "lite_code=$LITE_CODE"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Generar manifiestos
+        env:
+          REPO: ${{ github.repository }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          FULL_NAME: ${{ steps.meta.outputs.full_name }}
+          FULL_CODE: ${{ steps.meta.outputs.full_code }}
+          LITE_NAME: ${{ steps.meta.outputs.lite_name }}
+          LITE_CODE: ${{ steps.meta.outputs.lite_code }}
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/$REPO/releases/download/$TAG"
+          python3 tools/update_manifest.py \
+            --edition full \
+            --version-name "$FULL_NAME" \
+            --version-code "$FULL_CODE" \
+            --application-id com.angelonmx.reloquence \
+            --apk-dir dist/full/release \
+            --base-url "$BASE" \
+            --output updates/full.json
+          python3 tools/update_manifest.py \
+            --edition lite \
+            --version-name "$LITE_NAME" \
+            --version-code "$LITE_CODE" \
+            --application-id com.angelonmx.reloquence.lite \
+            --apk-dir dist/lite/release \
+            --base-url "$BASE" \
+            --output updates/lite.json
+          python3 tools/release_notes.py --output "$RUNNER_TEMP/notes.md"
+
+      - name: Publicar en GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          TITLE: reloquenceTTS ${{ steps.meta.outputs.full_name }} (Lite ${{ steps.meta.outputs.lite_name }})
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/full/release/*.apk dist/lite/release/*.apk --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file "$RUNNER_TEMP/notes.md"
+          else
+            gh release create "$TAG" dist/full/release/*.apk dist/lite/release/*.apk \
+              --title "$TITLE" \
+              --notes-file "$RUNNER_TEMP/notes.md" \
+              --target main
+          fi
+
+      # La app lee updates/<edición>.json desde raw.githubusercontent.com.
+      # Si esto falla, la release ya existe pero la app todavía no la ve;
+      # volver a lanzar el flujo lo corrige.
+      - name: Guardar los manifiestos en main
+        env:
+          FULL_NAME: ${{ steps.meta.outputs.full_name }}
+          LITE_NAME: ${{ steps.meta.outputs.lite_name }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add updates/full.json updates/lite.json
+          if git diff --cached --quiet; then
+            echo "Los manifiestos ya estaban al día."
+            exit 0
+          fi
+          git commit -m "Actualizar manifiestos a $FULL_NAME / Lite $LITE_NAME"
+          git pull --rebase origin main
+          git push origin HEAD:main

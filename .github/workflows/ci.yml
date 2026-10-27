@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "updates/**"
+      - "**/*.md"
+  pull_request:
+    paths-ignore:
+      - "updates/**"
+      - "**/*.md"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Pruebas y compilación
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Permisos del wrapper
+        run: chmod +x gradlew
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: SDK de Android
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-37.0 build-tools;37.0.0 ndk;26.1.10909125"
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Las pruebas de JVM no empaquetan el APK ni cargan el motor
+      # nativo. skipNative evita compilar el motor en cada push; las
+      # bibliotecas de verdad se compilan en el flujo de publicación.
+      - name: Pruebas unitarias
+        run: ./gradlew :app:testDebugUnitTest "-Pevvdroid.skipNative=true" --stacktrace
+
+      - name: Compilar la edición Lite
+        run: >-
+          ./gradlew :app:compileDebugKotlin
+          "-Pevvdroid.edition=lite"
+          "-Pevvdroid.skipNative=true"
+          --stacktrace

@@ -1,0 +1,40 @@
+reloquenceTTS
+=============
+
+Este repositorio contiene la aplicación reloquenceTTS y el puente que
+la conecta con el motor de síntesis. Hay tres cosas distintas y solo
+una se puede licenciar aquí sin más:
+
+1. La aplicación, el puente, la compilación, las pruebas y los parches
+   de este repositorio.
+
+   Se distribuyen bajo la licencia MIT de `LICENSE`, que conserva el
+   aviso de copyright original. Las modificaciones y el trabajo de
+   reloquenceTTS son de angelonmx.
+
+2. El motor de `native/openevv`.
+
+   Es un proyecto aparte, con su propia licencia MIT, y se trae como
+   submódulo. No se copia ni se relicencia aquí. Su `NOTICE` explica
+   qué parte es suya y qué parte no.
+
+3. Los datos de voz que el motor lleva dentro (`lang/`, las tablas del
+   sintetizador y las tablas del analizador XML).
+
+   Son datos de IBM, no del proyecto ni de quien firma este
+   repositorio. La licencia MIT **no** los cubre y aquí nadie está en
+   posición de licenciarlos. `native/openevv/NOTICE` dice de dónde
+   salen, quién los publicó y qué derechos pueden existir hoy sobre
+   ellos. Si vas a redistribuir la app o a hacer algo más que leerla y
+   ejecutarla, ese es el texto que tienes que leer y resolver.
+
+No se incluye ningún diccionario de pronunciación. Los diccionarios que
+merecen la pena pertenecen a quien los escribió, y el más conocido no
+lleva licencia, así que la app permite importarlos pero no los copia.
+
+IBM, ViaVoice y Embedded ViaVoice son marcas de International Business
+Machines Corporation. Eloquence es una marca de su respectivo titular.
+Este proyecto no está afiliado, respaldado ni soportado por IBM,
+Cerence, Nuance, Microsoft, Google ni Apple.
+
+Nada de esto es asesoramiento legal.

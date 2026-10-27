@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+	<!-- Solo para el selector en Android 12 e inferiores. En 13+
+	     se usa el selector del sistema (SAF), que no pide nada. -->
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+
+	<!-- Para que el servicio no se cierre: batería sin optimizar y
+	     notificación permanente. El overlay es opcional y se pide
+	     desde su apartado (hay que declararlo para que el sistema
+	     deje autorizarlo).
+
+	     largeHeap (4.2): el motor reserva sus tablas en memoria
+	     nativa, fuera del montón de Java, y el sistema mide la
+	     memoria del proceso entero. Con un teléfono de 4 GB (un
+	     Samsung A54, por ejemplo) y Telegram abierto, la cuenta no
+	     daba y el proceso acababa en la lista de candidatos del
+	     sistema para matar, que es donde nacía el "se detuvo y borra
+	     caché". No agranda el montón de Java: da margen para que la
+	     appraisal del sistema no nos ponds en cabeza. -->
+	<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+	<!-- 5.4: comprobar e instalar actualizaciones desde GitHub
+	     Releases. La app no descarga nada sin que el usuario lo pida
+	     o sin la comprobación automática que él mismo activó, y
+	     Android siempre confirma la instalación. -->
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+	<!-- 5.4: volver a programar la comprobación periódica tras un
+	     reinicio. WorkManager conserva el trabajo, pero el proceso
+	     puede haber arrancado en modo directo antes de desbloquear. -->
+	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+	<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+	<application
+		android:name=".ReloquenceApp"
+		android:allowBackup="true"
+		android:icon="@mipmap/ic_launcher"
+		android:label="@string/app_name"
+		android:supportsRtl="true"
+		android:theme="@style/Theme.Evvdroid"
+		android:localeConfig="@xml/locales_config"
+		android:enableOnBackInvokedCallback="true"
+		android:allowNativeHeapPointerTagging="false"
+		android:largeHeap="true">
+
+		<!-- Startable on the lock screen, which is where a screen reader is
+		     wanted first. What it reads there is in DirectBoot.kt. -->
+		<service
+			android:name=".EvvTtsService"
+			android:label="@string/engine_name"
+			android:directBootAware="true"
+			android:foregroundServiceType="mediaPlayback"
+			android:exported="true">
+			<intent-filter>
+				<action android:name="android.intent.action.TTS_SERVICE" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+			<meta-data
+				android:name="android.speech.tts"
+				android:resource="@xml/tts_engine" />
+		</service>
+
+		<activity
+			android:name=".CheckVoiceDataActivity"
+			android:exported="true"
+			android:noHistory="true"
+			android:theme="@android:style/Theme.NoDisplay">
+			<intent-filter>
+				<action android:name="android.speech.tts.engine.CHECK_TTS_DATA" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</activity>
+
+		<activity
+			android:name=".GetSampleTextActivity"
+			android:exported="true"
+			android:noHistory="true"
+			android:theme="@android:style/Theme.NoDisplay">
+			<intent-filter>
+				<action android:name="android.speech.tts.engine.GET_SAMPLE_TEXT" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</activity>
+
+		<!-- Recibe diccionarios desde fuera: WhatsApp, gestor de
+		     archivos, correo. Sin entrar a la aplicación. -->
+		<activity
+			android:name=".ImportDictionaryActivity"
+			android:exported="true"
+			android:noHistory="true"
+			android:excludeFromRecents="true"
+			android:theme="@style/Theme.Evvdroid">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<category android:name="android.intent.category.BROWSABLE" />
+				<data android:scheme="content" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.cfd" />
+				<data android:scheme="content" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.CFD" />
+				<data android:scheme="content" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.reloqdic" />
+				<data android:scheme="content" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.txt" />
+				<data android:scheme="content" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.reloqbkp" />
+				<data android:scheme="content" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.json" />
+				<data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.reloqbkp" />
+				<data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.json" />
+				<data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.cfd" />
+				<data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.CFD" />
+				<data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.reloqdic" />
+				<data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.txt" />
+			</intent-filter>
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:scheme="content" android:mimeType="application/octet-stream" />
+				<data android:scheme="file" android:mimeType="application/octet-stream" />
+				<data android:scheme="content" android:mimeType="application/json" />
+				<data android:scheme="file" android:mimeType="application/json" />
+				<data android:scheme="content" android:mimeType="text/plain" />
+				<data android:scheme="file" android:mimeType="text/plain" />
+			</intent-filter>
+			<intent-filter>
+				<action android:name="android.intent.action.SEND" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="application/octet-stream" />
+				<data android:mimeType="application/json" />
+				<data android:mimeType="application/*" />
+				<data android:mimeType="text/plain" />
+				<data android:mimeType="text/*" />
+			</intent-filter>
+		</activity>
+
+		<provider
+			android:name="androidx.core.content.FileProvider"
+			android:authorities="${applicationId}.fileprovider"
+			android:exported="false"
+			android:grantUriPermissions="true">
+			<meta-data
+				android:name="android.support.FILE_PROVIDER_PATHS"
+				android:resource="@xml/file_paths" />
+		</provider>
+
+		<!-- 5.4: recibe el resultado de PackageInstaller. El sistema
+		     envía el PendingIntent que se creó al abrir la sesión, así
+		     que no hace falta que el receptor sea exportado. -->
+		<receiver
+			android:name=".UpdateBootReceiver"
+			android:directBootAware="true"
+			android:exported="false">
+			<intent-filter>
+				<action android:name="android.intent.action.BOOT_COMPLETED" />
+				<action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+				<action android:name="android.intent.action.USER_UNLOCKED" />
+			</intent-filter>
+		</receiver>
+
+		<receiver
+			android:name=".UpdateInstallReceiver"
+			android:exported="false" />
+
+		<activity
+			android:name=".SettingsActivity"
+			android:exported="true"
+			android:label="@string/app_name"
+			android:launchMode="singleTop"
+			android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|density|fontScale"
+			android:directBootAware="true">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+			<intent-filter>
+				<action android:name="android.speech.tts.engine.CONFIGURE_ENGINE" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</activity>
+
+	</application>
+</manifest>

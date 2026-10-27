@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Idiomas de la interfaz para Android 13+ (selector por app).
+     Vacío en ajustes = idioma del sistema, como siempre. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="es" />
+    <locale android:name="en" />
+    <locale android:name="fr" />
+    <locale android:name="de" />
+    <locale android:name="it" />
+    <locale android:name="pt" />
+    <locale android:name="ja" />
+    <locale android:name="pl" />
+    <locale android:name="tr" />
+    <locale android:name="ru" />
+</locale-config>
