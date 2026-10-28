@@ -2,52 +2,44 @@
   "schema": 1,
   "applicationId": "com.angelonmx.reloquence.lite",
   "edition": "lite",
-  "versionName": "2.4.1",
-  "versionCode": 2401,
-  "publishedAt": "2026-10-27T23:47:51Z",
+  "versionName": "2.4.2",
+  "versionCode": 2402,
+  "publishedAt": "2026-10-28T00:52:12Z",
   "minSdk": 23,
   "notes": {
     "es": [
-      "La voz empieza antes y las paradas llegan antes: menos audio por delante y entregas más cortas.",
-      "Corregido el habla duplicada: una regla del diccionario ya no se aplica dos veces sobre su propia pronunciación.",
-      "Corregida la prosodia: la velocidad, el tono y el volumen de los ajustes se respetan antes de cada sustitución, sin cambios de tono no deseados.",
-      "Nuevo modo de ultrabaja latencia en Lectura, apagado de fábrica y pensado solo para aparatos con recursos de sobra.",
-      "La copia de seguridad guarda todo menos los registros: ajustes, perfiles, diagnósticos, preferencias de actualizaciones y la biblioteca entera de diccionarios.",
-      "Importar una copia reconstruye todos los diccionarios en esta instalación y deja activo el que corresponda.",
-      "Al instalar una versión nueva se muestra una vez su registro de cambios, con fecha y botón Cerrar.",
-      "Si falta el permiso para instalar apps desconocidas, se pide después de descargar y verificar el APK; al concederlo se abre el instalador sin volver a descargar.",
-      "Las versiones pasan a escribirse siempre con tres números: mayor, importante y parche."
+      "Corregida la elección de voz: el número de la app (0–7) se traduce al del motor (1–8), así que la voz elegida suena de verdad y se mantiene al reiniciar la prosodia.",
+      "Eliminada la doble aplicación del diccionario: las palabras propias también pasan por la sustitución en texto y ya no se enseñan además al motor.",
+      "La lista de sustitución se arma una sola vez por diccionario en vez de reconstruirse en cada frase, con menos trabajo en el hilo de síntesis.",
+      "Las palabras propias conservan las protecciones del diccionario: mayúsculas estrictas, números puros y letras sueltas solo se sustituyen donde corresponde.",
+      "Si Android cierra la app mientras concedes el permiso de instalar apps desconocidas, el APK verificado se conserva y el instalador se abre sin descargarlo otra vez."
     ],
     "en": [
-      "Speech starts sooner and stops arrive sooner: less audio queued ahead and shorter deliveries.",
-      "Fixed duplicated speech: a dictionary rule is no longer applied twice to its own pronunciation.",
-      "Fixed prosody: the speed, pitch, and volume from settings are applied before each substitution, with no unwanted tone changes.",
-      "New ultra-low latency mode under Reading, off by default and intended only for devices with resources to spare.",
-      "Backups now keep everything except logs: settings, profiles, diagnostics, update preferences, and the whole dictionary library.",
-      "Importing a backup rebuilds every dictionary for this installation and activates the right one.",
-      "After installing a new version, its changelog is shown once with the release date and a Close button.",
-      "If the install-unknown-apps permission is missing, it is requested after the APK is downloaded and verified; once granted, the installer opens without downloading again.",
-      "Versions now always use three numbers: major, minor, and patch."
+      "Fixed voice selection: the app's preset number (0–7) is translated to the engine's (1–8), so the chosen voice actually sounds and stays selected when prosody resets.",
+      "Removed duplicate dictionary application: custom words now go through text substitution and are no longer also taught to the engine.",
+      "The substitution list is built once per dictionary instead of being rebuilt for every sentence, with less work on the synthesis thread.",
+      "Custom words keep the dictionary protections: strict uppercase keys, pure numbers, and single letters are only replaced where they should be.",
+      "If Android closes the app while you grant the install-unknown-apps permission, the verified APK is kept and the installer opens without downloading it again."
     ]
   },
   "apks": [
     {
       "abi": "arm64-v8a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.1/reloquence-lite-2.4.1-2401-arm64-v8a-release.apk",
-      "sha256": "70496ac1c88bcb07ea9bf1b4dd3ac820368727134f793ae628b3b647b1d48e8e",
-      "size": 7230873
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.2/reloquence-lite-2.4.2-2402-arm64-v8a-release.apk",
+      "sha256": "2519fc1ed4c0127ab7aa7600ee26730a47184289166bc81e76e35c07da9b8216",
+      "size": 7232661
     },
     {
       "abi": "armeabi-v7a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.1/reloquence-lite-2.4.1-2401-armeabi-v7a-release.apk",
-      "sha256": "6d54e2e82290f6f33b8b6a6246550518c7230cd847837c750112bbcbf45b8ada",
-      "size": 6799074
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.2/reloquence-lite-2.4.2-2402-armeabi-v7a-release.apk",
+      "sha256": "4f58330a722b6dd554a488565d05b769b9be6e433a43db42225578c001e9a0b7",
+      "size": 6800854
     },
     {
       "abi": "universal",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.1/reloquence-lite-2.4.1-2401-universal-release.apk",
-      "sha256": "958a3355c8a837d3da2d99aaa5ef7f29e71cfef22908e6f0d2ec4531867d1243",
-      "size": 9184589
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.2/reloquence-lite-2.4.2-2402-universal-release.apk",
+      "sha256": "f27e8aabdb47ad54e4306579c3eb1d98cf2020fcf2badbb3daa19288c83fd8b4",
+      "size": 9186362
     }
   ]
 }
