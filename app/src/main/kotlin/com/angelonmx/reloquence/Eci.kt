@@ -59,6 +59,19 @@ object Eci {
 	const val LAST_PRESET = 8
 	const val SCRATCH_VOICE = 9
 
+	/**
+	 * 5.4.2: el número de preset del motor para [index].
+	 *
+	 * La app numera las voces desde cero (`VoicePlan.Plan.voice`,
+	 * `Settings.voice`, [PRESET_NAMES]: Reed es 0) y el motor desde
+	 * uno (Reed es 1). Pasar el índice tal cual a `eciCopyVoice` o a
+	 * un código `` `vN `` elige otra voz: Shelley acababa sonando
+	 * como Reed y Reed no se elegía nunca. La conversión vive aquí
+	 * para que no haya dos formas de hacerla.
+	 */
+	fun enginePreset(index: Int): Int =
+		(index + FIRST_PRESET).coerceIn(FIRST_PRESET, LAST_PRESET)
+
 	/** El bit que dice que el texto entregado es UTF-16 en lugar de bytes.
 	 *  Viaja en la palabra de idioma, no en un ajuste propio. */
 	const val UNICODE_CODE_SET = 0x800

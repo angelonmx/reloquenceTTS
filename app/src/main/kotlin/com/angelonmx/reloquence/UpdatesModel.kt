@@ -58,13 +58,22 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 		if (busy) return
 		viewModelScope.launch {
 			status = UpdateStatus.Checking
-			available = null
+			// Si hay un APK pendiente, su fila de instalación no se
+			// pierde porque la comprobación falle.
+			if (pendingApk == null) available = null
 			showDialog = false
 			val result = withContext(Dispatchers.IO) { UpdateChecker.check(app) }
 			prefs.lastCheckAt = System.currentTimeMillis()
 			lastCheckAt = prefs.lastCheckAt
 			when (result) {
 				is UpdateChecker.Result.Available -> {
+					// Si el servidor ofrece otra versión que la que
+					// quedó descargada, el APK viejo ya no sirve.
+					if (pendingApk != null &&
+						prefs.pendingVersionCode != result.info.versionCode
+					) {
+						discardPending()
+					}
 					available = result.info
 					status = UpdateStatus.Available(result.info.versionName)
 					showDialog = true
@@ -95,8 +104,61 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 	 * usuario conceda el permiso de instalar apps desconocidas.
 	 * Después de concederlo se abre el instalador sin volver a
 	 * descargar nada.
+	 *
+	 * 5.4.2: también sobrevive a que Android mate el proceso. La
+	 * ruta queda en [UpdatePrefs] y [loadPending] la acepta solo si
+	 * sigue dentro de la caché de actualizaciones, con el nombre y
+	 * la versión que corresponden a esa descarga.
 	 */
-	private var pendingApk: File? = null
+	private var pendingApk: File? = loadPending()
+
+	init {
+		val waiting = pendingApk
+		if (waiting != null) {
+			val code = prefs.pendingVersionCode
+			available = UpdateInfo(
+				versionName = prefs.pendingVersionName.ifBlank { code.toString() },
+				versionCode = code,
+				publishedAt = "",
+				notes = emptyMap(),
+				apk = UpdateApk("", "", "", 0L)
+			)
+			status = if (UpdateInstaller.canInstall(app)) {
+				UpdateStatus.Available(prefs.pendingVersionName)
+			} else {
+				UpdateStatus.Permission
+			}
+		}
+	}
+
+	/** El APK pendiente, si el archivo sigue donde se dejó. */
+	private fun loadPending(): File? {
+		val code = prefs.pendingVersionCode
+		val path = prefs.pendingApkPath ?: return null
+		val expected = File(
+			File(app.cacheDir, "updates"),
+			"reloquence-${BuildConfig.UPDATE_EDITION}-$code.apk"
+		)
+		val file = File(path)
+		val valid = code > BuildConfig.VERSION_CODE &&
+			file.isFile && file.length() > 0L &&
+			runCatching { file.canonicalPath == expected.canonicalPath }
+				.getOrDefault(false)
+		if (valid) return file
+		// Un archivo que ya no corresponde (versión instalada o ruta
+		// cambiada) solo ocupa sitio.
+		if (code > 0) runCatching { expected.delete() }
+		prefs.clearPending()
+		return null
+	}
+
+	/** Suelta el APK pendiente y, si se pide, borra el archivo. */
+	private fun discardPending(deleteFile: Boolean = true) {
+		val file = pendingApk
+		pendingApk = null
+		prefs.clearPending()
+		if (deleteFile && file != null) runCatching { file.delete() }
+	}
 
 	/**
 	 * Descargar, comprobar y abrir el instalador. Si falta el
@@ -105,20 +167,25 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 	 * abre el instalador con el mismo APK.
 	 */
 	fun install() {
-		val info = available ?: return
 		if (busy) return
 		// Si ya hay un APK verificado esperando permiso, se usa ese.
 		val waiting = pendingApk
-		if (waiting != null && waiting.isFile && waiting.length() > 0L) {
-			if (!UpdateInstaller.canInstall(app)) {
-				status = UpdateStatus.Permission
-				UpdateInstaller.requestInstallPermission(app)
+		if (waiting != null) {
+			val wanted = available
+			if (wanted != null && wanted.versionCode != prefs.pendingVersionCode) {
+				discardPending()
+			} else {
+				if (!UpdateInstaller.canInstall(app)) {
+					status = UpdateStatus.Permission
+					UpdateInstaller.requestInstallPermission(app)
+					return
+				}
+				showDialog = false
+				openInstaller(waiting)
 				return
 			}
-			showDialog = false
-			openInstaller(waiting)
-			return
 		}
+		val info = available ?: return
 		showDialog = false
 		viewModelScope.launch {
 			var file: File? = null
@@ -146,6 +213,9 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 					UpdateChecker.verifyApk(app, downloaded, info)
 				}
 				pendingApk = downloaded
+				prefs.pendingApkPath = downloaded.absolutePath
+				prefs.pendingVersionName = info.versionName
+				prefs.pendingVersionCode = info.versionCode
 				if (!UpdateInstaller.canInstall(app)) {
 					status = UpdateStatus.Permission
 					UpdateInstaller.requestInstallPermission(app)
@@ -156,20 +226,24 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 					UpdateInstaller.install(app, downloaded)
 				}
 				pendingApk = null
+				prefs.clearPending()
 			} catch (e: CancellationException) {
 				throw e
 			} catch (e: UpdateException) {
-				pendingApk = null
+				discardPending()
 				status = UpdateStatus.Failed(e.failure)
 			} catch (e: Exception) {
-				pendingApk = null
+				discardPending()
 				status = UpdateStatus.Failed(UpdateFailure.Unknown)
 			} finally {
 				// Con el permiso pendiente el archivo se conserva: es
 				// lo que se instala al volver, sin descargar otra vez.
 				if (status !is UpdateStatus.Permission) {
+					if (pendingApk === file) {
+						pendingApk = null
+						prefs.clearPending()
+					}
 					file?.delete()
-					if (pendingApk === file) pendingApk = null
 				}
 			}
 		}
@@ -184,6 +258,7 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 					UpdateInstaller.install(app, file)
 				}
 				pendingApk = null
+				prefs.clearPending()
 			} catch (e: CancellationException) {
 				throw e
 			} catch (e: UpdateException) {
@@ -193,11 +268,11 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 					status = UpdateStatus.Permission
 					UpdateInstaller.requestInstallPermission(app)
 				} else {
-					pendingApk = null
+					discardPending()
 					status = UpdateStatus.Failed(e.failure)
 				}
 			} catch (e: Exception) {
-				pendingApk = null
+				discardPending()
 				status = UpdateStatus.Failed(UpdateFailure.Unknown)
 			} finally {
 				if (status !is UpdateStatus.Permission) {

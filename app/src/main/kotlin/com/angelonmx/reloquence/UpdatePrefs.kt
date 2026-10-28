@@ -63,6 +63,43 @@ class UpdatePrefs(context: Context) {
 			prefs.edit().putInt(KEY_SKIPPED, value).commit()
 		}
 
+	/**
+	 * 5.4.2: el APK ya descargado y verificado que esperaba el
+	 * permiso de instalar apps desconocidas. Antes solo vivía en
+	 * memoria: si Android mataba el proceso mientras el usuario
+	 * estaba en la pantalla de permisos, al volver había que
+	 * descargarlo otra vez. La ruta se guarda aquí y se valida al
+	 * leerla (dentro de la caché de updates, con el nombre y la
+	 * versión esperados).
+	 */
+	var pendingApkPath: String?
+		get() = prefs.getString(KEY_PENDING_PATH, null)
+		set(value) {
+			prefs.edit().putString(KEY_PENDING_PATH, value).commit()
+		}
+
+	var pendingVersionName: String
+		get() = prefs.getString(KEY_PENDING_NAME, "").orEmpty()
+		set(value) {
+			prefs.edit().putString(KEY_PENDING_NAME, value).commit()
+		}
+
+	var pendingVersionCode: Int
+		get() = prefs.getInt(KEY_PENDING_CODE, 0)
+		set(value) {
+			prefs.edit().putInt(KEY_PENDING_CODE, value).commit()
+		}
+
+	/** Olvida el APK pendiente. No borra el archivo: eso lo decide
+	 *  quien llama, que es el único que sabe si ya se instaló. */
+	fun clearPending() {
+		prefs.edit()
+			.remove(KEY_PENDING_PATH)
+			.remove(KEY_PENDING_NAME)
+			.remove(KEY_PENDING_CODE)
+			.commit()
+	}
+
 	fun clearSkip() {
 		prefs.edit().remove(KEY_SKIPPED).commit()
 	}
@@ -109,11 +146,17 @@ class UpdatePrefs(context: Context) {
 		const val KEY_NOTIFIED = "last_notified_version_code"
 		const val KEY_SKIPPED = "skipped_version_code"
 		const val KEY_LAST_SEEN = "last_seen_version_code"
+		const val KEY_PENDING_PATH = "pending_apk_path"
+		const val KEY_PENDING_NAME = "pending_version_name"
+		const val KEY_PENDING_CODE = "pending_version_code"
 
 		/** Claves y tipos que una copia puede traer de este archivo. */
 		val BOOL_KEYS = setOf(KEY_AUTO)
-		val INT_KEYS = setOf(KEY_INTERVAL, KEY_NOTIFIED, KEY_SKIPPED, KEY_LAST_SEEN)
+		val INT_KEYS = setOf(
+			KEY_INTERVAL, KEY_NOTIFIED, KEY_SKIPPED, KEY_LAST_SEEN, KEY_PENDING_CODE
+		)
 		val LONG_KEYS = setOf(KEY_LAST_CHECK)
+		val STRING_KEYS = setOf(KEY_PENDING_PATH, KEY_PENDING_NAME)
 
 		/** El mínimo de WorkManager son 15 minutos, pero una
 		 *  actualización cada dos horas ya es más de lo que

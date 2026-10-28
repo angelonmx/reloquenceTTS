@@ -3,6 +3,27 @@
   "editions": {
     "full": [
       {
+        "versionName": "5.4.2",
+        "versionCode": 5402,
+        "date": "2026-10-27",
+        "notes": {
+          "es": [
+            "Corregida la elección de voz: el número de la app (0–7) se traduce al del motor (1–8), así que la voz elegida suena de verdad y se mantiene al reiniciar la prosodia.",
+            "Eliminada la doble aplicación del diccionario: las palabras propias también pasan por la sustitución en texto y ya no se enseñan además al motor.",
+            "La lista de sustitución se arma una sola vez por diccionario en vez de reconstruirse en cada frase, con menos trabajo en el hilo de síntesis.",
+            "Las palabras propias conservan las protecciones del diccionario: mayúsculas estrictas, números puros y letras sueltas solo se sustituyen donde corresponde.",
+            "Si Android cierra la app mientras concedes el permiso de instalar apps desconocidas, el APK verificado se conserva y el instalador se abre sin descargarlo otra vez."
+          ],
+          "en": [
+            "Fixed voice selection: the app's preset number (0–7) is translated to the engine's (1–8), so the chosen voice actually sounds and stays selected when prosody resets.",
+            "Removed duplicate dictionary application: custom words now go through text substitution and are no longer also taught to the engine.",
+            "The substitution list is built once per dictionary instead of being rebuilt for every sentence, with less work on the synthesis thread.",
+            "Custom words keep the dictionary protections: strict uppercase keys, pure numbers, and single letters are only replaced where they should be.",
+            "If Android closes the app while you grant the install-unknown-apps permission, the verified APK is kept and the installer opens without downloading it again."
+          ]
+        }
+      },
+      {
         "versionName": "5.4.1",
         "versionCode": 5401,
         "date": "2026-10-27",
@@ -137,6 +158,27 @@
       }
     ],
     "lite": [
+      {
+        "versionName": "2.4.2",
+        "versionCode": 2402,
+        "date": "2026-10-27",
+        "notes": {
+          "es": [
+            "Corregida la elección de voz: el número de la app (0–7) se traduce al del motor (1–8), así que la voz elegida suena de verdad y se mantiene al reiniciar la prosodia.",
+            "Eliminada la doble aplicación del diccionario: las palabras propias también pasan por la sustitución en texto y ya no se enseñan además al motor.",
+            "La lista de sustitución se arma una sola vez por diccionario en vez de reconstruirse en cada frase, con menos trabajo en el hilo de síntesis.",
+            "Las palabras propias conservan las protecciones del diccionario: mayúsculas estrictas, números puros y letras sueltas solo se sustituyen donde corresponde.",
+            "Si Android cierra la app mientras concedes el permiso de instalar apps desconocidas, el APK verificado se conserva y el instalador se abre sin descargarlo otra vez."
+          ],
+          "en": [
+            "Fixed voice selection: the app's preset number (0–7) is translated to the engine's (1–8), so the chosen voice actually sounds and stays selected when prosody resets.",
+            "Removed duplicate dictionary application: custom words now go through text substitution and are no longer also taught to the engine.",
+            "The substitution list is built once per dictionary instead of being rebuilt for every sentence, with less work on the synthesis thread.",
+            "Custom words keep the dictionary protections: strict uppercase keys, pure numbers, and single letters are only replaced where they should be.",
+            "If Android closes the app while you grant the install-unknown-apps permission, the verified APK is kept and the installer opens without downloading it again."
+          ]
+        }
+      },
       {
         "versionName": "2.4.1",
         "versionCode": 2401,

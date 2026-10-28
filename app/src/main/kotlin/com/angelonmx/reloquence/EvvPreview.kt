@@ -38,9 +38,6 @@ class EvvPreview(private val language: Int) {
 	@Volatile
 	private var generation = 0
 
-	@Volatile
-	private var taughtWords: List<Pair<String, String>>? = null
-
 	/** Cuántos bytes de audio han ido al track. Nada en la
 	 *  app lo lee; es lo que deja decir a una prueba que la
 	 *  vista previa realmente sonó, lo cual es útil porque una
@@ -79,8 +76,8 @@ class EvvPreview(private val language: Int) {
 	}
 
 	/** Dice [texto] en [voz] con [forma] encima, al [volumen]
-	 *  pedido y con [words] enseñadas, deteniendo lo que se
-	 *  estuviera diciendo. Con [fx] la muestra suena como hablará:
+	 *  pedido y con [words] aplicadas en el texto, deteniendo lo
+	 *  que se estuviera diciendo. Con [fx] la muestra suena como hablará:
 	 *  ecualizador y reverb cuando están en vigor. La sustitución
 	 *  del diccionario se hace aquí con la voz ya limpia, dejando
 	 *  detrás lo que la devuelve: los códigos de una palabra no se
@@ -103,24 +100,8 @@ class EvvPreview(private val language: Int) {
 			if (mine != generation) return@post
 			val e = engine ?: EvvEngine.open(language, Eci.sampleRateHz(1))?.also { engine = it } ?: return@post
 			e.setSampleRate(rateHz)
-			// Lo enseñado nuevo reemplaza a lo anterior: sin olvidar,
-			// una palabra borrada seguiría hablándose en la muestra.
-			if (taughtWords != words) {
-				e.forgetDictionaries()
-				// Listas grandes en forma simple: la sustitución en
-				// texto ya cubre mayúsculas y 4 formas por miles de
-				// palabras tardaría segundos en arrancar la muestra.
-				if (words.size > 200) {
-					for ((key, sayWord) in words) {
-						Dictionaries.teachSingle(e, Eci.DICT_MAIN, key, sayWord)
-					}
-				} else {
-					for ((key, sayWord) in words) {
-						Dictionaries.teachEntry(e, Eci.DICT_MAIN, key, sayWord)
-					}
-				}
-				taughtWords = words.toList()
-			}
+			// 5.4.2: la lista se sustituye en el texto antes de hablar,
+			// así que no se enseña al motor ni hay estado que olvidar.
 			val plan = VoicePlan.plan(
 				voice = voice,
 				shape = shape,
@@ -170,19 +151,7 @@ class EvvPreview(private val language: Int) {
 			if (mine != generation) return@post
 			val e = engine ?: EvvEngine.open(language, Eci.sampleRateHz(1))?.also { engine = it } ?: return@post
 			e.setSampleRate(rateHz)
-			if (taughtWords != words) {
-				e.forgetDictionaries()
-				if (words.size > 200) {
-					for ((key, sayWord) in words) {
-						Dictionaries.teachSingle(e, Eci.DICT_MAIN, key, sayWord)
-					}
-				} else {
-					for ((key, sayWord) in words) {
-						Dictionaries.teachEntry(e, Eci.DICT_MAIN, key, sayWord)
-					}
-				}
-				taughtWords = words.toList()
-			}
+			// 5.4.2: ver [say]; la sustitución cubre la lista.
 			for ((at, triple) in segments.withIndex()) {
 				val (voice, shape, text) = triple
 				if (mine != generation) return@post

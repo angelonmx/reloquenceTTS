@@ -1128,7 +1128,7 @@ class SettingsModel(private val app: Application) : ViewModel() {
 	}
 
 	/** Vacía la biblioteca entera: archivos importados y palabras
-	 *  propias. Lo enseñado al motor se olvida en la siguiente
+	 *  propias. La lista de sustitución se rehace en la siguiente
 	 *  emisión, que recarga y encuentra nada. */
 	fun clearAllDictionary() {
 		val held = settings.dictionaries.size
@@ -1144,7 +1144,7 @@ class SettingsModel(private val app: Application) : ViewModel() {
 		wordEntries = emptyMap()
 		dictLoading = false
 		rebuildListed()
-		// 4.3: el motor tenía lo enseñado dentro; sin este aviso
+		// 4.3: el servicio conserva la lista cargada; sin este aviso
 		// seguiría sustituciendo las palabras hasta el siguiente
 		// reinicio del servicio.
 		settings.dictionaryRewritten("diccionario vaciado")
@@ -3593,12 +3593,13 @@ object BackupStore {
 	 *  archivo y se restauran aparte. */
 	private fun isKnownUpdateKey(key: String): Boolean =
 		key in UpdatePrefs.BOOL_KEYS || key in UpdatePrefs.INT_KEYS ||
-			key in UpdatePrefs.LONG_KEYS
+			key in UpdatePrefs.LONG_KEYS || key in UpdatePrefs.STRING_KEYS
 
 	private fun updateExpectedType(key: String): Char? = when (key) {
 		in UpdatePrefs.BOOL_KEYS -> 'B'
 		in UpdatePrefs.INT_KEYS -> 'I'
 		in UpdatePrefs.LONG_KEYS -> 'L'
+		in UpdatePrefs.STRING_KEYS -> 'S'
 		else -> null
 	}
 
@@ -3608,10 +3609,12 @@ object BackupStore {
 			UpdatePrefs.KEY_INTERVAL -> value in UpdatePrefs.INTERVALS
 			UpdatePrefs.KEY_NOTIFIED,
 			UpdatePrefs.KEY_SKIPPED,
-			UpdatePrefs.KEY_LAST_SEEN -> value >= 0
+			UpdatePrefs.KEY_LAST_SEEN,
+			UpdatePrefs.KEY_PENDING_CODE -> value >= 0
 			else -> false
 		}
 		is Long -> key == UpdatePrefs.KEY_LAST_CHECK && value >= 0L
+		is String -> key in UpdatePrefs.STRING_KEYS && value.length <= 500
 		else -> false
 	}
 

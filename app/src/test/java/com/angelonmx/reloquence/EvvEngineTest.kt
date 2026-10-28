@@ -19,6 +19,9 @@ class EvvEngineTest {
 		private val handles = mutableMapOf<Long, MutableMap<Int, MutableMap<Int, Int>>>()
 		private var next = 1L
 
+		/** Cada `copyVoice` que pidió el motor, como (desde, hasta). */
+		val copies = mutableListOf<Pair<Int, Int>>()
+
 		private fun voice(handle: Long, v: Int): MutableMap<Int, Int> {
 			return handles.getOrPut(handle) { mutableMapOf() }.getOrPut(v) { mutableMapOf() }
 		}
@@ -54,6 +57,7 @@ class EvvEngineTest {
 		}
 
 		override fun copyVoice(handle: Long, from: Int, to: Int): Int {
+			copies += from to to
 			voice(handle, to).clear()
 			voice(handle, to).putAll(voice(handle, from))
 			return 0
@@ -120,6 +124,35 @@ class EvvEngineTest {
 				bridge.getVoiceParam(handle, Eci.VOICE_CURRENT, param)
 			)
 		}
+	}
+
+	@Test
+	fun `applyEmission traduce el preset de la app al del motor`() {
+		val bridge = FakeBridge()
+		val (engine, _) = openEngine(bridge)
+		val plan = fullPlan() // voice = 2 (Bobby) en la app
+		assertTrue(engine.applyEmission(plan))
+		// El motor numera desde uno: Bobby es 3, no 2.
+		assertEquals(
+			"el motor recibe el preset 3 para la voz 2",
+			listOf(3 to Eci.VOICE_CURRENT),
+			bridge.copies
+		)
+		assertTrue("el reinicio anuncia el preset del motor", engine.prosodyReset().contains("`v3 "))
+
+		// Aplicar la misma voz otra vez no vuelve a copiar el preset.
+		assertTrue(engine.applyEmission(plan))
+		assertEquals("mismo preset: no se copia dos veces", 1, bridge.copies.size)
+
+		// Reed es 0 en la app y 1 en el motor; no es "la voz en juego".
+		assertTrue(engine.applyEmission(plan.copy(voice = 0)))
+		assertEquals(1 to Eci.VOICE_CURRENT, bridge.copies.last())
+		assertTrue("Reed se anuncia como 1", engine.prosodyReset().contains("`v1 "))
+
+		// El último preset también cae dentro del rango del motor.
+		assertTrue(engine.applyEmission(plan.copy(voice = Eci.PRESET_NAMES.lastIndex)))
+		assertEquals(Eci.LAST_PRESET to Eci.VOICE_CURRENT, bridge.copies.last())
+		assertTrue(engine.prosodyReset().contains("`v${Eci.LAST_PRESET} "))
 	}
 
 	@Test

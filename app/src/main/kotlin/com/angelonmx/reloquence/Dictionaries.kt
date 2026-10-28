@@ -9,10 +9,10 @@ import java.io.File
  * El motor tiene un cargador propio, y no acepta estos archivos:
  * eciLoadDict contesta eciDictAccessError para cada uno de ellos,
  * porque lo que lee es la forma guardada propia de IBM y lo que la
- * gente comparte es texto. Así que el texto se lee aquí y al motor
- * se le enseña palabra por palabra, que es la misma interfaz que
- * hubiera usado el cargador y no depende de ponerse de acuerdo
- * sobre un formato de archivo.
+ * gente comparte es texto. Así que el texto se lee aquí y se aplica
+ * sustituyéndolo antes de entregarlo al motor. 5.4.2 quitó la
+ * enseñanza nativa palabra por palabra: aplicar las dos vías duplicaba
+ * la regla cuando la pronunciación de una entrada contenía otra clave.
  *
  * Hay dos formatos, y ambos son texto con una entrada por línea:
  *
@@ -27,9 +27,9 @@ import java.io.File
  *   Los campos son palabra, pronunciación (reescritura como
  *   "llámeil" o alfabeto del motor como "`[Ekspoz1e]", que el
  *   motor acepta ambas), atributos ("*" o bits como 0x0a),
- *   origen ("*" o un nombre), "*", y dos números. Al enseñar
- *   solo importan palabra y pronunciación: los atributos son
- *   concordancias del original que teachWord no toma.
+ *   origen ("*" o un nombre), "*", y dos números. Al leer solo
+ *   importan palabra y pronunciación: los atributos son
+ *   concordancias del original que la sustitución no usa.
  * - Reloquence (.reloqdic): cuerpo tabulado ("palabra\tsay") con
  *   una cabecera "# reloqdic v1" que lo identifica. Al leer se
  *   acepta además "clave=valor", "clave=>valor" y "clave:valor",
@@ -295,10 +295,10 @@ object Dictionaries {
 	}
 
 	/**
-	 * Una clave tal como se guarda, sin bajar la caja: es la que se
-	 * enseña al motor y la que la pantalla de ajustes muestra, así
-	 * que tiene que seguir siendo la que escribió quien hizo el
-	 * archivo. Lo único que se toca son los blancos.
+	 * Una clave tal como se guarda, sin bajar la caja: es la que usa
+	 * la sustitución y la que la pantalla de ajustes muestra, así que
+	 * tiene que seguir siendo la que escribió quien hizo el archivo.
+	 * Lo único que se toca son los blancos.
 	 */
 	fun normWord(word: String): String = normBlanksOnly(word)
 
@@ -367,18 +367,6 @@ object Dictionaries {
 			}
 		}
 		return hasLetter
-	}
-
-	/** Si [key] conviene no enseñarla al motor y dejarla solo a la
-	 *  sustitución en texto: mayúsculas estrictas (el motor compara
-	 *  sin caja y rompería "esa") y números puros ("00" rompería
-	 *  "1:00"). La sustitución ya los protege. */
-	fun skipTeach(key: String): Boolean {
-		val t = key.trim()
-		if (t.isEmpty()) return true
-		if (isAllCapsKey(t)) return true
-		if (t.all { it.isDigit() }) return true
-		return false
 	}
 
 	/**
@@ -687,9 +675,9 @@ object Dictionaries {
 		 * larga se compruebe antes y gane donde dos casan.
 		 *
 		 * Una clave más larga que [MAX_PHRASE] no entra en patrón
-		 * (sigue enseñándose al motor y sigue en el mapa): es un
-		 * diálogo entero metido como clave, y un patrón de esa
-		 * anchura no se compila en tiempo razonable. El largo
+		 * (se queda en el mapa, sin efecto): es un diálogo entero
+		 * metido como clave, y un patrón de esa anchura no se
+		 * compila en tiempo razonable. El largo
 		 * de una ventana es [TextPieces.WINDOW_CHARS], así que
 		 * por encima de eso tampoco habría dónde casarla.
 		 *
@@ -763,44 +751,6 @@ object Dictionaries {
 		}
 	}
 
-	/** Enseña una entrada tal cual, una sola forma. Rápida para
-	 *  archivos grandes: la sustitución en texto ya cubre las
-	 *  mayúsculas, así que el motor no necesita las cuatro formas.
-	 *  Mayúsculas estrictas y números puros no se enseñan: el motor
-	 *  compara sin caja y rompería "esa" y "1:00"; la sustitución
-	 *  los lleva con protección. Contesta si entró (o si se dejó a la
-	 *  sustitución). */
-	fun teachSingle(engine: EvvEngine, volume: Int, key: String, say: String): Boolean {
-		if (key.isEmpty()) return false
-		if (skipTeach(key)) return true
-		return engine.teachWord(volume, normWord(key.trim()), say) == 0
-	}
-
-	/** Enseña una entrada en todas sus formas de mayúsculas
-	 *  (original, minúsculas, MAYÚSCULAS y Capitalizada) para que
-	 *  el reemplazo no dependa de cómo venga escrita la palabra.
-	 *  Una oración (con espacios) entra una sola vez en su forma
-	 *  exacta: cuatro copias de una frase larga no aportan nada y
-	 *  la sustitución en texto ya ignora la caja. Contesta si al
-	 *  menos una entró. */
-	fun teachEntry(engine: EvvEngine, volume: Int, key: String, say: String): Boolean {
-		if (key.any { it.isWhitespace() }) {
-			val word = normWord(key)
-			return word.isNotEmpty() && engine.teachWord(volume, word, say) == 0
-		}
-		val forms = linkedSetOf(
-			key,
-			key.lowercase(),
-			key.uppercase(),
-			key.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-		)
-		var ok = false
-		for (form in forms) {
-			if (form.isNotEmpty() && engine.teachWord(volume, form, say) == 0) ok = true
-		}
-		return ok
-	}
-
 	/** Cuántas entradas ofrece un archivo, para decirlo en la pantalla
 	 *  de ajustes sin un motor a la mano. */
 	fun count(file: File): Int = entries(file).size
@@ -811,7 +761,7 @@ object Dictionaries {
 	 *  .reloqdic al revés, para que una línea .cfd pegada en él
 	 *  también entre. La palabra sale con sus blancos reducidos
 	 *  ([normWord]), que es lo que la hace comparable con el texto
-	 *  y lo que se enseña al motor. */
+	 *  y con la lista de sustitución. */
 	fun entries(file: File): List<Pair<String, String>> {
 		val lines = readLines(file)
 		return if (file.extension.equals("cfd", ignoreCase = true)) {

@@ -66,4 +66,25 @@ class DictionariesTest {
 		val plain = listOf("hola" to "ola")
 		assertEquals("ola", Dictionaries.substitute("hola", plain, "`v0"))
 	}
+
+	@Test
+	fun `una clave en mayúsculas estrictas no toca la palabra en minúsculas`() {
+		val entries = listOf("ESA" to "E S A")
+		assertEquals("esa", Dictionaries.substitute("esa", entries))
+		assertEquals("E S A", Dictionaries.substitute("ESA", entries))
+	}
+
+	@Test
+	fun `una clave de números puros no rompe una hora`() {
+		val entries = listOf("00" to "cero cero")
+		assertEquals("1:00", Dictionaries.substitute("1:00", entries))
+		assertEquals("cero cero", Dictionaries.substitute("00", entries))
+	}
+
+	@Test
+	fun `una letra suelta en minúsculas solo se sustituye en mayúscula`() {
+		val entries = listOf("y" to "i griega")
+		assertEquals("sal y pimienta", Dictionaries.substitute("sal y pimienta", entries))
+		assertEquals("i griega", Dictionaries.substitute("Y", entries))
+	}
 }

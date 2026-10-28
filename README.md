@@ -12,6 +12,9 @@ no necesita cuenta, no muestra anuncios y no envía lo que lees a ningún sitio.
 - **Lectura cuidada.** Pausas, abreviaturas, números, horas, decimales,
   direcciones y archivos se leen como se espera, no como una cadena de
   caracteres suelta. Detecta el idioma del texto y puede cambiar de voz.
+- **Latencia opcional.** El modo de ultrabaja latencia, apagado de fábrica,
+  entrega menos audio por delante para que la voz empiece y se detenga antes.
+  Consume más CPU, así que está pensado para aparatos con recursos de sobra.
 - **Efectos de audio.** Ecualizador, reverberación, eco, coro, trémolo,
   compresión, puerta de ruido, filtros y una lista larga de ajustes de color.
   Todo se puede apagar, y apagado no hace nada.
@@ -23,6 +26,9 @@ no necesita cuenta, no muestra anuncios y no envía lo que lees a ningún sitio.
   ajustes con los que sonó.
 - **Diagnóstico.** Un registro local, apagado de fábrica, para ver qué pasó
   cuando algo no suena. Nunca guarda el texto que se está leyendo.
+- **Copias completas.** Ajustes, perfiles, preferencias de diagnóstico y de
+  actualizaciones y la biblioteca entera de diccionarios, todo menos los
+  archivos de registro.
 - **Actualizaciones.** La app puede buscar versiones nuevas, avisarte y
   descargarlas desde Ajustes. Android siempre pide confirmación antes de
   instalar; no hay instalación silenciosa.
@@ -31,8 +37,8 @@ no necesita cuenta, no muestra anuncios y no envía lo que lees a ningún sitio.
 
 | edición | versión | paquete | voces |
 | --- | --- | --- | --- |
-| **full** | 5.4 (5400) | `com.angelonmx.reloquence` | inglés (EE. UU. y Reino Unido), español (España y Latinoamérica), francés (Francia y Canadá), alemán, italiano y japonés |
-| **lite** | 2.4 (2400) | `com.angelonmx.reloquence.lite` | español (España y Latinoamérica) |
+| **full** | 5.4.2 (5402) | `com.angelonmx.reloquence` | inglés (EE. UU. y Reino Unido), español (España y Latinoamérica), francés (Francia y Canadá), alemán, italiano y japonés |
+| **lite** | 2.4.2 (2402) | `com.angelonmx.reloquence.lite` | español (España y Latinoamérica) |
 
 Las dos se pueden instalar en el mismo teléfono: tienen paquetes distintos y
 no comparten ajustes ni diccionario. La Lite es la misma app con menos voces,
@@ -86,6 +92,11 @@ Antes de abrir el instalador, la app comprueba el tamaño, el SHA-256, el
 paquete, el `versionCode` y el certificado de firma del APK. Si algo no
 coincide, no se instala. Aun así, Android muestra su propia pantalla de
 confirmación y tú decides.
+
+Si falta el permiso de instalar apps desconocidas, se pide **después** de
+descargar y verificar el APK. Al concederlo, el instalador se abre con ese
+mismo archivo, sin descargarlo otra vez; el APK pendiente se conserva aunque
+Android cierre la app mientras estás en la pantalla de permisos.
 
 La app lee los manifiestos de actualización de un archivo JSON estático. No
 necesita token ni la API de GitHub, y no envía ningún dato tuyo. Si el

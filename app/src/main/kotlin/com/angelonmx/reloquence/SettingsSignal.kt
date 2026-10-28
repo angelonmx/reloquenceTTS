@@ -35,8 +35,6 @@ import java.util.concurrent.atomic.AtomicLong
  *  - La **pantalla de ajustes**, que relee y se redibuja sola. Da igual
  *    de dónde venga el cambio: la propia app, otra actividad, o el
  *    motor.
- *  - La **vista previa**, que suelta lo enseñado al motor para que una
- *    palabra borrada deje de oírse en la muestra.
  *
  * Los avisos salen en el hilo que escribió el ajuste, que puede ser el
  * principal, el de síntesis o el de una importación en segundo plano.

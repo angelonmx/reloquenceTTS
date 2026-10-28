@@ -59,10 +59,14 @@ class EvvEngine internal constructor(
 	private var baseGender = -1
 	private var curVolume = -1
 
-	/** La voz/preset que applyEmission dejó seleccionada, para que
-	 *  prosodyReset la vuelva a anunciar antes de los ocho overrides
-	 *  (`` `vN `` primero, parámetros después). Cero es la voz en
-	 *  juego, no un preset, y no anuncia nada. */
+	/** El preset del motor (1..8) que applyEmission dejó
+	 *  seleccionado, para que prosodyReset lo vuelva a anunciar antes
+	 *  de los ocho overrides (`` `vN `` primero, parámetros después).
+	 *  Cero es la voz en juego, no un preset, y no anuncia nada.
+	 *
+	 *  5.4.2: se guarda ya en la numeración del motor, no en la de la
+	 *  app. Antes se guardaba el índice de [VoicePlan] (0..7) y el
+	 *  reinicio anunciaba una voz distinta de la elegida. */
 	private var currentVoice = 0
 
 	/** Lo que la velocidad y el tono pedidos por última vez dan en
@@ -192,7 +196,7 @@ class EvvEngine internal constructor(
 	 *  en uno nuestro. */
 	fun presetShape(index: Int): Map<Int, Int> = synchronized(guard) {
 		if (closed) return emptyMap()
-		val preset = (index + Eci.FIRST_PRESET).coerceIn(Eci.FIRST_PRESET, Eci.LAST_PRESET)
+		val preset = Eci.enginePreset(index)
 		val out = LinkedHashMap<Int, Int>()
 		for (param in 0 until Eci.NUM_VOICE_PARAMS) {
 			val value = native.getVoiceParam(handle, preset, param)
@@ -223,10 +227,15 @@ class EvvEngine internal constructor(
 		// y OI_READY). Los ocho parámetros se escriben después, sobre
 		// esa voz ya seleccionada: primero la identidad, luego los
 		// valores, que es el orden que el motor espera.
-		if (plan.voice > 0 && plan.voice <= Eci.LAST_PRESET) {
-			if (native.copyVoice(handle, plan.voice, Eci.VOICE_CURRENT) < 0) return false
+		//
+		// 5.4.2: el plan numera desde cero y el motor desde uno. La
+		// conversión se hace aquí y se guarda ya convertida, para que
+		// [prosodyReset] anuncie el mismo preset que se copió.
+		val preset = Eci.enginePreset(plan.voice)
+		if (preset != currentVoice) {
+			if (native.copyVoice(handle, preset, Eci.VOICE_CURRENT) < 0) return false
+			currentVoice = preset
 		}
-		currentVoice = plan.voice
 		for (param in Eci.SHAPE) {
 			val value = plan.value(param)
 			if (value < 0) return false

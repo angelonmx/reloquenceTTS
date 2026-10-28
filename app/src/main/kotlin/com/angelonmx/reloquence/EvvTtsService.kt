@@ -179,24 +179,24 @@ class EvvTtsService : TextToSpeechService() {
 	 *  hablar". El candado es propio y solo vive aquí, así que no
 	 *  se puede enredar con el del motor. */
 	private class PerEngine {
-		private val taught = HashMap<EvvEngine, TeachProgress>()
+		private val states = HashMap<EvvEngine, DictionaryState>()
 
-		fun progress(one: EvvEngine): TeachProgress? = synchronized(this) { taught[one] }
+		fun state(one: EvvEngine): DictionaryState? = synchronized(this) { states[one] }
 
-		fun setProgress(one: EvvEngine, value: TeachProgress) = synchronized(this) { taught[one] = value }
+		fun setState(one: EvvEngine, value: DictionaryState) = synchronized(this) { states[one] = value }
 
-		fun forget(one: EvvEngine) = synchronized(this) { taught.remove(one) }
+		fun forget(one: EvvEngine) = synchronized(this) { states.remove(one) }
 
-		fun clear() = synchronized(this) { taught.clear() }
+		fun clear() = synchronized(this) { states.clear() }
 	}
 
-	/** Lo aplicado en cada instancia, como huella de los ajustes
-	 *  que mandan en la voz. Antes de cada emisión se compara con
-	 *  lo que hay ahora mismo: si algo cambió (voz, forma,
-	 *  velocidad, tasa, abreviaturas) se aplica de nuevo, venga de
-	 *  donde venga el cambio y sin que nadie tenga que reiniciar
-	 *  ni reseleccionar el motor. */
-	private val appliedVoice = PerEngine()
+	/** La huella del último diccionario cargado en cada instancia:
+	 *  archivo, tamaño, revisión y palabras propias. Antes de cada
+	 *  emisión se compara con lo que hay ahora mismo y solo si algo
+	 *  cambió se vuelve a preparar. La sustitución en texto es la
+	 *  única vía de aplicación, así que no hay nada que reenseñar al
+	 *  motor ni que llevar por rebanadas. */
+	private val dictionaryStates = PerEngine()
 
 	/** Una instancia lista y el plan completo que hay que aplicarle
 	 *  antes de cada `speak`. */
@@ -262,7 +262,7 @@ class EvvTtsService : TextToSpeechService() {
 
 	private fun identity(one: EvvEngine): String = one.id.toString()
 
-	/** En qué instancia quedó enseñado el diccionario. 4.3:
+	/** En qué instancia quedó cargado el diccionario. 4.3:
 	 *  `@Volatile` porque [dropEverything] también lo pone a cero desde
 	 *  el hilo principal. */
 	@Volatile
@@ -290,6 +290,15 @@ class EvvTtsService : TextToSpeechService() {
 	 *  mayúsculas): archivo más palabras propias. */
 	private var subEntries: List<Pair<String, String>> = emptyList()
 	private var subHasVoiceSelect = false
+
+	/**
+	 * 5.4.2: las palabras propias convertidas en lista, con el mapa
+	 *  del que salieron. Sin esto, el caso sin archivo de diccionario
+	 *  armaba una lista nueva en cada emisión, la caché de
+	 *  [Dictionaries] la veía distinta y rehacía todos los patrones
+	 *  antes de cada frase.
+	 */
+	private var wordSubEntries: Pair<Map<String, String>, List<Pair<String, String>>>? = null
 
 	/**
 	 * 4.3: el diccionario ya leído y con la lista de sustitución
@@ -468,10 +477,10 @@ class EvvTtsService : TextToSpeechService() {
 	 * vuelve a dejar el motor calentado.
 	 *
 	 * Soltar en caliente es lo que hace que un cambio se oiga entero y
-	 * no a medias: la huella de la voz, lo que se había enseñado al
-	 * diccionario y el archivo ya preparado se olvidan, así que la
-	 * siguiente emisión abre una instancia nueva que solo sabe lo que
-	 * el usuario acaba de dejar escrito.
+	 * no a medias: la huella de la voz, el diccionario ya cargado y el
+	 * archivo preparado se olvidan, así que la siguiente emisión abre
+	 * una instancia nueva que solo sabe lo que el usuario acaba de
+	 * dejar escrito.
 	 *
 	 * Solo se llama con el motor en reposo ([speaking] a cero) o desde
 	 * el principio de una emisión, que es lo mismo: entre el framework
@@ -492,7 +501,7 @@ class EvvTtsService : TextToSpeechService() {
 		// lector dentro y eso puede tardar, y con el candado puesto
 		// el resto del servicio se quedaría esperando.
 		for (one in live) one.close()
-		appliedVoice.clear()
+		dictionaryStates.clear()
 		loadedEngine = null
 		loadedDictionary = null
 		loadedDictionaryModified = 0L
@@ -719,7 +728,7 @@ class EvvTtsService : TextToSpeechService() {
 		}
 		for (one in held) one.close()
 		engine = null
-		appliedVoice.clear()
+		dictionaryStates.clear()
 		loadedEngine = null
 		diag(
 			"lifecycle", "event" to "engines_closed",
@@ -941,7 +950,7 @@ class EvvTtsService : TextToSpeechService() {
 	 */
 	private fun forget(one: EvvEngine?) {
 		if (one == null) return
-		appliedVoice.forget(one)
+		dictionaryStates.forget(one)
 		var dropped = false
 		synchronized(engines) {
 			if (engines.remove(one.language) === one) dropped = true
@@ -1114,7 +1123,7 @@ class EvvTtsService : TextToSpeechService() {
 		// el candado del mapa puesto bloqueaba al hilo de síntesis y
 		// al principal a la vez.
 		for (one in drop) {
-			appliedVoice.forget(one)
+			dictionaryStates.forget(one)
 			if (loadedEngine === one) loadedEngine = null
 			diag(
 				"engine", "event" to "closed",
@@ -1157,7 +1166,7 @@ class EvvTtsService : TextToSpeechService() {
 			}
 			for (held in drop) {
 				engines.remove(held.language)
-				appliedVoice.forget(held)
+				dictionaryStates.forget(held)
 				if (loadedEngine === held) loadedEngine = null
 			}
 			// 4.3: la instancia calentada tambien se va. Es una mas
@@ -1186,7 +1195,7 @@ class EvvTtsService : TextToSpeechService() {
 		// porque [EvvEngine.close] es idempotente, pero sonaba a
 		// fallo y no lo era.
 		for (held in drop) held.close()
-		appliedVoice.clear()
+		dictionaryStates.clear()
 		diag(
 			"lifecycle", "event" to "trim_memory",
 			"level" to level.toString(),
@@ -1204,12 +1213,10 @@ class EvvTtsService : TextToSpeechService() {
 		onTrimMemory(TRIM_COMPLETE)
 	}
 
-	/** Cuánto se enseña por emisión. 4000 palabras de golpe
-	 *  congelan el habla segundos; por rebanadas no se nota y la
-	 *  sustitución en texto cubre todo desde la primera. */
-	private class TeachProgress(
-		val entries: List<Pair<String, String>>,
-		var index: Int,
+	/** Lo que identifica al diccionario ya cargado en una instancia.
+	 *  No guarda las entradas: la sustitución en texto se aplica
+	 *  antes de cada emisión y no hay nada pendiente en el motor. */
+	private class DictionaryState(
 		val want: String?,
 		val modified: Long,
 		val size: Long,
@@ -1218,15 +1225,15 @@ class EvvTtsService : TextToSpeechService() {
 	)
 
 	/**
-	 * 4.1: el mapa del diccionario también vive en [PerEngine], con
+	 * 4.1: el estado del diccionario también vive en [PerEngine], con
 	 * su candado, porque lo vacía el hilo principal en onDestroy
-	 * mientras el de síntesis va teachiendo.
+	 * mientras el de síntesis lo lee y lo escribe.
 	 */
 
-	/** Enseñar miles de palabras cuesta segundos, así que ocurre
-	 *  por rebanadas en vez de todo junto: la sustitución en texto
-	 *  ya aplica cada palabra desde la primera emisión y el motor
-	 *  se pone al día solo. */
+	/** Compara la huella del diccionario y, si cambió, olvida las
+	 *  reglas viejas y arma la lista de sustitución nueva. Ya no se
+	 *  enseña nada al motor: hacerlo duplicaba la aplicación porque
+	 *  la pronunciación de una entrada puede contener otra clave. */
 	private fun loadDictionary(target: EvvEngine, s: Settings) {
 		// Lo que hay en lugar de lo que se pidió. Un diccionario
 		// elegido antes de esta compilación no está donde dicen
@@ -1234,7 +1241,7 @@ class EvvTtsService : TextToSpeechService() {
 		// una vez, y recordar solo lo que se leyó significa que se
 		// recoge cuando llega en lugar de darse por escrito como
 		// cargado.
-		// Otra instancia no trae lo enseñado a la anterior.
+		// Otra instancia no trae el diccionario cargado en la anterior.
 		if (target !== loadedEngine) {
 			loadedDictionary = null
 			loadedDictionaryModified = 0L
@@ -1250,40 +1257,53 @@ class EvvTtsService : TextToSpeechService() {
 		// (fecha, tamaño y el contador de [SettingsSignal]) está en
 		// [readDictionary], que es el único sitio que la hace.
 		val ready = readDictionary(s, target.language)
-		subEntries = ready?.substitutions ?: emptyList()
-		subHasVoiceSelect = ready?.voiceSelect ?: false
 		val want = ready?.path
 		val words = ready?.words ?: s.dictionaryWords
+		// 5.4.2: las palabras propias también van por la sustitución
+		// en texto cuando no hay archivo de diccionario. Antes se
+		// enseñaban solo al motor, con lo que se saltaban las
+		// protecciones de la sustitución (mayúsculas estrictas,
+		// números puros, letras sueltas) y podían sonar distinto que
+		// dentro de un diccionario. Si no hay ni archivo ni palabras
+		// propias, la lista queda vacía y no hay nada que enseñar.
+		val wordSubs = if (words.isEmpty()) {
+			emptyList()
+		} else {
+			val cached = wordSubEntries
+			if (cached != null && cached.first === words) {
+				cached.second
+			} else {
+				words.entries.map { it.toPair() }.also { wordSubEntries = words to it }
+			}
+		}
+		subEntries = ready?.substitutions ?: wordSubs
+		subHasVoiceSelect = ready?.voiceSelect ?: Dictionaries.hasVoiceSelect(subEntries)
 		val modified = ready?.modified ?: 0L
 		val size = ready?.size ?: -1L
 		val revision = ready?.revision ?: SettingsSignal.dictionaryRevision
-		var progress = appliedVoice.progress(target)
+		val state = dictionaryStates.state(target)
 		// 4.3: el atajo incluye el contador. Con la fecha y el tamaño
 		// solos, importar dos veces el mismo archivo con las mismas
-		// entradas pasaba por "nada ha cambiado" y el motor seguía con
-		// el diccionario viejo, que es lo que se oía.
-		if (progress != null && progress.want == want && progress.modified == modified &&
-			progress.words == words && progress.index >= progress.entries.size &&
+		// entradas pasaba por "nada ha cambiado" y la emisión seguía
+		// con el diccionario viejo, que es lo que se oía.
+		if (state != null && state.want == want && state.modified == modified &&
+			state.words == words &&
 			target === loadedEngine && want == loadedDictionary &&
 			size == loadedDictionarySize && revision == loadedDictionaryRevision
 		) return
-		if (progress == null || progress.want != want || progress.modified != modified ||
-			progress.words != words || size != loadedDictionarySize ||
+		if (state == null || state.want != want || state.modified != modified ||
+			state.words != words || size != loadedDictionarySize ||
 			revision != loadedDictionaryRevision
 		) {
 			target.forgetDictionaries()
-			// 4.1: lo que ya estaba enseñado se olvida de verdad
-			// cuando el archivo o las palabras propias cambian. Antes
-			// solo se olvidaba al empezar una tanda, así que la
-			// entrada quitada del diccionario seguía sonando, y con
-			// ella el «no se respetan los parámetros» de quien la
-			// quitó. La sustitución en texto cubre lo nuevo desde la
-			// primera emisión, así que purgar no se nota.
+			// 4.1: lo que hubiera enseñado una versión anterior se
+			// olvida de verdad cuando el archivo o las palabras
+			// propias cambian. La sustitución en texto cubre lo nuevo
+			// desde la primera emisión, así que purgar no se nota.
 			for (one in synchronized(engines) { engines.values.toList() }) one.forgetDictionaries()
-			val fileEntries = ready?.entries ?: emptyList()
-			for ((key, say) in words) {
-				Dictionaries.teachEntry(target, Eci.DICT_MAIN, key, say)
-			}
+			// Solo se cuentan para el diagnóstico: las entradas ya no
+			// se enseñan al motor.
+			val fileEntries = ready?.entries.orEmpty()
 			if (words.isNotEmpty()) Timber.i("diccionario: ${words.size} palabras propias")
 			if (fileEntries.isNotEmpty()) Timber.i("diccionario: ${fileEntries.size} entradas")
 			diag(
@@ -1301,42 +1321,16 @@ class EvvTtsService : TextToSpeechService() {
 				"revision" to revision.toString(),
 				"voice_select" to subHasVoiceSelect.toString()
 			)
-			progress = TeachProgress(fileEntries, 0, want, modified, size, revision, words)
-			appliedVoice.setProgress(target, progress)
+			dictionaryStates.setState(
+				target,
+				DictionaryState(want, modified, size, revision, words)
+			)
 			loadedDictionary = want
 			loadedDictionaryModified = modified
 			loadedDictionarySize = size
 			loadedDictionaryRevision = revision
 			loadedWords = words
 			loadedEngine = target
-		}
-		// Una rebanada por emisión, en forma simple (la sustitución
-		// en texto ya cubre mayúsculas desde el principio).
-		// 4.1: una entrada de cada cinco, y con eso un archivo de
-		// cuatro mil entra entero en cinco o seis emisiones en vez
-		// de diez. La sustitución en texto pone cada regla desde la
-		// primera, así que la rebanada es solo lo que el motor tiene
-		// pendiente de saber.
-		var left = SLICE_WORDS
-		var taught = 0
-		while (progress.index < progress.entries.size && left > 0) {
-			val at = progress.index
-			val (key, say) = progress.entries[at]
-			progress.index = at + 1
-			if (at % TEACH_STRIDE != 0) continue
-			Dictionaries.teachSingle(target, Eci.DICT_MAIN, key, say)
-			left--
-			taught++
-		}
-		if (taught > 0) {
-			diag(
-				"dictionary", "event" to "taught",
-				"language" to (Eci.bcp47Of(target.language) ?: "?"),
-				"engine" to identity(target),
-				"count" to taught.toString(),
-				"index" to progress.index.toString(),
-				"total" to progress.entries.size.toString()
-			)
 		}
 	}
 
@@ -1351,17 +1345,16 @@ class EvvTtsService : TextToSpeechService() {
 		// el callback se abandona aquí para que una parada no espere
 		// ni un bloque más.
 		activeOutput?.abandon()
-		// 5.4: aquí NO se borra [appliedVoice].
+		// 5.4: aquí NO se borra [dictionaryStates].
 		//
-		// Lo que guarda no es una huella de la voz: es el progreso de
-		// enseñanza del diccionario, y [Emission] vuelve a aplicar los
-		// ocho parámetros antes de cada trozo de todas formas. Al
-		// borrarlo en cada parada, la siguiente emisión volvía a
-		// "cargar" el diccionario desde cero (102 `dictionary
-		// loaded` para 35 servicios en el registro real) y, con un
-		// archivo de verdad, la enseñanza por rebanadas no terminaba
-		// nunca. La voz ya se repone sola; el diccionario no tiene por
-		// qué olvidarse.
+		// Lo que guarda no es una huella de la voz: es la del
+		// diccionario cargado, y [Emission] vuelve a aplicar los ocho
+		// parámetros antes de cada trozo de todas formas. Al borrarlo
+		// en cada parada, la siguiente emisión volvía a "cargar" el
+		// diccionario desde cero (102 `dictionary loaded` para 35
+		// servicios en el registro real) y rehacía los patrones de
+		// sustitución aunque nada hubiera cambiado. La voz ya se
+		// repone sola; el diccionario no tiene por qué olvidarse.
 		val live = ArrayList<EvvEngine>()
 		synchronized(engines) { live.addAll(engines.values) }
 		var reset = false
@@ -2321,22 +2314,6 @@ class EvvTtsService : TextToSpeechService() {
 		 *  la plataforma). Se nombra aquí porque la constante del
 		 *  sistema está obsoleta en las versiones nuevas. */
 		const val TRIM_COMPLETE = 80
-		/**
-		 * 4.2: palabras del archivo enseñadas por emisión. Bajó de
-		 * 400 a 100: cada `eciUpdateDict` es una llamada nativa y
-		 * esta va en el hilo de síntesis, que es el que el sistema
-		 * mide para decidir si el motor responde. La sustitución en
-		 * texto cubre cada regla desde la primera emisión, así que
-		 * esto solo es lo que el motor tiene pendiente de saber, y
-		 * llegar a todo un archivo grande cuesta unas emisiones más.
-		 */
-		const val SLICE_WORDS = 100
-		/**
-		 * 4.1: de cada cuántas entradas del archivo se enseña una al
-		 * motor. Cuatro de cada cinco con un diccionario grande, y
-		 * la sustitución en texto cubre el resto desde el principio.
-		 */
-		const val TEACH_STRIDE = 5
 		const val BYTES_PER_SAMPLE = 2
 		/**
 		 * Cuánto audio puede estar adelantado al habla, para que la
