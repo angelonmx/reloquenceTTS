@@ -2,44 +2,46 @@
   "schema": 1,
   "applicationId": "com.angelonmx.reloquence",
   "edition": "full",
-  "versionName": "5.4.2",
-  "versionCode": 5402,
-  "publishedAt": "2026-10-28T00:52:12Z",
+  "versionName": "5.4.3",
+  "versionCode": 5403,
+  "publishedAt": "2026-10-30T03:21:33Z",
   "minSdk": 23,
   "notes": {
     "es": [
-      "Corregida la elección de voz: el número de la app (0–7) se traduce al del motor (1–8), así que la voz elegida suena de verdad y se mantiene al reiniciar la prosodia.",
-      "Eliminada la doble aplicación del diccionario: las palabras propias también pasan por la sustitución en texto y ya no se enseñan además al motor.",
-      "La lista de sustitución se arma una sola vez por diccionario en vez de reconstruirse en cada frase, con menos trabajo en el hilo de síntesis.",
-      "Las palabras propias conservan las protecciones del diccionario: mayúsculas estrictas, números puros y letras sueltas solo se sustituyen donde corresponde.",
-      "Si Android cierra la app mientras concedes el permiso de instalar apps desconocidas, el APK verificado se conserva y el instalador se abre sin descargarlo otra vez."
+      "Eliminado el modo de ultrabaja latencia: añadía trabajo al hilo de síntesis y no reducía el retardo; ahora la lectura usa siempre el camino normal.",
+      "Actualizaciones: ya no hay comprobaciones periódicas, intervalos ni notificaciones, ni trabajo en segundo plano que despierte la app. Queda un solo interruptor, «Verificar actualizaciones al iniciar la aplicación».",
+      "El diálogo de actualización se muestra al iniciar sobre cualquier pantalla y enseña cada dato en su línea: versión actual, versión nueva, fecha, peso, arquitectura, edición y cambios, con «Ahora no» a la izquierda y «Actualizar» a la derecha.",
+      "Las copias de seguridad guardan todos los ajustes y la biblioteca de diccionarios, y al restaurar se reconstruyen. La clave del modo retirado se descarta sin avisos ni errores.",
+      "La prosodia conserva el reinicio con los ocho parámetros antes de cada emisión, para que la voz no cambie de tono a mitad de frase.",
+      "Los textos del diálogo de actualización están traducidos en los diez idiomas de la app."
     ],
     "en": [
-      "Fixed voice selection: the app's preset number (0–7) is translated to the engine's (1–8), so the chosen voice actually sounds and stays selected when prosody resets.",
-      "Removed duplicate dictionary application: custom words now go through text substitution and are no longer also taught to the engine.",
-      "The substitution list is built once per dictionary instead of being rebuilt for every sentence, with less work on the synthesis thread.",
-      "Custom words keep the dictionary protections: strict uppercase keys, pure numbers, and single letters are only replaced where they should be.",
-      "If Android closes the app while you grant the install-unknown-apps permission, the verified APK is kept and the installer opens without downloading it again."
+      "Removed ultra-low latency mode: it added work to the synthesis thread without reducing delay; playback now always uses the normal path.",
+      "Updates: no more periodic checks, intervals, or notifications, and no background work waking the app. A single switch remains, “Check for updates when the app starts”.",
+      "The update dialog now appears at launch over any screen and shows each item on its own line: current version, new version, release date, size, architecture, edition, and changes, with “Not now” on the left and “Update” on the right.",
+      "Backups keep every setting and the whole dictionary library, and restoring rebuilds them. The retired mode's key is discarded without warnings or errors.",
+      "Prosody keeps the eight-parameter reset before each utterance, so the voice does not change tone mid-sentence.",
+      "The update dialog texts are translated into all ten app languages."
     ]
   },
   "apks": [
     {
       "abi": "arm64-v8a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.2/reloquence-full-5.4.2-5402-arm64-v8a-release.apk",
-      "sha256": "ffec8be7ac0f9b82c66d6e7e9b96dd8f7149e9b0534c625c66842ed17bc57791",
-      "size": 20661919
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.3/reloquence-full-5.4.3-5403-arm64-v8a-release.apk",
+      "sha256": "8dad534660a4288901e746c598e6285be29ba37889fc8263eaff0d9ff3560fa3",
+      "size": 20541854
     },
     {
       "abi": "armeabi-v7a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.2/reloquence-full-5.4.2-5402-armeabi-v7a-release.apk",
-      "sha256": "d086a864d0679f463fbc294b857c3ddfcdc02ae38aaf26493842b2eb926bc36c",
-      "size": 18281476
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.3/reloquence-full-5.4.3-5403-armeabi-v7a-release.apk",
+      "sha256": "7965b244d85bf6066f9ff09bbd733b56dfac2e54ed10b5b2c4c603c37ceff248",
+      "size": 18161431
     },
     {
       "abi": "universal",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.2/reloquence-full-5.4.2-5402-universal-release.apk",
-      "sha256": "1bfccdc2f9fbcc77fb07a28b5b3aa6d7c96daac9625093955d2cad185fb17f6e",
-      "size": 33753418
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.3/reloquence-full-5.4.3-5403-universal-release.apk",
+      "sha256": "048540e917c4b647c039f0cf6d00ee76b9358e3e33b23a1bb09c370bdb1b6597",
+      "size": 33633370
     }
   ]
 }
