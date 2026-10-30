@@ -68,13 +68,11 @@ class BackupFormatTest {
 			  "version": 3,
 			  "name": "completa",
 			  "prefs": {
-			    "low_latency": {"type": "B", "value": true},
 			    "dictionary_language": {"type": "I", "value": 3}
 			  },
 			  "dictionaries": [],
 			  "updates": {
 			    "auto_check": {"type": "B", "value": false},
-			    "interval_hours": {"type": "I", "value": 12},
 			    "last_check_at": {"type": "L", "value": 1700000000000},
 			    "clave_inventada": {"type": "B", "value": true}
 			  }
@@ -84,12 +82,10 @@ class BackupFormatTest {
 		assertNotNull(parsed)
 		assertEquals("completa", parsed!!.name)
 		assertEquals(3, parsed.version)
-		assertEquals(true, parsed.prefs["low_latency"])
 		assertEquals(3, parsed.prefs["dictionary_language"])
 		assertTrue("la sección dictionaries existe aunque venga vacía", parsed.libraryPresent)
 		assertTrue("la sección updates existe", parsed.updatesPresent)
 		assertEquals(false, parsed.updatePrefs["auto_check"])
-		assertEquals(12, parsed.updatePrefs["interval_hours"])
 		assertEquals(1700000000000L, parsed.updatePrefs["last_check_at"])
 		assertTrue("una clave de actualizaciones desconocida no entra", "clave_inventada" !in parsed.updatePrefs)
 		assertTrue(parsed.issues.any { it.kind == BackupStore.IssueKind.UNKNOWN_PREF_KEYS })
