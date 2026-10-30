@@ -385,7 +385,7 @@
 	<string name="lang_es_latam">スペイン語（ラテンアメリカ）</string>
 	<!-- 5.4: アップデート -->
 	<string name="updates_label">アップデート</string>
-	<string name="category_updates_hint">新しいバージョンを検索し、自動的に確認します</string>
+	<string name="category_updates_hint">新しいバージョンを検索し、起動時に確認します</string>
 	<string name="update_check_now">アップデートを確認</string>
 	<string name="update_current_changelog">このバージョンの変更点を見る</string>
 	<string name="update_current_version">現在のバージョン</string>
@@ -395,6 +395,13 @@
 	<string name="update_available">アップデートがあります: %1$s</string>
 	<string name="update_available_title">アップデートがあります</string>
 	<string name="update_new_version">新しいバージョン</string>
+	<string name="update_check_on_launch">アプリ起動時にアップデートを確認する</string>
+	<string name="update_release_date">リリース日</string>
+	<string name="update_apk_size">サイズ</string>
+	<string name="update_device_architecture">端末のアーキテクチャ</string>
+	<string name="update_download_apk">ダウンロードするバージョン</string>
+	<string name="update_download_lite">ライト版（%1$s）</string>
+	<string name="update_download_full">フル版（%1$s）</string>
 	<string name="update_changes_title">変更点:</string>
 	<string name="update_not_now">後で</string>
 	<string name="update_install_now">今すぐ更新</string>

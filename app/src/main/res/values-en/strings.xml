@@ -384,7 +384,7 @@
 
 	<!-- 5.4: updates -->
 	<string name="updates_label">Updates</string>
-	<string name="category_updates_hint">Look for new versions and check automatically</string>
+	<string name="category_updates_hint">Look for new versions and check on launch</string>
 	<string name="update_check_now">Check for updates</string>
 	<string name="update_current_changelog">View changes in this version</string>
 	<string name="update_current_version">Current version</string>
@@ -394,6 +394,13 @@
 	<string name="update_available">Update available: %1$s</string>
 	<string name="update_available_title">Update available</string>
 	<string name="update_new_version">New version</string>
+	<string name="update_check_on_launch">Check for updates when the app starts</string>
+	<string name="update_release_date">Release date</string>
+	<string name="update_apk_size">Size</string>
+	<string name="update_device_architecture">Device architecture</string>
+	<string name="update_download_apk">Version to download</string>
+	<string name="update_download_lite">lite (%1$s)</string>
+	<string name="update_download_full">full (%1$s)</string>
 	<string name="update_changes_title">Changes:</string>
 	<string name="update_not_now">Not now</string>
 	<string name="update_install_now">Update now</string>

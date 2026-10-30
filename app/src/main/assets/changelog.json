@@ -3,6 +3,29 @@
   "editions": {
     "full": [
       {
+        "versionName": "5.4.3",
+        "versionCode": 5403,
+        "date": "2026-10-29",
+        "notes": {
+          "es": [
+            "Eliminado el modo de ultrabaja latencia: añadía trabajo al hilo de síntesis y no reducía el retardo; ahora la lectura usa siempre el camino normal.",
+            "Actualizaciones: ya no hay comprobaciones periódicas, intervalos ni notificaciones, ni trabajo en segundo plano que despierte la app. Queda un solo interruptor, «Verificar actualizaciones al iniciar la aplicación».",
+            "El diálogo de actualización se muestra al iniciar sobre cualquier pantalla y enseña cada dato en su línea: versión actual, versión nueva, fecha, peso, arquitectura, edición y cambios, con «Ahora no» a la izquierda y «Actualizar» a la derecha.",
+            "Las copias de seguridad guardan todos los ajustes y la biblioteca de diccionarios, y al restaurar se reconstruyen. La clave del modo retirado se descarta sin avisos ni errores.",
+            "La prosodia conserva el reinicio con los ocho parámetros antes de cada emisión, para que la voz no cambie de tono a mitad de frase.",
+            "Los textos del diálogo de actualización están traducidos en los diez idiomas de la app."
+          ],
+          "en": [
+            "Removed ultra-low latency mode: it added work to the synthesis thread without reducing delay; playback now always uses the normal path.",
+            "Updates: no more periodic checks, intervals, or notifications, and no background work waking the app. A single switch remains, “Check for updates when the app starts”.",
+            "The update dialog now appears at launch over any screen and shows each item on its own line: current version, new version, release date, size, architecture, edition, and changes, with “Not now” on the left and “Update” on the right.",
+            "Backups keep every setting and the whole dictionary library, and restoring rebuilds them. The retired mode's key is discarded without warnings or errors.",
+            "Prosody keeps the eight-parameter reset before each utterance, so the voice does not change tone mid-sentence.",
+            "The update dialog texts are translated into all ten app languages."
+          ]
+        }
+      },
+      {
         "versionName": "5.4.2",
         "versionCode": 5402,
         "date": "2026-10-27",
@@ -158,6 +181,29 @@
       }
     ],
     "lite": [
+      {
+        "versionName": "2.4.3",
+        "versionCode": 2403,
+        "date": "2026-10-29",
+        "notes": {
+          "es": [
+            "Eliminado el modo de ultrabaja latencia: añadía trabajo al hilo de síntesis y no reducía el retardo; ahora la lectura usa siempre el camino normal.",
+            "Actualizaciones: ya no hay comprobaciones periódicas, intervalos ni notificaciones, ni trabajo en segundo plano que despierte la app. Queda un solo interruptor, «Verificar actualizaciones al iniciar la aplicación».",
+            "El diálogo de actualización se muestra al iniciar sobre cualquier pantalla y enseña cada dato en su línea: versión actual, versión nueva, fecha, peso, arquitectura, edición y cambios, con «Ahora no» a la izquierda y «Actualizar» a la derecha.",
+            "Las copias de seguridad guardan todos los ajustes y la biblioteca de diccionarios, y al restaurar se reconstruyen. La clave del modo retirado se descarta sin avisos ni errores.",
+            "La prosodia conserva el reinicio con los ocho parámetros antes de cada emisión, para que la voz no cambie de tono a mitad de frase.",
+            "Los textos del diálogo de actualización están traducidos en los diez idiomas de la app."
+          ],
+          "en": [
+            "Removed ultra-low latency mode: it added work to the synthesis thread without reducing delay; playback now always uses the normal path.",
+            "Updates: no more periodic checks, intervals, or notifications, and no background work waking the app. A single switch remains, “Check for updates when the app starts”.",
+            "The update dialog now appears at launch over any screen and shows each item on its own line: current version, new version, release date, size, architecture, edition, and changes, with “Not now” on the left and “Update” on the right.",
+            "Backups keep every setting and the whole dictionary library, and restoring rebuilds them. The retired mode's key is discarded without warnings or errors.",
+            "Prosody keeps the eight-parameter reset before each utterance, so the voice does not change tone mid-sentence.",
+            "The update dialog texts are translated into all ten app languages."
+          ]
+        }
+      },
       {
         "versionName": "2.4.2",
         "versionCode": 2402,

@@ -385,7 +385,7 @@
 	<string name="lang_es_latam">Испанский (Латинская Америка)</string>
 	<!-- 5.4: обновления -->
 	<string name="updates_label">Обновления</string>
-	<string name="category_updates_hint">Искать новые версии и проверять автоматически</string>
+	<string name="category_updates_hint">Искать новые версии и проверять при запуске</string>
 	<string name="update_check_now">Проверить обновления</string>
 	<string name="update_current_changelog">Посмотреть изменения этой версии</string>
 	<string name="update_current_version">Текущая версия</string>
@@ -395,6 +395,13 @@
 	<string name="update_available">Доступно обновление: %1$s</string>
 	<string name="update_available_title">Доступно обновление</string>
 	<string name="update_new_version">Новая версия</string>
+	<string name="update_check_on_launch">Проверять обновления при запуске приложения</string>
+	<string name="update_release_date">Дата выпуска</string>
+	<string name="update_apk_size">Размер</string>
+	<string name="update_device_architecture">Архитектура устройства</string>
+	<string name="update_download_apk">Версия для загрузки</string>
+	<string name="update_download_lite">облегчённая (%1$s)</string>
+	<string name="update_download_full">полная (%1$s)</string>
 	<string name="update_changes_title">Изменения:</string>
 	<string name="update_not_now">Не сейчас</string>
 	<string name="update_install_now">Обновить сейчас</string>

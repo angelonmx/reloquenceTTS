@@ -2478,7 +2478,7 @@ private fun WordDialog(
  *
  * El orden es el que se pidió: buscar, ver los cambios de la versión
  * actual, la versión y el interruptor de comprobación al iniciar.
- * Debajo van la última comprobación y lo que haya pasado.
+ * Debajo va lo que haya pasado en la última búsqueda.
  *
  * La descarga y la instalación nunca empiezan solas: la
  * comprobación al iniciar solo enseña el diálogo, y siempre con el

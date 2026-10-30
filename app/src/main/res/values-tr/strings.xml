@@ -385,7 +385,7 @@
 	<string name="lang_es_latam">İspanyolca (Latin Amerika)</string>
 	<!-- 5.4: güncellemeler -->
 	<string name="updates_label">Güncellemeler</string>
-	<string name="category_updates_hint">Yeni sürümleri ara ve otomatik olarak denetle</string>
+	<string name="category_updates_hint">Yeni sürümleri ara ve başlatmada denetle</string>
 	<string name="update_check_now">Güncellemeleri ara</string>
 	<string name="update_current_changelog">Bu sürümdeki değişiklikleri gör</string>
 	<string name="update_current_version">Geçerli sürüm</string>
@@ -395,6 +395,13 @@
 	<string name="update_available">Güncelleme mevcut: %1$s</string>
 	<string name="update_available_title">Güncelleme mevcut</string>
 	<string name="update_new_version">Yeni sürüm</string>
+	<string name="update_check_on_launch">Uygulama başlatıldığında güncellemeleri denetle</string>
+	<string name="update_release_date">Yayın tarihi</string>
+	<string name="update_apk_size">Boyut</string>
+	<string name="update_device_architecture">Cihaz mimarisi</string>
+	<string name="update_download_apk">İndirilecek sürüm</string>
+	<string name="update_download_lite">hafif (%1$s)</string>
+	<string name="update_download_full">tam (%1$s)</string>
 	<string name="update_changes_title">Değişiklikler:</string>
 	<string name="update_not_now">Şimdi değil</string>
 	<string name="update_install_now">Şimdi güncelle</string>

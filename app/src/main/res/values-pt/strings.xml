@@ -385,7 +385,7 @@
 	<string name="lang_es_latam">Espanhol (América Latina)</string>
 	<!-- 5.4: atualizações -->
 	<string name="updates_label">Atualizações</string>
-	<string name="category_updates_hint">Procurar novas versões e verificar automaticamente</string>
+	<string name="category_updates_hint">Procurar novas versões e verificar ao iniciar</string>
 	<string name="update_check_now">Procurar atualizações</string>
 	<string name="update_current_changelog">Ver alterações desta versão</string>
 	<string name="update_current_version">Versão atual</string>
@@ -395,6 +395,13 @@
 	<string name="update_available">Atualização disponível: %1$s</string>
 	<string name="update_available_title">Atualização disponível</string>
 	<string name="update_new_version">Nova versão</string>
+	<string name="update_check_on_launch">Verificar atualizações ao iniciar a aplicação</string>
+	<string name="update_release_date">Data de lançamento</string>
+	<string name="update_apk_size">Tamanho</string>
+	<string name="update_device_architecture">Arquitetura do dispositivo</string>
+	<string name="update_download_apk">Versão a transferir</string>
+	<string name="update_download_lite">lite (%1$s)</string>
+	<string name="update_download_full">completa (%1$s)</string>
 	<string name="update_changes_title">Alterações:</string>
 	<string name="update_not_now">Agora não</string>
 	<string name="update_install_now">Atualizar agora</string>
