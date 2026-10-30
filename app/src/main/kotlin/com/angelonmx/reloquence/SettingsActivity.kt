@@ -1,6 +1,5 @@
 package com.angelonmx.reloquence
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,9 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import timber.log.Timber
@@ -85,16 +81,7 @@ class SettingsActivity : ComponentActivity() {
 	}
 	private var askingPerms = false
 
-	// 5.4: cada vez que la notificación pide abrir Actualizaciones se
-	// incrementa. La pantalla lo mira y navega; así funciona tanto
-	// al arrancar como con la actividad ya delante, sin recrearla.
-	private var openUpdatesRequests by mutableIntStateOf(0)
-
 	companion object {
-		/** Lo pone la notificación de actualización para abrir
-		 *  Ajustes directamente en su apartado. */
-		const val EXTRA_OPEN_UPDATES = "com.angelonmx.reloquence.OPEN_UPDATES"
-
 		@Volatile
 		private var permsShownFor: Set<String>? = null
 	}
@@ -110,37 +97,12 @@ class SettingsActivity : ComponentActivity() {
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		if (Timber.forest().isEmpty()) Timber.plant(Timber.DebugTree())
-		// 5.4: si el proceso venía del arranque directo, ReloquenceApp
-		// no pudo programar WorkManager (su base de datos está bajo el
-		// almacenamiento protegido). Al abrir Ajustes ya hay usuario
-		// desbloqueado; KEEP respeta el trabajo que ya existiera.
-		UpdateScheduler.sync(this)
-		if (savedInstanceState == null &&
-			intent?.getBooleanExtra(EXTRA_OPEN_UPDATES, false) == true
-		) {
-			openUpdatesRequests = 1
-		}
 		setContent {
 			MaterialTheme {
 				Surface {
-					SettingsScreen(model, updates, openUpdatesRequests)
+					SettingsScreen(model, updates)
 				}
 			}
-		}
-	}
-
-	/**
-	 * 5.4: la notificación de actualización puede llegar con la
-	 * pantalla ya abierta. `launchMode="singleTop"` hace que el
-	 * Intent llegue aquí en vez de crear otra actividad, y el
-	 * contador hace que la pantalla navegue a Actualizaciones sin
-	 * perder lo que hubiera debajo.
-	 */
-	override fun onNewIntent(intent: Intent) {
-		super.onNewIntent(intent)
-		setIntent(intent)
-		if (intent.getBooleanExtra(EXTRA_OPEN_UPDATES, false)) {
-			openUpdatesRequests++
 		}
 	}
 
@@ -150,6 +112,7 @@ class SettingsActivity : ComponentActivity() {
 		// la pantalla se quedaba en "Instalando..." y no dejaba
 		// reintentar. Al volver ya no hay instalación en curso.
 		updates.onScreenResumed()
+		updates.syncFromDisk()
 		// 4.3: algo pudo cambiar mientras esta actividad no estaba
 		// delante: un diccionario o una copia importados con el
 		// "Abrir con" desde el gestor de archivos o el correo, que

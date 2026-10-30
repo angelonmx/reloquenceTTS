@@ -116,11 +116,6 @@ class SettingsModel(private val app: Application) : ViewModel() {
 	var ignoreVoiceTags by mutableStateOf(settings.ignoreVoiceTags)
 		private set
 
-	/** 5.4.1: si el servicio entrega audio con menos margen para
-	 *  reducir la latencia. Apagado de fábrica. */
-	var lowLatency by mutableStateOf(settings.lowLatency)
-		private set
-
 	var sampleRateHz by mutableStateOf(settings.sampleRateHz)
 		private set
 
@@ -608,17 +603,6 @@ class SettingsModel(private val app: Application) : ViewModel() {
 		ignoreVoiceTags = on
 		settings.ignoreVoiceTags = on
 		diag("settings", "event" to "ignore_voice_tags", "on" to on.toString())
-	}
-
-	/**
-	 * 5.4.1: el modo de ultrabaja latencia cambia el ritmo con el
-	 * que el servicio entrega audio, no la voz. Se oye en la
-	 * siguiente emisión sin reiniciar el motor.
-	 */
-	fun chooseLowLatency(on: Boolean) {
-		lowLatency = on
-		settings.lowLatency = on
-		diag("settings", "event" to "low_latency", "on" to on.toString())
 	}
 
 	// ---- diccionario ----------------------------------------------------
@@ -1610,7 +1594,6 @@ class SettingsModel(private val app: Application) : ViewModel() {
 		voice = settings.voice
 		abbreviations = settings.abbreviations
 		ignoreVoiceTags = settings.ignoreVoiceTags
-		lowLatency = settings.lowLatency
 		sampleRateHz = settings.sampleRateHz
 		pauses = settings.pauses
 		pauseDurationMs = settings.pauseDurationMs
@@ -3186,8 +3169,9 @@ object BackupStore {
 			}
 		}
 		// 5.4.1: también viajan las preferencias de actualizaciones
-		// (frecuencia, última comprobación, versión omitida y la
-		// última versión abierta). No hay archivos de registro aquí.
+		// (comprobar al iniciar, última comprobación, versión omitida
+		// y la última versión abierta). El APK pendiente no: es una
+		// ruta de este aparato. No hay archivos de registro aquí.
 		val updates = kotlinx.serialization.json.buildJsonObject {
 			if (app != null) {
 				for ((key, value) in UpdatePrefs(app).dumpPrefs()) putTyped(key, value)
@@ -3328,7 +3312,7 @@ object BackupStore {
 			} else {
 				prefs.putAll(
 					readTypedPrefs(
-						prefElement,
+						withoutLegacyPrefs(prefElement, LEGACY_SETTINGS_KEYS),
 						known = { isKnownPrefKey(it) },
 						expected = { expectedType(it) },
 						sane = { key, value -> isSanePref(key, value) },
@@ -3403,7 +3387,7 @@ object BackupStore {
 			} else {
 				updates.putAll(
 					readTypedPrefs(
-						updatesElement,
+						withoutLegacyPrefs(updatesElement, UpdatePrefs.LEGACY_KEYS),
 						known = { isKnownUpdateKey(it) },
 						expected = { updateExpectedType(it) },
 						sane = { key, value -> isSaneUpdatePref(key, value) },
@@ -3420,6 +3404,22 @@ object BackupStore {
 			dictionaries = dictionaries,
 			libraryPresent = libraryPresent,
 			updatesPresent = updatesPresent
+		)
+	}
+
+	/**
+	 * 5.4.3: quita del JSON las claves que ya no existen **antes** de
+	 * pasarlo por la puerta de claves conocidas. Así una copia de una
+	 * versión anterior se importa sin un aviso por cada ajuste
+	 * retirado: no son datos rotos, son datos viejos.
+	 */
+	private fun withoutLegacyPrefs(
+		source: kotlinx.serialization.json.JsonObject,
+		legacy: Set<String>
+	): kotlinx.serialization.json.JsonObject {
+		if (legacy.none { it in source }) return source
+		return kotlinx.serialization.json.JsonObject(
+			source.filterKeys { it !in legacy }
 		)
 	}
 
@@ -3605,14 +3605,7 @@ object BackupStore {
 
 	private fun isSaneUpdatePref(key: String, value: Any?): Boolean = when (value) {
 		is Boolean -> key in UpdatePrefs.BOOL_KEYS
-		is Int -> when (key) {
-			UpdatePrefs.KEY_INTERVAL -> value in UpdatePrefs.INTERVALS
-			UpdatePrefs.KEY_NOTIFIED,
-			UpdatePrefs.KEY_SKIPPED,
-			UpdatePrefs.KEY_LAST_SEEN,
-			UpdatePrefs.KEY_PENDING_CODE -> value >= 0
-			else -> false
-		}
+		is Int -> key in UpdatePrefs.INT_KEYS && value >= 0
 		is Long -> key == UpdatePrefs.KEY_LAST_CHECK && value >= 0L
 		is String -> key in UpdatePrefs.STRING_KEYS && value.length <= 500
 		else -> false
@@ -3736,6 +3729,12 @@ object BackupStore {
 		return ParsedBackup(name, prefs, extLocal, dictName, bytes)
 	}
 
+	/** 5.4.3: claves retiradas que las copias anteriores todavía
+	 *  pueden traer. Se descartan sin avisar. */
+	private val LEGACY_SETTINGS_KEYS: Set<String> = setOf(
+		Settings.LEGACY_LOW_LATENCY
+	)
+
 	/** Claves que una copia puede traer. Todo lo demás se ignora. */
 	private fun isKnownPrefKey(key: String): Boolean {
 		if (key.startsWith("voice") && "_param" in key) return true
@@ -3757,8 +3756,6 @@ object BackupStore {
 		Settings.KEY_MIX_MIGRATED, Settings.KEY_PHASER, Settings.KEY_TELEPHONE,
 		Settings.KEY_NORMALIZER, Settings.KEY_HIGHPASS, Settings.KEY_DRIVE,
 		Settings.KEY_BODY,
-		// 5.4.1: modo de ultrabaja latencia.
-		Settings.KEY_LOW_LATENCY,
 		// 5.4: el interruptor de registro viaja en la copia y se restaura
 		// al importar, para que la app arranque con el mismo estado.
 		Diagnostics.KEY_ENABLED
@@ -3815,7 +3812,7 @@ object BackupStore {
 		Settings.KEY_PHASER, Settings.KEY_VIBRATO, Settings.KEY_RINGMOD, Settings.KEY_FUZZ,
 		Settings.KEY_WAH, Settings.KEY_MAXIMIZER, Settings.KEY_TELEPHONE,
 		Settings.KEY_NORMALIZER, Settings.KEY_HIGHPASS, Settings.KEY_DRIVE,
-		Settings.KEY_BODY, Settings.KEY_LOW_LATENCY,
+		Settings.KEY_BODY,
 		Settings.KEY_DICTIONARY_PATH, Settings.KEY_DICTIONARY_NAME,
 		Settings.KEY_DICTIONARY_WORDS, Settings.KEY_DICTIONARY_LIBRARY,
 		Settings.KEY_DICTIONARY_LANGUAGE,

@@ -22,15 +22,10 @@
 	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 	<!-- 5.4: comprobar e instalar actualizaciones desde GitHub
 	     Releases. La app no descarga nada sin que el usuario lo pida
-	     o sin la comprobación automática que él mismo activó, y
+	     o sin la comprobación al iniciar que él mismo activó, y
 	     Android siempre confirma la instalación. -->
 	<uses-permission android:name="android.permission.INTERNET" />
-	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-	<!-- 5.4: volver a programar la comprobación periódica tras un
-	     reinicio. WorkManager conserva el trabajo, pero el proceso
-	     puede haber arrancado en modo directo antes de desbloquear. -->
-	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 	<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -145,17 +140,6 @@
 		<!-- 5.4: recibe el resultado de PackageInstaller. El sistema
 		     envía el PendingIntent que se creó al abrir la sesión, así
 		     que no hace falta que el receptor sea exportado. -->
-		<receiver
-			android:name=".UpdateBootReceiver"
-			android:directBootAware="true"
-			android:exported="false">
-			<intent-filter>
-				<action android:name="android.intent.action.BOOT_COMPLETED" />
-				<action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-				<action android:name="android.intent.action.USER_UNLOCKED" />
-			</intent-filter>
-		</receiver>
-
 		<receiver
 			android:name=".UpdateInstallReceiver"
 			android:exported="false" />

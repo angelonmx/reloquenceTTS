@@ -43,8 +43,6 @@
 	<string name="milliseconds">%1$d мс</string>
 	<string name="phrase_prediction_label">Предсказание фраз</string>
 	<string name="abbreviations_label">Раскрывать сокращения</string>
-	<string name="low_latency_label">Режим сверхнизкой задержки</string>
-	<string name="low_latency_hint">Передаёт меньше звука заранее, поэтому речь начинается и останавливается быстрее. Может заметно повысить нагрузку на процессор, но не делает телефон непригодным. (Полезно, только если ваше устройство не из бюджетного сегмента и не ограничено в ресурсах)</string>
 	<string name="emoji_label">Читать эмодзи</string>
 	<string name="unicode_symbols_label">Читать символы Юникода и специальные знаки</string>
 	<string name="punct_process_label">Читать пунктуацию</string>
@@ -392,11 +390,6 @@
 	<string name="update_current_changelog">Посмотреть изменения этой версии</string>
 	<string name="update_current_version">Текущая версия</string>
 	<string name="update_current_code">Код версии</string>
-	<string name="update_auto_check">Проверять автоматически</string>
-	<string name="update_interval">Частота проверки</string>
-	<string name="update_interval_hours">Каждые %1$d ч.</string>
-	<string name="update_last_check">Последняя проверка</string>
-	<string name="update_never_checked">Никогда</string>
 	<string name="update_checking">Проверка обновлений…</string>
 	<string name="update_up_to_date">У вас последняя версия.</string>
 	<string name="update_available">Доступно обновление: %1$s</string>

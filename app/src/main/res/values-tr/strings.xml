@@ -43,8 +43,6 @@
 	<string name="milliseconds">%1$d ms</string>
 	<string name="phrase_prediction_label">Cümle tahmini</string>
 	<string name="abbreviations_label">Kısaltmaları aç</string>
-	<string name="low_latency_label">Ultra düşük gecikme modu</string>
-	<string name="low_latency_hint">Sesi daha az önden göndererek konuşmanın daha çabuk başlayıp durmasını sağlar. Çok daha fazla CPU kullanabilir ama telefonu kullanılamaz hâle getirmez. (Yalnızca cihazınız giriş seviyesi veya kaynakları kısıtlı değilse yararlıdır)</string>
 	<string name="emoji_label">Emojileri oku</string>
 	<string name="unicode_symbols_label">Unicode karakterleri ve özel simgeleri oku</string>
 	<string name="punct_process_label">Noktalamayı oku</string>
@@ -392,11 +390,6 @@
 	<string name="update_current_changelog">Bu sürümdeki değişiklikleri gör</string>
 	<string name="update_current_version">Geçerli sürüm</string>
 	<string name="update_current_code">Sürüm kodu</string>
-	<string name="update_auto_check">Otomatik olarak denetle</string>
-	<string name="update_interval">Denetim sıklığı</string>
-	<string name="update_interval_hours">Her %1$d saatte bir</string>
-	<string name="update_last_check">Son denetim</string>
-	<string name="update_never_checked">Hiç</string>
 	<string name="update_checking">Güncellemeler aranıyor…</string>
 	<string name="update_up_to_date">En son sürüme sahipsiniz.</string>
 	<string name="update_available">Güncelleme mevcut: %1$s</string>

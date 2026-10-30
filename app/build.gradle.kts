@@ -554,9 +554,6 @@ dependencies {
 	implementation(libs.androidx.lifecycle.runtime.ktx)
 	implementation(libs.androidx.navigation.compose)
 	implementation(libs.kotlinx.serialization.json)
-	// 5.4: comprobaciones periódicas de actualizaciones. WorkManager
-	// sobrevive a reinicios y respeta las restricciones de red.
-	implementation(libs.androidx.work.runtime.ktx)
 	implementation(libs.timber)
 	implementation(libs.commons.text)
 	// 4.4: ML Kit se enlaza siempre, pero en la edición Lite el

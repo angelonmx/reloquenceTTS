@@ -100,8 +100,6 @@
 	<string name="milliseconds">%1$d ms</string>
 	<string name="phrase_prediction_label">Predicción de frases</string>
 	<string name="abbreviations_label">Expandir abreviaturas</string>
-	<string name="low_latency_label">Modo de ultrabaja latencia</string>
-	<string name="low_latency_hint">Entrega menos audio por delante para que la voz empiece y se detenga antes. Puede consumir bastante más CPU, sin dejar el teléfono inutilizable. (Útil sólo si tu dispositivo no es de gama baja o de recursos limitados)</string>
 	<string name="emoji_label">Leer emojis</string>
 	<string name="unicode_symbols_label">Leer caracteres Unicode y símbolos especiales</string>
 	<string name="punct_process_label">Procesar puntuación</string>
@@ -382,25 +380,27 @@
 	<string name="lang_es_es">Español (España)</string>
 	<string name="lang_es_latam">Español (Latinoamérica)</string>
 
-	<!-- 5.4: actualizaciones. El orden del apartado es el que se pidió:
-	     buscar, ver cambios, versión, código y comprobación automática. -->
+	<!-- 5.4: actualizaciones. Solo hay una comprobación: al abrir la app si el
+	     usuario lo deja activado. No hay comprobaciones periódicas ni intervalos. -->
 	<string name="updates_label">Actualizaciones</string>
-	<string name="category_updates_hint">Buscar versiones nuevas y comprobar automáticamente</string>
+	<string name="category_updates_hint">Buscar versiones nuevas y comprobar al iniciar</string>
 	<string name="update_check_now">Buscar actualizaciones</string>
 	<string name="update_current_changelog">Ver cambios de la versión actual</string>
-	<string name="update_current_version">Versión actual</string>
+	<string name="update_current_version">Versión tuya actual</string>
 	<string name="update_current_code">Código de la versión</string>
-	<string name="update_auto_check">Comprobar automáticamente</string>
-	<string name="update_interval">Frecuencia de comprobación</string>
-	<string name="update_interval_hours">Cada %1$d horas</string>
-	<string name="update_last_check">Última comprobación</string>
-	<string name="update_never_checked">Nunca</string>
+	<string name="update_check_on_launch">Verificar actualizaciones al iniciar la aplicación</string>
 	<string name="update_checking">Buscando actualizaciones…</string>
 	<string name="update_up_to_date">Ya tienes la última versión.</string>
 	<string name="update_available">Actualización disponible: %1$s</string>
 	<string name="update_available_title">Actualización disponible</string>
-	<string name="update_new_version">Versión nueva</string>
-	<string name="update_changes_title">Cambios:</string>
+	<string name="update_new_version">Versión a la que se va a actualizar</string>
+	<string name="update_release_date">Fecha de lanzamiento</string>
+	<string name="update_apk_size">Peso</string>
+	<string name="update_device_architecture">Arquitectura de tu dispositivo</string>
+	<string name="update_download_apk">Versión a descargar</string>
+	<string name="update_download_lite">ligera (%1$s)</string>
+	<string name="update_download_full">completa (%1$s)</string>
+	<string name="update_changes_title">Registro de cambios:</string>
 	<string name="update_not_now">Ahora no</string>
 	<string name="update_install_now">Actualizar ahora</string>
 	<string name="update_downloading">Descargando… %1$d%%</string>

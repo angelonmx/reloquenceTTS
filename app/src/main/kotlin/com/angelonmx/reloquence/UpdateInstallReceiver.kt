@@ -18,8 +18,9 @@ import timber.log.Timber
  *    viene dentro;
  *  - se instaló (`STATUS_SUCCESS`), y no hay nada que hacer porque
  *    el proceso de la app está a punto de ser reemplazado;
- *  - falló, y se deja una notificación para que el usuario sepa por
- *    qué no pasó nada.
+ *  - falló, y solo se anota en el registro: la actualización la pidió
+ *    el usuario y la pantalla ya le enseña el error, así que no se
+ *    añade una notificación que no pidió.
  */
 class UpdateInstallReceiver : BroadcastReceiver() {
 
@@ -51,7 +52,6 @@ class UpdateInstallReceiver : BroadcastReceiver() {
 			else -> {
 				val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
 				Timber.w("instalación fallida (%d): %s", status, message)
-				UpdateNotifications.installFailed(context)
 			}
 		}
 	}

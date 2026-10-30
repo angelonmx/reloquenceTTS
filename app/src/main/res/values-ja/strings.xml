@@ -43,8 +43,6 @@
 	<string name="milliseconds">%1$dミリ秒</string>
 	<string name="phrase_prediction_label">フレーズ予測</string>
 	<string name="abbreviations_label">略語を展開する</string>
-	<string name="low_latency_label">超低遅延モード</string>
-	<string name="low_latency_hint">音声を先に送る量を減らし、読み上げの開始と停止を早くします。CPU 使用量はかなり増えることがありますが、スマートフォンが使えなくなることはありません。(低価格帯やリソースの限られた端末でない場合にのみ有効です)</string>
 	<string name="emoji_label">絵文字を読む</string>
 	<string name="unicode_symbols_label">Unicode文字と特殊記号を読む</string>
 	<string name="punct_process_label">句読点を読む</string>
@@ -392,11 +390,6 @@
 	<string name="update_current_changelog">このバージョンの変更点を見る</string>
 	<string name="update_current_version">現在のバージョン</string>
 	<string name="update_current_code">バージョンコード</string>
-	<string name="update_auto_check">自動的に確認</string>
-	<string name="update_interval">確認の頻度</string>
-	<string name="update_interval_hours">%1$d 時間ごと</string>
-	<string name="update_last_check">最終確認</string>
-	<string name="update_never_checked">なし</string>
 	<string name="update_checking">アップデートを確認しています…</string>
 	<string name="update_up_to_date">最新バージョンです。</string>
 	<string name="update_available">アップデートがあります: %1$s</string>

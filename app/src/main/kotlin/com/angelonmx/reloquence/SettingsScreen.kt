@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -65,6 +66,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -103,8 +105,7 @@ private fun copyToClipboard(ctx: android.content.Context, label: String, text: S
 @Composable
 fun SettingsScreen(
 	state: SettingsModel,
-	updates: UpdatesModel,
-	openUpdatesRequest: Int = 0
+	updates: UpdatesModel
 ) {
 	// 4.1: navegación real con pila (librería navigation-compose)
 	// en vez de un string de estado: el botón atrás del sistema
@@ -130,19 +131,6 @@ fun SettingsScreen(
 		state.shareTarget?.let { target ->
 			Share.send(shareCtx, target)
 			state.clearShareTarget()
-		}
-	}
-	// 5.4: la notificación de actualización pide abrir su apartado.
-	// Al arrancar se navega una vez; con la pantalla ya abierta, cada
-	// notificación incrementa el contador y vuelve a navegar.
-	androidx.compose.runtime.LaunchedEffect(openUpdatesRequest) {
-		if (openUpdatesRequest > 0) {
-			nav.navigate("updates") { launchSingleTop = true }
-			// La notificación ya avisó de que hay algo nuevo. Al abrirla
-			// se comprueba otra vez para enseñar el diálogo con la
-			// versión y los botones, en vez de obligar a pulsar
-			// "Buscar actualizaciones" otra vez. No descarga nada.
-			updates.search()
 		}
 	}
 	Scaffold(
@@ -198,10 +186,15 @@ fun SettingsScreen(
 	}
 	// 5.4.1: después de instalar una versión nueva se enseña una sola
 	// vez su registro de cambios, con la fecha y el botón Cerrar.
-	// Vive en la raíz para que aparezca sin importar en qué apartado
-	// se abra la app. En una instalación nueva no hay nada pendiente.
-	state.postUpdateChangelog?.let { entry ->
-		ChangelogDialog(entry, state::closePostUpdateChangelog)
+	// 5.4.3: el diálogo de actualización también vive aquí, no solo
+	// dentro de su apartado, para que la comprobación al iniciar
+	// pueda aparecer sobre cualquier pantalla. Se enseña uno a la
+	// vez y el registro de cambios tiene prioridad.
+	val pendingChangelog = state.postUpdateChangelog
+	if (pendingChangelog != null) {
+		ChangelogDialog(pendingChangelog, state::closePostUpdateChangelog)
+	} else if (updates.showDialog) {
+		updates.available?.let { info -> UpdateAvailableDialog(updates, info) }
 	}
 }
 
@@ -776,19 +769,6 @@ private fun PronScreen(state: SettingsModel, modifier: Modifier = Modifier, onBa
 			label = stringResource(R.string.abbreviations_label),
 			checked = state.abbreviations,
 			onChange = state::chooseAbbreviations
-		)
-		// 5.4.1: entrega menos audio por delante para que la voz
-		// empiece antes y una parada llegue antes. No cambia la voz
-		// ni la configuración de lectura.
-		SwitchRow(
-			label = stringResource(R.string.low_latency_label),
-			checked = state.lowLatency,
-			onChange = state::chooseLowLatency
-		)
-		Text(
-			text = stringResource(R.string.low_latency_hint),
-			style = MaterialTheme.typography.bodyMedium,
-			modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
 		)
 		// 4.3: apagar los códigos de voz. Va aquí y no en la
 		// sección de sonido porque no es un efecto: es si el texto
@@ -2494,15 +2474,15 @@ private fun WordDialog(
 }
 
 /**
- * 5.4: el apartado de actualizaciones.
+ * 5.4.3: el apartado de actualizaciones.
  *
  * El orden es el que se pidió: buscar, ver los cambios de la versión
- * actual, la versión, el código y el interruptor de comprobación
- * automática. Debajo van la frecuencia, la última comprobación y lo
- * que haya pasado.
+ * actual, la versión y el interruptor de comprobación al iniciar.
+ * Debajo van la última comprobación y lo que haya pasado.
  *
  * La descarga y la instalación nunca empiezan solas: la
- * comprobación automática solo deja una notificación.
+ * comprobación al iniciar solo enseña el diálogo, y siempre con el
+ * botón "Ahora no" delante.
  */
 @Composable
 private fun UpdatesScreen(
@@ -2511,16 +2491,6 @@ private fun UpdatesScreen(
 	onBack: () -> Unit
 ) {
 	BackHandler(onBack = onBack)
-	val lastCheck = remember(updates.lastCheckAt) {
-		if (updates.lastCheckAt <= 0L) {
-			null
-		} else {
-			java.text.DateFormat.getDateTimeInstance(
-				java.text.DateFormat.MEDIUM,
-				java.text.DateFormat.SHORT
-			).format(java.util.Date(updates.lastCheckAt))
-		}
-	}
 	Column(
 		modifier = modifier
 			.fillMaxSize()
@@ -2540,24 +2510,9 @@ private fun UpdatesScreen(
 			com.angelonmx.reloquence.BuildConfig.VERSION_CODE.toString()
 		)
 		SwitchRow(
-			label = stringResource(R.string.update_auto_check),
-			checked = updates.autoCheck,
-			onChange = updates::changeAutoCheck
-		)
-		if (updates.autoCheck) {
-			val intervals = UpdatePrefs.INTERVALS
-			ChoiceRow(
-				label = stringResource(R.string.update_interval),
-				options = intervals.map {
-					stringResource(R.string.update_interval_hours, it)
-				},
-				chosen = intervals.indexOf(updates.intervalHours).coerceAtLeast(0),
-				onChoose = { updates.setInterval(intervals[it]) }
-			)
-		}
-		InfoRow(
-			stringResource(R.string.update_last_check),
-			lastCheck ?: stringResource(R.string.update_never_checked)
+			label = stringResource(R.string.update_check_on_launch),
+			checked = updates.checkOnLaunch,
+			onChange = updates::changeCheckOnLaunch
 		)
 		val statusText = updateStatusText(updates.status)
 		if (statusText.isNotEmpty()) {
@@ -2579,77 +2534,172 @@ private fun UpdatesScreen(
 		}
 	}
 
-	if (updates.showDialog) {
-		updates.available?.let { info -> UpdateAvailableDialog(updates, info) }
-	}
 	if (updates.showChangelog) {
 		ChangelogDialog(updates.changelog, updates::closeChangelog)
 	}
 }
 
+/**
+ * 5.4.3: el diálogo de actualización disponible.
+ *
+ * No es un `AlertDialog` porque los botones tienen que quedar uno a
+ * cada extremo del pie y el título centrado arriba. Cada dato va en
+ * su propia línea para que un lector de pantalla los lea por
+ * separado, sin mezclar versión, fecha, tamaño y arquitectura en un
+ * solo párrafo.
+ */
 @Composable
 private fun UpdateAvailableDialog(updates: UpdatesModel, info: UpdateInfo) {
 	val language = java.util.Locale.getDefault().language
 	val notes = UpdateManifestParser.localizedNotes(info.notes, language)
-	AlertDialog(
-		onDismissRequest = updates::dismiss,
-		title = { Text(stringResource(R.string.update_available_title)) },
-		text = {
-			Column(
-				modifier = Modifier
-					.heightIn(max = 420.dp)
-					.verticalScroll(rememberScrollState())
-			) {
+	val date = formatUpdateDate(info.publishedAt)
+	val size = formatApkSize(info.apk.size)
+	val device = deviceAbi()
+	val apkAbi = info.apk.abi.ifBlank { device }
+	val edition = stringResource(
+		if (com.angelonmx.reloquence.BuildConfig.LITE) {
+			R.string.update_download_lite
+		} else {
+			R.string.update_download_full
+		},
+		apkAbi
+	)
+	Dialog(onDismissRequest = updates::dismiss) {
+		Surface(
+			modifier = Modifier.fillMaxWidth(),
+			shape = MaterialTheme.shapes.large,
+			tonalElevation = 6.dp,
+			color = MaterialTheme.colorScheme.surface
+		) {
+			Column(modifier = Modifier.padding(24.dp)) {
 				Text(
-					stringResource(
-						R.string.labelled_value,
-						stringResource(R.string.update_current_version),
-						com.angelonmx.reloquence.BuildConfig.VERSION_NAME
-					)
+					text = stringResource(R.string.update_available_title),
+					style = MaterialTheme.typography.titleLarge,
+					textAlign = TextAlign.Center,
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(bottom = 16.dp)
 				)
-				Text(
-					stringResource(
-						R.string.labelled_value,
-						stringResource(R.string.update_new_version),
-						info.versionName
-					)
-				)
-				if (notes.isNotEmpty()) {
+				Column(
+					modifier = Modifier
+						.heightIn(max = 420.dp)
+						.verticalScroll(rememberScrollState()),
+					verticalArrangement = Arrangement.spacedBy(6.dp)
+				) {
 					Text(
-						text = stringResource(R.string.update_changes_title),
-						style = MaterialTheme.typography.titleSmall,
-						modifier = Modifier.padding(top = 12.dp)
+						stringResource(
+							R.string.labelled_value,
+							stringResource(R.string.update_current_version),
+							com.angelonmx.reloquence.BuildConfig.VERSION_NAME
+						)
 					)
-					notes.forEach { note ->
+					Text(
+						stringResource(
+							R.string.labelled_value,
+							stringResource(R.string.update_new_version),
+							info.versionName
+						)
+					)
+					Text(
+						stringResource(
+							R.string.labelled_value,
+							stringResource(R.string.update_release_date),
+							date ?: "—"
+						)
+					)
+					Text(
+						stringResource(
+							R.string.labelled_value,
+							stringResource(R.string.update_apk_size),
+							size ?: "—"
+						)
+					)
+					Text(
+						stringResource(
+							R.string.labelled_value,
+							stringResource(R.string.update_device_architecture),
+							device
+						)
+					)
+					Text(
+						stringResource(
+							R.string.labelled_value,
+							stringResource(R.string.update_download_apk),
+							edition
+						)
+					)
+					if (notes.isNotEmpty()) {
 						Text(
-							text = "• $note",
+							text = stringResource(R.string.update_changes_title),
+							style = MaterialTheme.typography.titleSmall,
+							modifier = Modifier.padding(top = 10.dp)
+						)
+						notes.forEach { note ->
+							Text(
+								text = "• $note",
+								style = MaterialTheme.typography.bodyMedium
+							)
+						}
+					}
+					if (updates.status is UpdateStatus.Permission) {
+						Text(
+							text = stringResource(R.string.update_permission_needed),
 							style = MaterialTheme.typography.bodyMedium,
-							modifier = Modifier.padding(top = 4.dp)
+							color = MaterialTheme.colorScheme.error,
+							modifier = Modifier.padding(top = 10.dp)
 						)
 					}
 				}
-				if (updates.status is UpdateStatus.Permission) {
-					Text(
-						text = stringResource(R.string.update_permission_needed),
-						style = MaterialTheme.typography.bodyMedium,
-						color = MaterialTheme.colorScheme.error,
-						modifier = Modifier.padding(top = 12.dp)
-					)
+				Row(
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(top = 16.dp),
+					horizontalArrangement = Arrangement.SpaceBetween,
+					verticalAlignment = Alignment.CenterVertically
+				) {
+					TextButton(onClick = updates::dismiss) {
+						Text(stringResource(R.string.update_not_now))
+					}
+					TextButton(onClick = updates::install) {
+						Text(stringResource(R.string.update_install_now))
+					}
 				}
 			}
-		},
-		confirmButton = {
-			TextButton(onClick = updates::install) {
-				Text(stringResource(R.string.update_install_now))
-			}
-		},
-		dismissButton = {
-			TextButton(onClick = updates::dismiss) {
-				Text(stringResource(R.string.update_not_now))
-			}
 		}
-	)
+	}
 }
+
+/** La fecha ISO del manifiesto, en el formato del teléfono. */
+private fun formatUpdateDate(raw: String): String? {
+	if (raw.isBlank()) return null
+	return runCatching {
+		val parser = java.text.SimpleDateFormat(
+			"yyyy-MM-dd'T'HH:mm:ss'Z'",
+			java.util.Locale.US
+		)
+		parser.timeZone = java.util.TimeZone.getTimeZone("UTC")
+		parser.isLenient = false
+		java.text.DateFormat.getDateTimeInstance(
+			java.text.DateFormat.MEDIUM,
+			java.text.DateFormat.SHORT
+		).format(parser.parse(raw) ?: throw IllegalArgumentException(raw))
+	}.getOrElse { raw }
+}
+
+/** El tamaño del APK en MB o kB, con el separador del idioma. */
+private fun formatApkSize(bytes: Long): String? {
+	if (bytes <= 0L) return null
+	val locale = java.util.Locale.getDefault()
+	return if (bytes >= 1024L * 1024L) {
+		String.format(locale, "%.1f MB", bytes / (1024.0 * 1024.0))
+	} else {
+		String.format(locale, "%.0f kB", bytes / 1024.0)
+	}
+}
+
+/** La arquitectura principal de este aparato. */
+private fun deviceAbi(): String =
+	android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "—"
 
 @Composable
 private fun ChangelogDialog(entry: ChangelogEntry?, onDismiss: () -> Unit) {

@@ -43,8 +43,6 @@
 	<string name="milliseconds">%1$d ms</string>
 	<string name="phrase_prediction_label">Prédiction de phrases</string>
 	<string name="abbreviations_label">Développer les abréviations</string>
-	<string name="low_latency_label">Mode ultra-basse latence</string>
-	<string name="low_latency_hint">Fournit moins d’audio à l’avance pour que la voix démarre et s’arrête plus tôt. Peut consommer nettement plus de CPU sans rendre le téléphone inutilisable. (Utile uniquement si votre appareil n’est pas d’entrée de gamme ou limité en ressources)</string>
 	<string name="emoji_label">Lire les émojis</string>
 	<string name="unicode_symbols_label">Lire les caractères Unicode et les symboles spéciaux</string>
 	<string name="punct_process_label">Dire la ponctuation</string>
@@ -393,11 +391,6 @@
 	<string name="update_current_changelog">Voir les changements de cette version</string>
 	<string name="update_current_version">Version actuelle</string>
 	<string name="update_current_code">Code de version</string>
-	<string name="update_auto_check">Vérifier automatiquement</string>
-	<string name="update_interval">Fréquence de vérification</string>
-	<string name="update_interval_hours">Toutes les %1$d heures</string>
-	<string name="update_last_check">Dernière vérification</string>
-	<string name="update_never_checked">Jamais</string>
 	<string name="update_checking">Recherche de mises à jour…</string>
 	<string name="update_up_to_date">Vous avez la dernière version.</string>
 	<string name="update_available">Mise à jour disponible : %1$s</string>

@@ -36,10 +36,9 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 	var showChangelog by mutableStateOf(false)
 		private set
 
-	var autoCheck by mutableStateOf(prefs.autoCheck)
-		private set
-
-	var intervalHours by mutableStateOf(prefs.intervalHours)
+	/** 5.4.3: una sola comprobación al abrir la app, si el usuario
+	 *  la dejó encendida. No hay trabajos periódicos. */
+	var checkOnLaunch by mutableStateOf(prefs.checkOnLaunch)
 		private set
 
 	var lastCheckAt by mutableStateOf(prefs.lastCheckAt)
@@ -55,6 +54,20 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 	 * quiere ver lo que hay.
 	 */
 	fun search() {
+		check(manual = true)
+	}
+
+	/**
+	 * 5.4.3: la comprobación de una sola vez al abrir la app. No
+	 * enseña el diálogo si esa misma versión ya se dejó para después
+	 * con "Ahora no"; la búsqueda manual sí lo enseña siempre.
+	 */
+	private fun checkAtLaunch() {
+		if (!checkOnLaunch || pendingApk != null) return
+		check(manual = false)
+	}
+
+	private fun check(manual: Boolean) {
 		if (busy) return
 		viewModelScope.launch {
 			status = UpdateStatus.Checking
@@ -76,12 +89,14 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 					}
 					available = result.info
 					status = UpdateStatus.Available(result.info.versionName)
-					showDialog = true
+					val skipped = prefs.skippedVersionCode
+					if (manual || result.info.versionCode != skipped) {
+						showDialog = true
+					}
 				}
 
 				UpdateChecker.Result.UpToDate -> {
 					prefs.clearSkip()
-					prefs.lastNotifiedVersionCode = 0
 					status = UpdateStatus.UpToDate
 				}
 
@@ -129,6 +144,9 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 				UpdateStatus.Permission
 			}
 		}
+		// 5.4.3: una sola comprobación al abrir la app, nunca en
+		// segundo plano ni repetida cada cierto tiempo.
+		checkAtLaunch()
 	}
 
 	/** El APK pendiente, si el archivo sigue donde se dejó. */
@@ -282,17 +300,19 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 		}
 	}
 
-	fun changeAutoCheck(on: Boolean) {
-		autoCheck = on
-		prefs.autoCheck = on
-		UpdateScheduler.sync(app, update = true)
+	fun changeCheckOnLaunch(on: Boolean) {
+		checkOnLaunch = on
+		prefs.checkOnLaunch = on
 	}
 
-	fun setInterval(hours: Int) {
-		if (hours !in UpdatePrefs.INTERVALS) return
-		intervalHours = hours
-		prefs.intervalHours = hours
-		UpdateScheduler.sync(app, update = true)
+	/**
+	 * 5.4.3: relee lo que pudo cambiar fuera de esta pantalla -- una
+	 * copia importada, por ejemplo -- sin lanzar otra comprobación.
+	 * La comprobación al iniciar ya corrió al crear el modelo.
+	 */
+	fun syncFromDisk() {
+		checkOnLaunch = prefs.checkOnLaunch
+		lastCheckAt = prefs.lastCheckAt
 	}
 
 	/**

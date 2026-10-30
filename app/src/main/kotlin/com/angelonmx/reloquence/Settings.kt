@@ -42,6 +42,7 @@ class Settings(context: Context) {
 		// motor y la pantalla. Va antes que las cargas, porque las dos
 		// escriben y ese cambio tiene que verse igual que los demás.
 		SettingsSignal.attach(prefs)
+		dropLegacyKeys()
 		carryOverTheOldKeys()
 		carryOverMixInterval()
 		carryOverDictionaryLibrary()
@@ -181,20 +182,6 @@ class Settings(context: Context) {
 	var ignoreVoiceTags: Boolean
 		get() = prefs.getBoolean(KEY_IGNORE_VOICE_TAGS, false)
 		set(value) = write { putBoolean(KEY_IGNORE_VOICE_TAGS, value) }
-
-	/**
-	 * 5.4.1: modo de ultrabaja latencia.
-	 *
-	 * Apagado de fábrica. Encendido, el servicio encola menos audio
-	 * por delante del habla, entrega trozos más pequeños y despierta
-	 * más a menudo para vaciar la cola. Eso reduce el retardo y sube
-	 * el uso de CPU; no toca la voz, el diccionario, los efectos ni
-	 * ninguna otra preferencia. En un aparato de gama baja el coste
-	 * puede notarse, por eso la descripción avisa.
-	 */
-	var lowLatency: Boolean
-		get() = prefs.getBoolean(KEY_LOW_LATENCY, false)
-		set(value) = write { putBoolean(KEY_LOW_LATENCY, value) }
 
 	// ---- volumen -----------------------------------------------------
 
@@ -780,7 +767,6 @@ class Settings(context: Context) {
 				.putInt(KEY_PAUSE_DURATION_MS, DEFAULT_PAUSE_MS)
 				.putBoolean(KEY_ABBREVIATIONS, false)
 				.putBoolean(KEY_IGNORE_VOICE_TAGS, false)
-				.putBoolean(KEY_LOW_LATENCY, false)
 				.putBoolean(KEY_AUTO_DETECT, false)
 				.putInt(KEY_AUTO_VARIANT_EN, 0)
 				.putInt(KEY_AUTO_VARIANT_ES, 0)
@@ -900,13 +886,16 @@ class Settings(context: Context) {
 
 	// ---- copia de seguridad ----------------------------------------
 
-	/** Todo lo guardado, para la copia de seguridad. */
-	fun dumpPrefs(): Map<String, Any?> = prefs.all.toMap()
+	/** Todo lo guardado, para la copia de seguridad. Las claves de
+	 *  versiones anteriores que ya no existen se quedan fuera. */
+	fun dumpPrefs(): Map<String, Any?> =
+		prefs.all.filterKeys { it != LEGACY_LOW_LATENCY }
 
 	/** Repone lo guardado por [dumpPrefs], tal cual. */
 	fun restorePrefs(values: Map<String, Any?>) {
 		val editor = prefs.edit().clear()
 		for ((key, value) in values) {
+			if (key == LEGACY_LOW_LATENCY) continue
 			when (value) {
 				is Int -> editor.putInt(key, value)
 				is Long -> editor.putLong(key, value)
@@ -991,6 +980,17 @@ class Settings(context: Context) {
 	}
 
 	private fun keyOf(voice: Int, param: Int) = "voice${voice}_param$param"
+
+	/**
+	 * 5.4.3: claves de versiones anteriores que ya no significan nada.
+	 * Se borran del archivo al abrir para que no vuelvan a viajar en
+	 * una copia de seguridad nueva ni engorden el almacenamiento.
+	 */
+	private fun dropLegacyKeys() {
+		if (prefs.contains(LEGACY_LOW_LATENCY)) {
+			prefs.edit().remove(LEGACY_LOW_LATENCY).apply()
+		}
+	}
 
 	/** Ajustes escritos cuando había un solo conjunto para cada voz.
 	 *  Van al idioma que estuviera en vigor en ese momento, que es
@@ -1241,8 +1241,10 @@ class Settings(context: Context) {
 		/** 4.3: ignorar los códigos de voz (`` `v ``) del texto y de
 		 *  los diccionarios. Apagado es lo de fábrica. */
 		const val KEY_IGNORE_VOICE_TAGS = "ignore_voice_tags"
-		/** 5.4.1: menos audio por delante y trozos más pequeños. */
-		const val KEY_LOW_LATENCY = "low_latency"
+		/** Clave del antiguo modo de ultrabaja latencia. Solo se usa
+		 *  para dejarla fuera de las copias de seguridad y no
+		 *  restaurarla: el modo ya no existe. */
+		const val LEGACY_LOW_LATENCY = "low_latency"
 		const val KEY_AUTO_DETECT = "auto_detect_language"
 		const val KEY_AUTO_VARIANT_EN = "auto_variant_en"
 		const val KEY_AUTO_VARIANT_ES = "auto_variant_es"

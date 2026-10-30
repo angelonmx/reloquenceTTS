@@ -1701,10 +1701,7 @@ class EvvTtsService : TextToSpeechService() {
 			return
 		}
 		remember(pace)
-		logLatency(
-			pace, output,
-			if (s?.lowLatency == true) LOW_LATENCY_LEAD_MS else LEAD_MS
-		)
+		logLatency(pace, output)
 		// Cortada a mitad (el caso normal de un lector de pantalla).
 		// 5.4: la voz se repone sola porque [Emission] la vuelve a
 		// aplicar antes del siguiente trozo; lo que no se toca aquí es
@@ -1799,14 +1796,6 @@ class EvvTtsService : TextToSpeechService() {
 	): Boolean {
 		val it = TextPieces.windows(rawText).iterator()
 		if (!it.hasNext()) return true
-		// 5.4.1: el modo de ultrabaja latencia solo cambia el ritmo
-		// de entrega (menos audio por delante, trozos más pequeños y
-		// esperas más cortas). La voz, el diccionario y los efectos
-		// siguen exactamente igual.
-		val lowLatency = s?.lowLatency == true
-		val leadMs = if (lowLatency) LOW_LATENCY_LEAD_MS else LEAD_MS
-		val chunkBytes = if (lowLatency) LOW_LATENCY_MAX_CHUNK else MAX_CHUNK
-		val sliceMs = if (lowLatency) LOW_LATENCY_SLICE_MS else SLICE_MS
 		var ready = first
 		var target = ready.engine
 		var pending = it.next()
@@ -1909,8 +1898,7 @@ class EvvTtsService : TextToSpeechService() {
 					}
 					if (!pump(
 							target, output, pace, session,
-							fadeIn = true, fadeOutLast = !lastOverall, fx = fx,
-							chunkBytes = chunkBytes, leadMs = leadMs, sliceMs = sliceMs
+							fadeIn = true, fadeOutLast = !lastOverall, fx = fx
 						)
 					) {
 						return false
@@ -1960,11 +1948,6 @@ class EvvTtsService : TextToSpeechService() {
 	): Boolean {
 		val windows = TextPieces.windows(rawText).iterator()
 		if (!windows.hasNext()) return true
-		// 5.4.1: el mismo modo de entrega que [speakStream].
-		val lowLatency = s.lowLatency
-		val leadMs = if (lowLatency) LOW_LATENCY_LEAD_MS else LEAD_MS
-		val chunkBytes = if (lowLatency) LOW_LATENCY_MAX_CHUNK else MAX_CHUNK
-		val sliceMs = if (lowLatency) LOW_LATENCY_SLICE_MS else SLICE_MS
 		var ready = first
 		var target = ready.engine
 		// El plan de cada voz se arma una vez por ventana; el preset
@@ -2054,8 +2037,7 @@ class EvvTtsService : TextToSpeechService() {
 				}
 				if (!pump(
 						target, output, pace, session,
-						fadeIn = true, fadeOutLast = !lastOverall, fx = fx,
-						chunkBytes = chunkBytes, leadMs = leadMs, sliceMs = sliceMs
+						fadeIn = true, fadeOutLast = !lastOverall, fx = fx
 					)
 				) {
 					return false
@@ -2082,10 +2064,7 @@ class EvvTtsService : TextToSpeechService() {
 		session: TtsSession,
 		fadeIn: Boolean = true,
 		fadeOutLast: Boolean = false,
-		fx: AudioFx.Chain? = null,
-		chunkBytes: Int = MAX_CHUNK,
-		leadMs: Long = LEAD_MS,
-		sliceMs: Long = SLICE_MS
+		fx: AudioFx.Chain? = null
 	): Boolean {
 		// El límite lo declara el framework. Antes se hacía
 		// coerceIn(MIN_CHUNK, MAX_CHUNK) y, si el máximo era menor
@@ -2095,7 +2074,7 @@ class EvvTtsService : TextToSpeechService() {
 			Timber.e("el framework no dio tamaño de búfer")
 			return false
 		}
-		val size = (minOf(limit, chunkBytes) and 1.inv()).coerceAtLeast(2)
+		val size = (minOf(limit, MAX_CHUNK) and 1.inv()).coerceAtLeast(2)
 		if (bufferA.size < size) bufferA = ByteArray(size)
 		if (bufferB.size < size) bufferB = ByteArray(size)
 		var natural = false
@@ -2143,7 +2122,7 @@ class EvvTtsService : TextToSpeechService() {
 				}
 				pace.handed(n)
 				session.progress()
-				hold(pace, session, leadMs, sliceMs)
+				hold(pace, session)
 				if (isLast) {
 					natural = session.alive
 					break
@@ -2290,9 +2269,16 @@ class EvvTtsService : TextToSpeechService() {
 		}
 
 		const val NOTIF_ID = 1
-		/** 5.0: 4 kB en vez de 8. El primer bloque llega antes y una
-		 *  parada descarta menos audio ya entregado; a 11 kHz son
-		 *  unos 186 ms, no los 370 de antes. */
+		/**
+		 * 5.0: 4 kB en vez de 8. El primer bloque llega antes y una
+		 * parada descarta menos audio ya entregado; a 11 kHz son
+		 * unos 186 ms, no los 370 de antes.
+		 *
+		 * 5.4.3: se queda en 4 kB para todas las emisiones. El modo
+		 * de ultrabaja latencia usaba bloques de 2 kB y despertaba
+		 * cada 10 ms; en la práctica eso añadía trabajo de hilos y
+		 * empeoraba la respuesta, así que se retiró.
+		 */
 		const val MAX_CHUNK = 4096
 		/** 5.0: una emisión que no avanza en este tiempo se cancela. */
 		const val WATCHDOG_MS = 15_000L
@@ -2330,25 +2316,17 @@ class EvvTtsService : TextToSpeechService() {
 		 *
 		 * 5.0: 150 ms. El motor entrega mucho más rápido que el
 		 * habla, y con 300 había hasta trescientas milésimas de
-		 * audio en cola que una parada tenía que tirar. La pista
-		 * sigue teniendo margen para no secarse, y [logLatency]
-		 * deja ver la cifra real si algún día hay que moverlo.
-		 */
-		const val LEAD_MS = 150L
-	const val SLICE_MS = 30L
-
-		/**
-		 * 5.4.1: valores del modo de ultrabaja latencia.
+		 * audio en cola que una parada tenía que tirar.
 		 *
-		 * [LOW_LATENCY_LEAD_MS] deja menos audio encolado por
-		 * delante del habla, que es el retardo que se oye al pulsar
-		 * detener. [LOW_LATENCY_MAX_CHUNK] entrega bloques más
-		 * pequeños para que el primero salga antes y una parada
-		 * descarte menos. [LOW_LATENCY_SLICE_MS] despierta más a
-		 * menudo para vaciar la cola: cuesta más CPU, no más voz.
+		 * 5.4.3: 100 ms para todas las emisiones. Es menos audio
+		 * encolado --una parada llega antes-- sin bajar a los 60 ms
+		 * del modo retirado, que con bloques pequeños dejaba la
+		 * pista demasiado justa. [logLatency] sigue dejando la
+		 * cifra real si hay que moverlo otra vez.
 		 */
-		const val LOW_LATENCY_LEAD_MS = 60L
-		const val LOW_LATENCY_MAX_CHUNK = 2048
-		const val LOW_LATENCY_SLICE_MS = 10L
+		const val LEAD_MS = 100L
+		/** 5.4.3: 20 ms por rebanada. Suficiente para que una parada
+		 *  se note al instante sin despertar el hilo de más. */
+		const val SLICE_MS = 20L
 	}
 }
