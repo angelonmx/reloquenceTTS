@@ -12,9 +12,9 @@ no necesita cuenta, no muestra anuncios y no envía lo que lees a ningún sitio.
 - **Lectura cuidada.** Pausas, abreviaturas, números, horas, decimales,
   direcciones y archivos se leen como se espera, no como una cadena de
   caracteres suelta. Detecta el idioma del texto y puede cambiar de voz.
-- **Latencia opcional.** El modo de ultrabaja latencia, apagado de fábrica,
-  entrega menos audio por delante para que la voz empiece y se detenga antes.
-  Consume más CPU, así que está pensado para aparatos con recursos de sobra.
+- **Lectura estable.** La voz mantiene la velocidad, el tono y el volumen
+  configurados al empezar y al parar, sin cambios bruscos ni modos que añadan
+  trabajo al hilo de síntesis.
 - **Efectos de audio.** Ecualizador, reverberación, eco, coro, trémolo,
   compresión, puerta de ruido, filtros y una lista larga de ajustes de color.
   Todo se puede apagar, y apagado no hace nada.
@@ -29,16 +29,17 @@ no necesita cuenta, no muestra anuncios y no envía lo que lees a ningún sitio.
 - **Copias completas.** Ajustes, perfiles, preferencias de diagnóstico y de
   actualizaciones y la biblioteca entera de diccionarios, todo menos los
   archivos de registro.
-- **Actualizaciones.** La app puede buscar versiones nuevas, avisarte y
-  descargarlas desde Ajustes. Android siempre pide confirmación antes de
-  instalar; no hay instalación silenciosa.
+- **Actualizaciones.** La app puede buscar versiones nuevas al iniciar, avisarte
+  y descargarlas desde Ajustes. No hay comprobaciones periódicas ni trabajo en
+  segundo plano. Android siempre pide confirmación antes de instalar; no hay
+  instalación silenciosa.
 
 ## Dos ediciones
 
 | edición | versión | paquete | voces |
 | --- | --- | --- | --- |
-| **full** | 5.4.2 (5402) | `com.angelonmx.reloquence` | inglés (EE. UU. y Reino Unido), español (España y Latinoamérica), francés (Francia y Canadá), alemán, italiano y japonés |
-| **lite** | 2.4.2 (2402) | `com.angelonmx.reloquence.lite` | español (España y Latinoamérica) |
+| **full** | 5.4.3 (5403) | `com.angelonmx.reloquence` | inglés (EE. UU. y Reino Unido), español (España y Latinoamérica), francés (Francia y Canadá), alemán, italiano y japonés |
+| **lite** | 2.4.3 (2403) | `com.angelonmx.reloquence.lite` | español (España y Latinoamérica) |
 
 Las dos se pueden instalar en el mismo teléfono: tienen paquetes distintos y
 no comparten ajustes ni diccionario. La Lite es la misma app con menos voces,
@@ -80,13 +81,14 @@ En **Ajustes > Actualizaciones** están, en este orden:
 2. **Ver cambios de la versión actual** — el changelog viaja dentro de la app,
    así que funciona sin conexión.
 3. **Versión actual** y **código de la versión** — lo que está instalado.
-4. **Comprobar automáticamente** — un interruptor, con frecuencia de 2, 6, 12,
-   24, 48 o 72 horas.
+4. **Verificar actualizaciones al iniciar la aplicación** — un solo interruptor,
+   sin intervalos ni comprobaciones periódicas.
 
-Cuando hay una versión nueva, la app muestra **Actualización disponible**, la
-versión actual, la versión nueva y los botones **Ahora no** / **Actualizar
-ahora**. La comprobación automática solo deja una notificación: no descarga ni
-instala nada por su cuenta.
+Cuando hay una versión nueva, la app muestra **Actualización disponible** con
+cada dato en su línea: versión actual, versión nueva, fecha, peso, arquitectura,
+edición y cambios, con **Ahora no** a la izquierda y **Actualizar** a la derecha.
+La comprobación al iniciar solo muestra el diálogo: no descarga ni instala nada
+por su cuenta.
 
 Antes de abrir el instalador, la app comprueba el tamaño, el SHA-256, el
 paquete, el `versionCode` y el certificado de firma del APK. Si algo no

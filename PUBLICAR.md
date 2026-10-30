@@ -44,7 +44,7 @@ cuatro líneas:
 ```powershell
 git init
 git add .
-git commit -m "reloquenceTTS 5.4.2"
+git commit -m "reloquenceTTS 5.4.3"
 git branch -M main
 ```
 
@@ -115,7 +115,7 @@ Android aceptaría como actualizaciones de esta app.
 
 El flujo de publicación comprueba que la huella SHA-256 del certificado sea
 `4e516988538b3d20a8fe9bf40a14edd4e277feee97275aac874f0de495578717`, la de la
-clave con la que se firmaron las versiones 5.4.2 y 2.4.2. Si algún día cambias de
+clave con la que se firmaron las versiones 5.4.2 y 2.4.2, y también 5.4.3 y 2.4.3. Si algún día cambias de
 almacén a propósito, actualiza `EXPECTED_CERT` en
 `.github/workflows/release.yml`; las instalaciones existentes no podrán
 actualizarse con una clave distinta.
@@ -125,10 +125,10 @@ actualizarse con una clave distinta.
 Las versiones viven en `version.properties` y en ningún otro sitio:
 
 ```properties
-full.versionName=5.4.2
-full.versionCode=5402
-lite.versionName=2.4.2
-lite.versionCode=2402
+full.versionName=5.4.3
+full.versionCode=5403
+lite.versionName=2.4.3
+lite.versionCode=2403
 ```
 
 Reglas:
@@ -146,7 +146,7 @@ Después:
 
 ```powershell
 git add version.properties app/src/main/assets/changelog.json
-git commit -m "Preparar la versión 5.4.2"
+git commit -m "Preparar la versión 5.4.3"
 git push
 ```
 
@@ -171,13 +171,13 @@ El flujo hace esto:
    cada APK;
 6. hace commit de esos dos manifiestos en `main`.
 
-La etiqueta por defecto es `v5.4.2` para la versión full. Si quieres otra, escribe
+La etiqueta por defecto es `v5.4.3` para la versión full. Si quieres otra, escribe
 el nombre en el campo **Etiqueta** al lanzar el flujo. También puedes publicar
 empujando una etiqueta:
 
 ```powershell
-git tag v5.4.2
-git push origin v5.4.2
+git tag v5.4.3
+git push origin v5.4.3
 ```
 
 La primera compilación tarda más porque compila el motor desde cero. Las
