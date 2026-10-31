@@ -92,6 +92,7 @@ class EvvEngine internal constructor(
 	 *  cuando no hay base a la que escalar. */
 	private var wantSpeed = -1
 	private var wantPitch = -1
+	private var prosodyReady = false
 
 	companion object {
 		/** Cada cuánto mira [close] si ya no queda ningún lector
@@ -294,6 +295,7 @@ class EvvEngine internal constructor(
 		curVolume = volume.coerceIn(0, Eci.VOLUME_MAX)
 		wantSpeed = baseSpeed
 		wantPitch = basePitch
+		prosodyReady = true
 		// 5.3: esto es lo que el motor tiene de verdad tras aplicar el
 		// plan (los valores leídos de vuelta, no los que se pidieron).
 		// Se registra para poder comparar antes/después de cada emisión
@@ -332,7 +334,7 @@ class EvvEngine internal constructor(
 	 */
 	override fun prosodyReset(): String = synchronized(guard) {
 		if (closed) return ""
-		if (wantSpeed < 0 || wantPitch < 0 || baseFluct < 0 || baseHead < 0 ||
+		if (!prosodyReady || wantSpeed < 0 || wantPitch < 0 || baseFluct < 0 || baseHead < 0 ||
 			baseRough < 0 || baseBreath < 0 || curVolume < 0 || baseGender < 0
 		) return ""
 		buildString {
@@ -361,23 +363,30 @@ class EvvEngine internal constructor(
 	 */
 	fun resetProsody() = synchronized(guard) {
 		if (closed) return
-		if (baseSpeed >= 0) native.setVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_SPEED, baseSpeed)
-		if (basePitch >= 0) native.setVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_PITCH_BASELINE, basePitch)
-		if (baseFluct >= 0) native.setVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_PITCH_FLUCTUATION, baseFluct)
-		if (baseHead >= 0) native.setVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_HEAD_SIZE, baseHead)
-		if (baseRough >= 0) native.setVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_ROUGHNESS, baseRough)
-		if (baseBreath >= 0) native.setVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_BREATHINESS, baseBreath)
-		if (baseGender >= 0) native.setVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_GENDER, baseGender)
-		if (curVolume >= 0) native.setVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_VOLUME, curVolume)
+		var restored = true
+		fun restore(param: Int, value: Int) {
+			if (value < 0 || native.setVoiceParam(handle, Eci.VOICE_CURRENT, param, value) < 0) {
+				restored = false
+			}
+		}
+		restore(Eci.VOICE_SPEED, baseSpeed)
+		restore(Eci.VOICE_PITCH_BASELINE, basePitch)
+		restore(Eci.VOICE_PITCH_FLUCTUATION, baseFluct)
+		restore(Eci.VOICE_HEAD_SIZE, baseHead)
+		restore(Eci.VOICE_ROUGHNESS, baseRough)
+		restore(Eci.VOICE_BREATHINESS, baseBreath)
+		restore(Eci.VOICE_GENDER, baseGender)
+		restore(Eci.VOICE_VOLUME, curVolume)
 		wantSpeed = baseSpeed
 		wantPitch = basePitch
+		prosodyReady = restored
 	}
 
 	/** Android entrega la velocidad y el tono como porcentaje de lo
 	 *  normal, donde el motor quiere sus propios números. Lo normal
 	 *  es la voz tal como [applyEmission] la dejó, así que 100 no
-	 *  cambia nada. Ninguno de los dos se escribe: [prosodyReset] los
-	 *  envía por delante de las palabras. */
+	 *  cambia nada. Se escriben en la voz actual y también se incluyen
+	 *  en [prosodyReset], para no depender solo de los códigos del texto. */
 	override fun setRatePercent(percent: Int) = synchronized(guard) {
 		if (closed || baseSpeed < 0) return
 		// Cero o negativo no es "habla muy despacio": es que el
@@ -386,17 +395,27 @@ class EvvEngine internal constructor(
 		// arrastre que suena cantado y que el usuario no eligió.
 		// Sin base propia, la del sistema manda tal cual, hasta el
 		// tope que ya tiene el deslizador de la aplicación.
-		wantSpeed = SpeechRate.speedForPercent(
+		val speed = SpeechRate.speedForPercent(
 			baseSpeed,
 			VoicePlan.sanePercent(percent).coerceAtMost(VoicePlan.MAX_RATE_PERCENT)
 		)
+		if (native.setVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_SPEED, speed) < 0) {
+			prosodyReady = false
+			return
+		}
+		wantSpeed = speed
 	}
 
 	override fun setPitchPercent(percent: Int) = synchronized(guard) {
 		if (closed || basePitch < 0) return
-		wantPitch = (basePitch.toLong() * VoicePlan.sanePercent(percent) / 100)
+		val pitch = (basePitch.toLong() * VoicePlan.sanePercent(percent) / 100)
 			.toInt()
 			.coerceIn(0, Eci.PERCENT_MAX)
+		if (native.setVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_PITCH_BASELINE, pitch) < 0) {
+			prosodyReady = false
+			return
+		}
+		wantPitch = pitch
 	}
 
 	/**

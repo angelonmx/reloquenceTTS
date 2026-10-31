@@ -38,8 +38,8 @@ no necesita cuenta, no muestra anuncios y no envía lo que lees a ningún sitio.
 
 | edición | versión | paquete | voces |
 | --- | --- | --- | --- |
-| **full** | 5.5.0 (5500) | `com.angelonmx.reloquence` | inglés (EE. UU. y Reino Unido), español (España y Latinoamérica), francés (Francia y Canadá), alemán, italiano y japonés |
-| **lite** | 2.5.0 (2500) | `com.angelonmx.reloquence.lite` | español (España y Latinoamérica) |
+| **full** | 5.5.1 (5501) | `com.angelonmx.reloquence` | inglés (EE. UU. y Reino Unido), español (España y Latinoamérica), francés (Francia y Canadá), alemán, italiano y japonés |
+| **lite** | 2.5.1 (2501) | `com.angelonmx.reloquence.lite` | español (España y Latinoamérica) |
 
 Las dos se pueden instalar en el mismo teléfono: tienen paquetes distintos y
 no comparten ajustes ni diccionario. La Lite es la misma app con menos voces,
