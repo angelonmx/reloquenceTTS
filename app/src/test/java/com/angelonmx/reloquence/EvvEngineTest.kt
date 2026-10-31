@@ -227,16 +227,46 @@ class EvvEngineTest {
 	}
 
 	@Test
-	fun `setRatePercent escala el tono base y setPitchPercent el tono`() {
+	fun `los porcentajes del sistema se escriben en el motor y en el reinicio`() {
 		val bridge = FakeBridge()
-		val (engine, _) = openEngine(bridge)
+		val (engine, handle) = openEngine(bridge)
 		assertTrue(engine.applyEmission(fullPlan()))
-		// baseSpeed = 100; el 200 % se escala sobre esa base.
+		// baseSpeed = 100; ambos valores se aplican al estado nativo.
 		engine.setRatePercent(200)
-		engine.setPitchPercent(50)
+		engine.setPitchPercent(150)
+		assertEquals(
+			SpeechRate.speedForPercent(100, 200),
+			bridge.getVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_SPEED)
+		)
+		assertEquals(90, bridge.getVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_PITCH_BASELINE))
 		val reset = engine.prosodyReset()
-		assertTrue("velocidad escalada en el reinicio", reset.contains("`vs"))
-		assertTrue("tono a la mitad en el reinicio", reset.contains("`vb30 "))
+		assertTrue(
+			"velocidad escalada en el reinicio",
+			reset.contains("`vs${SpeechRate.speedForPercent(100, 200)} ")
+		)
+		assertTrue("tono escalado en el reinicio", reset.contains("`vb90 "))
+	}
+
+	@Test
+	fun `las emisiones sucesivas usan la nueva prosodia sin acumular valores`() {
+		val bridge = FakeBridge()
+		val (engine, handle) = openEngine(bridge)
+		val plan = fullPlan()
+
+		assertTrue(engine.applyEmission(plan))
+		engine.setRatePercent(200)
+		engine.setPitchPercent(150)
+		assertEquals(90, bridge.getVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_PITCH_BASELINE))
+
+		assertTrue(engine.applyEmission(plan))
+		engine.setRatePercent(50)
+		engine.setPitchPercent(75)
+		assertEquals(
+			SpeechRate.speedForPercent(100, 50),
+			bridge.getVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_SPEED)
+		)
+		assertEquals(45, bridge.getVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_PITCH_BASELINE))
+		assertTrue(engine.prosodyReset().contains("`vb45 "))
 	}
 
 	@Test

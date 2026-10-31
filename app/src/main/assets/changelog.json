@@ -3,6 +3,53 @@
   "editions": {
     "full": [
       {
+        "versionName": "5.5.1",
+        "versionCode": 5501,
+        "date": "2026-10-31",
+        "notes": {
+          "es": [
+            "La velocidad y el tono solicitados por Android se aplican directamente a la voz nativa, además de incluirse en el reinicio de cada fragmento. Así se usan los valores del sistema de forma consistente y no se acumulan entre emisiones.",
+            "Si el motor rechaza un parámetro de prosodia, la frase no se envía con los valores que dejó la emisión anterior."
+          ],
+          "en": [
+            "Android's requested rate and pitch are now applied directly to the native voice as well as included in each chunk's prosody reset. This consistently uses system values without carrying them over between utterances.",
+            "If the engine rejects a prosody parameter, the utterance is not sent with values left by the previous one."
+          ],
+          "fr": [
+            "La vitesse et le ton demandés par Android sont maintenant appliqués directement à la voix native et inclus dans la réinitialisation de prosodie de chaque fragment. Les valeurs du système sont ainsi utilisées de façon cohérente, sans être conservées d’une synthèse à l’autre.",
+            "Si le moteur refuse un paramètre de prosodie, le texte n’est pas envoyé avec les valeurs laissées par la synthèse précédente."
+          ],
+          "de": [
+            "Die von Android angeforderte Geschwindigkeit und Tonhöhe werden jetzt direkt auf die native Stimme angewendet und zusätzlich beim Prosodie-Reset jedes Abschnitts gesetzt. Dadurch werden Systemwerte zuverlässig verwendet und nicht zwischen Ausgaben übernommen.",
+            "Lehnt die Engine einen Prosodieparameter ab, wird die Ausgabe nicht mit den Werten der vorherigen Synthese gestartet."
+          ],
+          "it": [
+            "La velocità e il tono richiesti da Android vengono ora applicati direttamente alla voce nativa e inclusi anche nel ripristino della prosodia di ogni segmento. I valori di sistema vengono così usati in modo coerente senza essere mantenuti tra le sintesi.",
+            "Se il motore rifiuta un parametro di prosodia, il testo non viene inviato con i valori lasciati dalla sintesi precedente."
+          ],
+          "pt": [
+            "A velocidade e o tom solicitados pelo Android agora são aplicados diretamente à voz nativa e também incluídos na redefinição de prosódia de cada trecho. Assim, os valores do sistema são usados de forma consistente e não se acumulam entre sínteses.",
+            "Se o mecanismo rejeitar um parâmetro de prosódia, o texto não será enviado com os valores deixados pela síntese anterior."
+          ],
+          "ja": [
+            "Android が指定した速度と音程をネイティブ音声に直接適用し、各区間のプロソディリセットにも反映するようになりました。システムの値を一貫して使用し、合成ごとに設定が引き継がれることを防ぎます。",
+            "エンジンがプロソディのパラメーターを受け付けない場合、前の合成で残った値のまま読み上げることはありません。"
+          ],
+          "pl": [
+            "Szybkość i ton żądane przez Androida są teraz stosowane bezpośrednio do głosu natywnego i uwzględniane w resetowaniu prozodii każdego fragmentu. Wartości systemowe są dzięki temu używane spójnie i nie przechodzą między syntezami.",
+            "Jeśli silnik odrzuci parametr prozodii, tekst nie zostanie wysłany z wartościami pozostałymi po poprzedniej syntezie."
+          ],
+          "ru": [
+            "Заданные Android скорость и высота тона теперь применяются непосредственно к голосу движка и включаются в сброс просодии каждого фрагмента. Системные значения используются согласованно и не переносятся между синтезами.",
+            "Если движок отклонит параметр просодии, текст не будет отправлен со значениями, оставшимися от предыдущего синтеза."
+          ],
+          "tr": [
+            "Android tarafından istenen hız ve perde artık yerel sese doğrudan uygulanıyor ve her parçanın prozodi sıfırlamasına da ekleniyor. Böylece sistem değerleri tutarlı biçimde kullanılıyor ve konuşmalar arasında birikmiyor.",
+            "Motor bir prozodi parametresini reddederse metin, önceki sentezden kalan değerlerle gönderilmez."
+          ]
+        }
+      },
+      {
         "versionName": "5.5.0",
         "versionCode": 5500,
         "date": "2026-10-31",
@@ -261,6 +308,53 @@
       }
     ],
     "lite": [
+      {
+        "versionName": "2.5.1",
+        "versionCode": 2501,
+        "date": "2026-10-31",
+        "notes": {
+          "es": [
+            "La velocidad y el tono solicitados por Android se aplican directamente a la voz nativa, además de incluirse en el reinicio de cada fragmento. Así se usan los valores del sistema de forma consistente y no se acumulan entre emisiones.",
+            "Si el motor rechaza un parámetro de prosodia, la frase no se envía con los valores que dejó la emisión anterior."
+          ],
+          "en": [
+            "Android's requested rate and pitch are now applied directly to the native voice as well as included in each chunk's prosody reset. This consistently uses system values without carrying them over between utterances.",
+            "If the engine rejects a prosody parameter, the utterance is not sent with values left by the previous one."
+          ],
+          "fr": [
+            "La vitesse et le ton demandés par Android sont maintenant appliqués directement à la voix native et inclus dans la réinitialisation de prosodie de chaque fragment. Les valeurs du système sont ainsi utilisées de façon cohérente, sans être conservées d’une synthèse à l’autre.",
+            "Si le moteur refuse un paramètre de prosodie, le texte n’est pas envoyé avec les valeurs laissées par la synthèse précédente."
+          ],
+          "de": [
+            "Die von Android angeforderte Geschwindigkeit und Tonhöhe werden jetzt direkt auf die native Stimme angewendet und zusätzlich beim Prosodie-Reset jedes Abschnitts gesetzt. Dadurch werden Systemwerte zuverlässig verwendet und nicht zwischen Ausgaben übernommen.",
+            "Lehnt die Engine einen Prosodieparameter ab, wird die Ausgabe nicht mit den Werten der vorherigen Synthese gestartet."
+          ],
+          "it": [
+            "La velocità e il tono richiesti da Android vengono ora applicati direttamente alla voce nativa e inclusi anche nel ripristino della prosodia di ogni segmento. I valori di sistema vengono così usati in modo coerente senza essere mantenuti tra le sintesi.",
+            "Se il motore rifiuta un parametro di prosodia, il testo non viene inviato con i valori lasciati dalla sintesi precedente."
+          ],
+          "pt": [
+            "A velocidade e o tom solicitados pelo Android agora são aplicados diretamente à voz nativa e também incluídos na redefinição de prosódia de cada trecho. Assim, os valores do sistema são usados de forma consistente e não se acumulam entre sínteses.",
+            "Se o mecanismo rejeitar um parâmetro de prosódia, o texto não será enviado com os valores deixados pela síntese anterior."
+          ],
+          "ja": [
+            "Android が指定した速度と音程をネイティブ音声に直接適用し、各区間のプロソディリセットにも反映するようになりました。システムの値を一貫して使用し、合成ごとに設定が引き継がれることを防ぎます。",
+            "エンジンがプロソディのパラメーターを受け付けない場合、前の合成で残った値のまま読み上げることはありません。"
+          ],
+          "pl": [
+            "Szybkość i ton żądane przez Androida są teraz stosowane bezpośrednio do głosu natywnego i uwzględniane w resetowaniu prozodii każdego fragmentu. Wartości systemowe są dzięki temu używane spójnie i nie przechodzą między syntezami.",
+            "Jeśli silnik odrzuci parametr prozodii, tekst nie zostanie wysłany z wartościami pozostałymi po poprzedniej syntezie."
+          ],
+          "ru": [
+            "Заданные Android скорость и высота тона теперь применяются непосредственно к голосу движка и включаются в сброс просодии каждого фрагмента. Системные значения используются согласованно и не переносятся между синтезами.",
+            "Если движок отклонит параметр просодии, текст не будет отправлен со значениями, оставшимися от предыдущего синтеза."
+          ],
+          "tr": [
+            "Android tarafından istenen hız ve perde artık yerel sese doğrudan uygulanıyor ve her parçanın prozodi sıfırlamasına da ekleniyor. Böylece sistem değerleri tutarlı biçimde kullanılıyor ve konuşmalar arasında birikmiyor.",
+            "Motor bir prozodi parametresini reddederse metin, önceki sentezden kalan değerlerle gönderilmez."
+          ]
+        }
+      },
       {
         "versionName": "2.5.0",
         "versionCode": 2500,
