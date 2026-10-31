@@ -3,6 +3,63 @@
   "editions": {
     "full": [
       {
+        "versionName": "5.5.0",
+        "versionCode": 5500,
+        "date": "2026-10-31",
+        "notes": {
+          "es": [
+            "El motor se prepara en segundo plano para el idioma configurado. Cargar una voz ya no bloquea la inicialización de Android y la primera síntesis abre el motor antes de empezar a hablar si aún no está listo.",
+            "El precalentamiento da prioridad al motor; las tablas de emojis y símbolos se cargan después y solo cuando esas funciones están activadas, reduciendo el trabajo durante el arranque.",
+            "Se registra cuánto tarda el motor en quedar listo para ayudar a diagnosticar la latencia inicial."
+          ],
+          "en": [
+            "The engine now prewarms in the background for the configured language. Loading a voice no longer blocks Android initialization, and the first synthesis opens the engine before speaking if it is not ready yet.",
+            "Prewarming prioritizes the engine; emoji and symbol tables load afterward and only when those features are enabled, reducing startup work.",
+            "The time taken for the engine to become ready is recorded to help diagnose startup latency."
+          ],
+          "fr": [
+            "Le moteur est désormais préchauffé en arrière-plan pour la langue configurée. Le chargement d’une voix ne bloque plus l’initialisation d’Android et, si nécessaire, le moteur s’ouvre avant le début de la première synthèse.",
+            "Le préchauffage donne la priorité au moteur ; les tables d’émojis et de symboles ne sont chargées ensuite que si ces fonctions sont activées, ce qui réduit le travail au démarrage.",
+            "Le temps nécessaire à la disponibilité du moteur est enregistré afin de faciliter le diagnostic de la latence au démarrage."
+          ],
+          "de": [
+            "Die Engine wird jetzt im Hintergrund für die konfigurierte Sprache vorgewärmt. Das Laden einer Stimme blockiert die Android-Initialisierung nicht mehr; falls die Engine noch nicht bereit ist, wird sie vor der ersten Sprachausgabe geöffnet.",
+            "Beim Vorwärmen hat die Engine Vorrang. Emoji- und Symboltabellen werden erst danach und nur bei aktivierten Funktionen geladen, wodurch beim Start weniger Arbeit anfällt.",
+            "Die Zeit bis zur Bereitschaft der Engine wird zur Diagnose der Startlatenz erfasst."
+          ],
+          "it": [
+            "Il motore ora viene preriscaldato in background per la lingua configurata. Il caricamento di una voce non blocca più l’inizializzazione di Android e, se necessario, il motore viene aperto prima di iniziare la prima sintesi.",
+            "Il preriscaldamento dà la precedenza al motore; le tabelle di emoji e simboli vengono caricate in seguito e solo se le relative funzioni sono attive, riducendo il lavoro all’avvio.",
+            "Viene registrato il tempo necessario al motore per essere pronto, così da facilitare la diagnosi della latenza iniziale."
+          ],
+          "pt": [
+            "O mecanismo agora é pré-aquecido em segundo plano para o idioma configurado. Carregar uma voz não bloqueia mais a inicialização do Android e, se necessário, o mecanismo é aberto antes de começar a primeira síntese.",
+            "O pré-aquecimento prioriza o mecanismo; as tabelas de emojis e símbolos são carregadas depois e somente quando esses recursos estão ativados, reduzindo o trabalho durante a inicialização.",
+            "O tempo para o mecanismo ficar pronto é registrado para ajudar a diagnosticar a latência inicial."
+          ],
+          "ja": [
+            "設定された言語の音声エンジンをバックグラウンドで事前に準備するようになりました。音声の読み込みで Android の初期化がブロックされなくなり、準備がまだの場合は最初の合成を話し始める前にエンジンを起動します。",
+            "事前準備ではエンジンを優先します。絵文字と記号のテーブルはその後、機能が有効な場合にのみ読み込まれるため、起動時の処理が減ります。",
+            "起動時の遅延を調べやすくするため、エンジンの準備にかかった時間を記録します。"
+          ],
+          "pl": [
+            "Silnik jest teraz przygotowywany w tle dla skonfigurowanego języka. Ładowanie głosu nie blokuje już inicjalizacji Androida, a jeśli silnik nie jest jeszcze gotowy, zostanie otwarty przed rozpoczęciem pierwszej syntezy.",
+            "Podczas przygotowania priorytet ma silnik; tabele emoji i symboli są ładowane później i tylko wtedy, gdy te funkcje są włączone, co ogranicza pracę podczas uruchamiania.",
+            "Zapisywany jest czas potrzebny na przygotowanie silnika, aby ułatwić diagnozowanie opóźnień przy uruchamianiu."
+          ],
+          "ru": [
+            "Движок теперь заранее запускается в фоновом режиме для выбранного языка. Загрузка голоса больше не блокирует инициализацию Android, а если движок ещё не готов, он открывается до начала первой синтезации.",
+            "При предварительной подготовке приоритет отдаётся движку; таблицы эмодзи и символов загружаются позже и только при включённых функциях, что сокращает работу при запуске.",
+            "Время подготовки движка записывается, чтобы упростить диагностику начальной задержки."
+          ],
+          "tr": [
+            "Motor artık yapılandırılan dil için arka planda önceden hazırlanıyor. Ses yüklemek Android başlatma sürecini artık engellemiyor; motor henüz hazır değilse ilk sentez konuşmaya başlamadan önce açılıyor.",
+            "Ön hazırlıkta motora öncelik veriliyor; emoji ve simge tabloları daha sonra ve yalnızca ilgili özellikler etkinse yüklenerek başlangıçtaki işlem miktarını azaltıyor.",
+            "Başlangıç gecikmesini incelemeye yardımcı olmak için motorun hazır olma süresi kaydediliyor."
+          ]
+        }
+      },
+      {
         "versionName": "5.4.4",
         "versionCode": 5404,
         "date": "2026-10-31",
@@ -204,6 +261,63 @@
       }
     ],
     "lite": [
+      {
+        "versionName": "2.5.0",
+        "versionCode": 2500,
+        "date": "2026-10-31",
+        "notes": {
+          "es": [
+            "El motor se prepara en segundo plano para el idioma configurado. Cargar una voz ya no bloquea la inicialización de Android y la primera síntesis abre el motor antes de empezar a hablar si aún no está listo.",
+            "El precalentamiento da prioridad al motor; las tablas de emojis y símbolos se cargan después y solo cuando esas funciones están activadas, reduciendo el trabajo durante el arranque.",
+            "Se registra cuánto tarda el motor en quedar listo para ayudar a diagnosticar la latencia inicial."
+          ],
+          "en": [
+            "The engine now prewarms in the background for the configured language. Loading a voice no longer blocks Android initialization, and the first synthesis opens the engine before speaking if it is not ready yet.",
+            "Prewarming prioritizes the engine; emoji and symbol tables load afterward and only when those features are enabled, reducing startup work.",
+            "The time taken for the engine to become ready is recorded to help diagnose startup latency."
+          ],
+          "fr": [
+            "Le moteur est désormais préchauffé en arrière-plan pour la langue configurée. Le chargement d’une voix ne bloque plus l’initialisation d’Android et, si nécessaire, le moteur s’ouvre avant le début de la première synthèse.",
+            "Le préchauffage donne la priorité au moteur ; les tables d’émojis et de symboles ne sont chargées ensuite que si ces fonctions sont activées, ce qui réduit le travail au démarrage.",
+            "Le temps nécessaire à la disponibilité du moteur est enregistré afin de faciliter le diagnostic de la latence au démarrage."
+          ],
+          "de": [
+            "Die Engine wird jetzt im Hintergrund für die konfigurierte Sprache vorgewärmt. Das Laden einer Stimme blockiert die Android-Initialisierung nicht mehr; falls die Engine noch nicht bereit ist, wird sie vor der ersten Sprachausgabe geöffnet.",
+            "Beim Vorwärmen hat die Engine Vorrang. Emoji- und Symboltabellen werden erst danach und nur bei aktivierten Funktionen geladen, wodurch beim Start weniger Arbeit anfällt.",
+            "Die Zeit bis zur Bereitschaft der Engine wird zur Diagnose der Startlatenz erfasst."
+          ],
+          "it": [
+            "Il motore ora viene preriscaldato in background per la lingua configurata. Il caricamento di una voce non blocca più l’inizializzazione di Android e, se necessario, il motore viene aperto prima di iniziare la prima sintesi.",
+            "Il preriscaldamento dà la precedenza al motore; le tabelle di emoji e simboli vengono caricate in seguito e solo se le relative funzioni sono attive, riducendo il lavoro all’avvio.",
+            "Viene registrato il tempo necessario al motore per essere pronto, così da facilitare la diagnosi della latenza iniziale."
+          ],
+          "pt": [
+            "O mecanismo agora é pré-aquecido em segundo plano para o idioma configurado. Carregar uma voz não bloqueia mais a inicialização do Android e, se necessário, o mecanismo é aberto antes de começar a primeira síntese.",
+            "O pré-aquecimento prioriza o mecanismo; as tabelas de emojis e símbolos são carregadas depois e somente quando esses recursos estão ativados, reduzindo o trabalho durante a inicialização.",
+            "O tempo para o mecanismo ficar pronto é registrado para ajudar a diagnosticar a latência inicial."
+          ],
+          "ja": [
+            "設定された言語の音声エンジンをバックグラウンドで事前に準備するようになりました。音声の読み込みで Android の初期化がブロックされなくなり、準備がまだの場合は最初の合成を話し始める前にエンジンを起動します。",
+            "事前準備ではエンジンを優先します。絵文字と記号のテーブルはその後、機能が有効な場合にのみ読み込まれるため、起動時の処理が減ります。",
+            "起動時の遅延を調べやすくするため、エンジンの準備にかかった時間を記録します。"
+          ],
+          "pl": [
+            "Silnik jest teraz przygotowywany w tle dla skonfigurowanego języka. Ładowanie głosu nie blokuje już inicjalizacji Androida, a jeśli silnik nie jest jeszcze gotowy, zostanie otwarty przed rozpoczęciem pierwszej syntezy.",
+            "Podczas przygotowania priorytet ma silnik; tabele emoji i symboli są ładowane później i tylko wtedy, gdy te funkcje są włączone, co ogranicza pracę podczas uruchamiania.",
+            "Zapisywany jest czas potrzebny na przygotowanie silnika, aby ułatwić diagnozowanie opóźnień przy uruchamianiu."
+          ],
+          "ru": [
+            "Движок теперь заранее запускается в фоновом режиме для выбранного языка. Загрузка голоса больше не блокирует инициализацию Android, а если движок ещё не готов, он открывается до начала первой синтезации.",
+            "При предварительной подготовке приоритет отдаётся движку; таблицы эмодзи и символов загружаются позже и только при включённых функциях, что сокращает работу при запуске.",
+            "Время подготовки движка записывается, чтобы упростить диагностику начальной задержки."
+          ],
+          "tr": [
+            "Motor artık yapılandırılan dil için arka planda önceden hazırlanıyor. Ses yüklemek Android başlatma sürecini artık engellemiyor; motor henüz hazır değilse ilk sentez konuşmaya başlamadan önce açılıyor.",
+            "Ön hazırlıkta motora öncelik veriliyor; emoji ve simge tabloları daha sonra ve yalnızca ilgili özellikler etkinse yüklenerek başlangıçtaki işlem miktarını azaltıyor.",
+            "Başlangıç gecikmesini incelemeye yardımcı olmak için motorun hazır olma süresi kaydediliyor."
+          ]
+        }
+      },
       {
         "versionName": "2.4.4",
         "versionCode": 2404,

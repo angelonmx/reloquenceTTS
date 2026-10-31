@@ -44,7 +44,7 @@ cuatro líneas:
 ```powershell
 git init
 git add .
-git commit -m "reloquenceTTS 5.4.4"
+git commit -m "reloquenceTTS 5.5.0"
 git branch -M main
 ```
 
@@ -126,10 +126,10 @@ actualizarse con una clave distinta.
 Las versiones viven en `version.properties` y en ningún otro sitio:
 
 ```properties
-full.versionName=5.4.4
-full.versionCode=5404
-lite.versionName=2.4.4
-lite.versionCode=2404
+full.versionName=5.5.0
+full.versionCode=5500
+lite.versionName=2.5.0
+lite.versionCode=2500
 ```
 
 Reglas:
@@ -147,7 +147,7 @@ Después:
 
 ```powershell
 git add version.properties app/src/main/assets/changelog.json
-git commit -m "Preparar la versión 5.4.4"
+git commit -m "Preparar la versión 5.5.0"
 git push
 ```
 
@@ -172,13 +172,13 @@ El flujo hace esto:
    cada APK;
 6. hace commit de esos dos manifiestos en `main`.
 
-La etiqueta por defecto es `v5.4.4` para la versión full. Si quieres otra, escribe
+La etiqueta por defecto es `v5.5.0` para la versión full. Si quieres otra, escribe
 el nombre en el campo **Etiqueta** al lanzar el flujo. También puedes publicar
 empujando una etiqueta:
 
 ```powershell
-git tag v5.4.4
-git push origin v5.4.4
+git tag v5.5.0
+git push origin v5.5.0
 ```
 
 La primera compilación tarda más porque compila el motor desde cero. Las
