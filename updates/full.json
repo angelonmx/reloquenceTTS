@@ -2,80 +2,70 @@
   "schema": 1,
   "applicationId": "com.angelonmx.reloquence",
   "edition": "full",
-  "versionName": "5.5.0",
-  "versionCode": 5500,
-  "publishedAt": "2026-10-31T17:20:41Z",
+  "versionName": "5.5.1",
+  "versionCode": 5501,
+  "publishedAt": "2026-10-31T17:51:54Z",
   "minSdk": 23,
   "notes": {
     "es": [
-      "El motor se prepara en segundo plano para el idioma configurado. Cargar una voz ya no bloquea la inicialización de Android y la primera síntesis abre el motor antes de empezar a hablar si aún no está listo.",
-      "El precalentamiento da prioridad al motor; las tablas de emojis y símbolos se cargan después y solo cuando esas funciones están activadas, reduciendo el trabajo durante el arranque.",
-      "Se registra cuánto tarda el motor en quedar listo para ayudar a diagnosticar la latencia inicial."
+      "La velocidad y el tono solicitados por Android se aplican directamente a la voz nativa, además de incluirse en el reinicio de cada fragmento. Así se usan los valores del sistema de forma consistente y no se acumulan entre emisiones.",
+      "Si el motor rechaza un parámetro de prosodia, la frase no se envía con los valores que dejó la emisión anterior."
     ],
     "en": [
-      "The engine now prewarms in the background for the configured language. Loading a voice no longer blocks Android initialization, and the first synthesis opens the engine before speaking if it is not ready yet.",
-      "Prewarming prioritizes the engine; emoji and symbol tables load afterward and only when those features are enabled, reducing startup work.",
-      "The time taken for the engine to become ready is recorded to help diagnose startup latency."
+      "Android's requested rate and pitch are now applied directly to the native voice as well as included in each chunk's prosody reset. This consistently uses system values without carrying them over between utterances.",
+      "If the engine rejects a prosody parameter, the utterance is not sent with values left by the previous one."
     ],
     "fr": [
-      "Le moteur est désormais préchauffé en arrière-plan pour la langue configurée. Le chargement d’une voix ne bloque plus l’initialisation d’Android et, si nécessaire, le moteur s’ouvre avant le début de la première synthèse.",
-      "Le préchauffage donne la priorité au moteur ; les tables d’émojis et de symboles ne sont chargées ensuite que si ces fonctions sont activées, ce qui réduit le travail au démarrage.",
-      "Le temps nécessaire à la disponibilité du moteur est enregistré afin de faciliter le diagnostic de la latence au démarrage."
+      "La vitesse et le ton demandés par Android sont maintenant appliqués directement à la voix native et inclus dans la réinitialisation de prosodie de chaque fragment. Les valeurs du système sont ainsi utilisées de façon cohérente, sans être conservées d’une synthèse à l’autre.",
+      "Si le moteur refuse un paramètre de prosodie, le texte n’est pas envoyé avec les valeurs laissées par la synthèse précédente."
     ],
     "de": [
-      "Die Engine wird jetzt im Hintergrund für die konfigurierte Sprache vorgewärmt. Das Laden einer Stimme blockiert die Android-Initialisierung nicht mehr; falls die Engine noch nicht bereit ist, wird sie vor der ersten Sprachausgabe geöffnet.",
-      "Beim Vorwärmen hat die Engine Vorrang. Emoji- und Symboltabellen werden erst danach und nur bei aktivierten Funktionen geladen, wodurch beim Start weniger Arbeit anfällt.",
-      "Die Zeit bis zur Bereitschaft der Engine wird zur Diagnose der Startlatenz erfasst."
+      "Die von Android angeforderte Geschwindigkeit und Tonhöhe werden jetzt direkt auf die native Stimme angewendet und zusätzlich beim Prosodie-Reset jedes Abschnitts gesetzt. Dadurch werden Systemwerte zuverlässig verwendet und nicht zwischen Ausgaben übernommen.",
+      "Lehnt die Engine einen Prosodieparameter ab, wird die Ausgabe nicht mit den Werten der vorherigen Synthese gestartet."
     ],
     "it": [
-      "Il motore ora viene preriscaldato in background per la lingua configurata. Il caricamento di una voce non blocca più l’inizializzazione di Android e, se necessario, il motore viene aperto prima di iniziare la prima sintesi.",
-      "Il preriscaldamento dà la precedenza al motore; le tabelle di emoji e simboli vengono caricate in seguito e solo se le relative funzioni sono attive, riducendo il lavoro all’avvio.",
-      "Viene registrato il tempo necessario al motore per essere pronto, così da facilitare la diagnosi della latenza iniziale."
+      "La velocità e il tono richiesti da Android vengono ora applicati direttamente alla voce nativa e inclusi anche nel ripristino della prosodia di ogni segmento. I valori di sistema vengono così usati in modo coerente senza essere mantenuti tra le sintesi.",
+      "Se il motore rifiuta un parametro di prosodia, il testo non viene inviato con i valori lasciati dalla sintesi precedente."
     ],
     "pt": [
-      "O mecanismo agora é pré-aquecido em segundo plano para o idioma configurado. Carregar uma voz não bloqueia mais a inicialização do Android e, se necessário, o mecanismo é aberto antes de começar a primeira síntese.",
-      "O pré-aquecimento prioriza o mecanismo; as tabelas de emojis e símbolos são carregadas depois e somente quando esses recursos estão ativados, reduzindo o trabalho durante a inicialização.",
-      "O tempo para o mecanismo ficar pronto é registrado para ajudar a diagnosticar a latência inicial."
+      "A velocidade e o tom solicitados pelo Android agora são aplicados diretamente à voz nativa e também incluídos na redefinição de prosódia de cada trecho. Assim, os valores do sistema são usados de forma consistente e não se acumulam entre sínteses.",
+      "Se o mecanismo rejeitar um parâmetro de prosódia, o texto não será enviado com os valores deixados pela síntese anterior."
     ],
     "ja": [
-      "設定された言語の音声エンジンをバックグラウンドで事前に準備するようになりました。音声の読み込みで Android の初期化がブロックされなくなり、準備がまだの場合は最初の合成を話し始める前にエンジンを起動します。",
-      "事前準備ではエンジンを優先します。絵文字と記号のテーブルはその後、機能が有効な場合にのみ読み込まれるため、起動時の処理が減ります。",
-      "起動時の遅延を調べやすくするため、エンジンの準備にかかった時間を記録します。"
+      "Android が指定した速度と音程をネイティブ音声に直接適用し、各区間のプロソディリセットにも反映するようになりました。システムの値を一貫して使用し、合成ごとに設定が引き継がれることを防ぎます。",
+      "エンジンがプロソディのパラメーターを受け付けない場合、前の合成で残った値のまま読み上げることはありません。"
     ],
     "pl": [
-      "Silnik jest teraz przygotowywany w tle dla skonfigurowanego języka. Ładowanie głosu nie blokuje już inicjalizacji Androida, a jeśli silnik nie jest jeszcze gotowy, zostanie otwarty przed rozpoczęciem pierwszej syntezy.",
-      "Podczas przygotowania priorytet ma silnik; tabele emoji i symboli są ładowane później i tylko wtedy, gdy te funkcje są włączone, co ogranicza pracę podczas uruchamiania.",
-      "Zapisywany jest czas potrzebny na przygotowanie silnika, aby ułatwić diagnozowanie opóźnień przy uruchamianiu."
+      "Szybkość i ton żądane przez Androida są teraz stosowane bezpośrednio do głosu natywnego i uwzględniane w resetowaniu prozodii każdego fragmentu. Wartości systemowe są dzięki temu używane spójnie i nie przechodzą między syntezami.",
+      "Jeśli silnik odrzuci parametr prozodii, tekst nie zostanie wysłany z wartościami pozostałymi po poprzedniej syntezie."
     ],
     "ru": [
-      "Движок теперь заранее запускается в фоновом режиме для выбранного языка. Загрузка голоса больше не блокирует инициализацию Android, а если движок ещё не готов, он открывается до начала первой синтезации.",
-      "При предварительной подготовке приоритет отдаётся движку; таблицы эмодзи и символов загружаются позже и только при включённых функциях, что сокращает работу при запуске.",
-      "Время подготовки движка записывается, чтобы упростить диагностику начальной задержки."
+      "Заданные Android скорость и высота тона теперь применяются непосредственно к голосу движка и включаются в сброс просодии каждого фрагмента. Системные значения используются согласованно и не переносятся между синтезами.",
+      "Если движок отклонит параметр просодии, текст не будет отправлен со значениями, оставшимися от предыдущего синтеза."
     ],
     "tr": [
-      "Motor artık yapılandırılan dil için arka planda önceden hazırlanıyor. Ses yüklemek Android başlatma sürecini artık engellemiyor; motor henüz hazır değilse ilk sentez konuşmaya başlamadan önce açılıyor.",
-      "Ön hazırlıkta motora öncelik veriliyor; emoji ve simge tabloları daha sonra ve yalnızca ilgili özellikler etkinse yüklenerek başlangıçtaki işlem miktarını azaltıyor.",
-      "Başlangıç gecikmesini incelemeye yardımcı olmak için motorun hazır olma süresi kaydediliyor."
+      "Android tarafından istenen hız ve perde artık yerel sese doğrudan uygulanıyor ve her parçanın prozodi sıfırlamasına da ekleniyor. Böylece sistem değerleri tutarlı biçimde kullanılıyor ve konuşmalar arasında birikmiyor.",
+      "Motor bir prozodi parametresini reddederse metin, önceki sentezden kalan değerlerle gönderilmez."
     ]
   },
   "apks": [
     {
       "abi": "arm64-v8a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.0/reloquence-full-5.5.0-5500-arm64-v8a-release.apk",
-      "sha256": "7ea6939c95e5df40d136887e6dc97ba3090dbfc0adb84907186cee973f2c2fa3",
-      "size": 20553588
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.1/reloquence-full-5.5.1-5501-arm64-v8a-release.apk",
+      "sha256": "0fa1a245a471e6e2a8caf94521846f875103316bb215488cced557ca7e1e9b15",
+      "size": 20555784
     },
     {
       "abi": "armeabi-v7a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.0/reloquence-full-5.5.0-5500-armeabi-v7a-release.apk",
-      "sha256": "581e678d6ec1239449910b6fbca2deeef3cf47c066fbca33e731910e7ec90c8d",
-      "size": 18173157
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.1/reloquence-full-5.5.1-5501-armeabi-v7a-release.apk",
+      "sha256": "1fed96dc6c81be1ea37a5463a8f6c4dca2d96591b9a81b0392e8d02d7b19bd8e",
+      "size": 18175345
     },
     {
       "abi": "universal",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.0/reloquence-full-5.5.0-5500-universal-release.apk",
-      "sha256": "0c4e4c4efc751d8c8272f608d2df35bf311671d34a8c016f9f93a2cf6e7e6f39",
-      "size": 33645110
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.1/reloquence-full-5.5.1-5501-universal-release.apk",
+      "sha256": "7473356e9c7892f78a7495cd7c97a005ec5f1ae1a5fad13366c4228337b3e187",
+      "size": 33647291
     }
   ]
 }
