@@ -38,8 +38,8 @@ no necesita cuenta, no muestra anuncios y no envía lo que lees a ningún sitio.
 
 | edición | versión | paquete | voces |
 | --- | --- | --- | --- |
-| **full** | 5.4.3 (5403) | `com.angelonmx.reloquence` | inglés (EE. UU. y Reino Unido), español (España y Latinoamérica), francés (Francia y Canadá), alemán, italiano y japonés |
-| **lite** | 2.4.3 (2403) | `com.angelonmx.reloquence.lite` | español (España y Latinoamérica) |
+| **full** | 5.4.4 (5404) | `com.angelonmx.reloquence` | inglés (EE. UU. y Reino Unido), español (España y Latinoamérica), francés (Francia y Canadá), alemán, italiano y japonés |
+| **lite** | 2.4.4 (2404) | `com.angelonmx.reloquence.lite` | español (España y Latinoamérica) |
 
 Las dos se pueden instalar en el mismo teléfono: tienen paquetes distintos y
 no comparten ajustes ni diccionario. La Lite es la misma app con menos voces,
@@ -85,8 +85,11 @@ En **Ajustes > Actualizaciones** están, en este orden:
    sin intervalos ni comprobaciones periódicas.
 
 Cuando hay una versión nueva, la app muestra **Actualización disponible** con
-cada dato en su línea: versión actual, versión nueva, fecha, peso, arquitectura,
-edición y cambios, con **Ahora no** a la izquierda y **Actualizar** a la derecha.
+cada dato en su línea: versión actual, versión nueva, fecha, peso, edición,
+arquitectura instalada y su tipo, arquitectura del dispositivo, arquitectura que
+se descargará y cambios, con **Ahora no** a la izquierda y **Actualizar** a la
+derecha. Si la instalación es universal (original), descarga el APK de la
+arquitectura del dispositivo y conserva la edición, completa o ligera.
 La comprobación al iniciar solo muestra el diálogo: no descarga ni instala nada
 por su cuenta.
 
