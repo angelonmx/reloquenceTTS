@@ -2,46 +2,80 @@
   "schema": 1,
   "applicationId": "com.angelonmx.reloquence",
   "edition": "full",
-  "versionName": "5.4.4",
-  "versionCode": 5404,
-  "publishedAt": "2026-10-31T15:50:59Z",
+  "versionName": "5.5.0",
+  "versionCode": 5500,
+  "publishedAt": "2026-10-31T17:20:41Z",
   "minSdk": 23,
   "notes": {
     "es": [
-      "La voz se queda exactamente como la configuraste. El reinicio de prosodia conserva los ocho parámetros, pero ya no anuncia el número de voz en cada frase: ese anuncio vaciaba la cola, rehacía el conversor de audio y cambiaba el romanizador, y era lo que hacía que todo sonara como una exclamación.",
-      "La voz vuelve a aplicarse solo cuando cambia de verdad o cuando el texto trae un cambio de voz propio, sin cortar el audio que ya está en cola.",
-      "La primera frase empieza sin espera añadida por la app: se eliminó la pausa de 200 ms que aguardaba al motor precalentado.",
-      "Actualizaciones: muestra la versión instalada, la edición (completa o ligera), la arquitectura instalada y su tipo (versión de la arquitectura u original), la arquitectura del dispositivo y la que se descargará.",
-      "Al actualizar una instalación universal (original), se descarga el APK de la arquitectura del dispositivo; la edición sigue siendo la misma, completa o ligera.",
-      "Los textos nuevos están traducidos en los diez idiomas de la app."
+      "El motor se prepara en segundo plano para el idioma configurado. Cargar una voz ya no bloquea la inicialización de Android y la primera síntesis abre el motor antes de empezar a hablar si aún no está listo.",
+      "El precalentamiento da prioridad al motor; las tablas de emojis y símbolos se cargan después y solo cuando esas funciones están activadas, reduciendo el trabajo durante el arranque.",
+      "Se registra cuánto tarda el motor en quedar listo para ayudar a diagnosticar la latencia inicial."
     ],
     "en": [
-      "The voice stays exactly as configured. The prosody reset keeps all eight parameters but no longer announces the voice number on every sentence: that announcement flushed the queue, rebuilt the audio converter, and changed the romanizer, which is what made everything sound like an exclamation.",
-      "The voice is applied again only when it truly changes or when the text contains its own voice change, without cutting off audio already queued.",
-      "The first sentence starts with no delay added by the app: the 200 ms wait for the prewarmed engine is gone.",
-      "Updates: shows the installed version, edition (full or lite), installed architecture and its type (architecture build or original), device architecture, and the architecture that will be downloaded.",
-      "When updating a universal (original) installation, it downloads the APK for the device architecture; the edition stays the same, full or lite.",
-      "The new texts are translated into all ten app languages."
+      "The engine now prewarms in the background for the configured language. Loading a voice no longer blocks Android initialization, and the first synthesis opens the engine before speaking if it is not ready yet.",
+      "Prewarming prioritizes the engine; emoji and symbol tables load afterward and only when those features are enabled, reducing startup work.",
+      "The time taken for the engine to become ready is recorded to help diagnose startup latency."
+    ],
+    "fr": [
+      "Le moteur est désormais préchauffé en arrière-plan pour la langue configurée. Le chargement d’une voix ne bloque plus l’initialisation d’Android et, si nécessaire, le moteur s’ouvre avant le début de la première synthèse.",
+      "Le préchauffage donne la priorité au moteur ; les tables d’émojis et de symboles ne sont chargées ensuite que si ces fonctions sont activées, ce qui réduit le travail au démarrage.",
+      "Le temps nécessaire à la disponibilité du moteur est enregistré afin de faciliter le diagnostic de la latence au démarrage."
+    ],
+    "de": [
+      "Die Engine wird jetzt im Hintergrund für die konfigurierte Sprache vorgewärmt. Das Laden einer Stimme blockiert die Android-Initialisierung nicht mehr; falls die Engine noch nicht bereit ist, wird sie vor der ersten Sprachausgabe geöffnet.",
+      "Beim Vorwärmen hat die Engine Vorrang. Emoji- und Symboltabellen werden erst danach und nur bei aktivierten Funktionen geladen, wodurch beim Start weniger Arbeit anfällt.",
+      "Die Zeit bis zur Bereitschaft der Engine wird zur Diagnose der Startlatenz erfasst."
+    ],
+    "it": [
+      "Il motore ora viene preriscaldato in background per la lingua configurata. Il caricamento di una voce non blocca più l’inizializzazione di Android e, se necessario, il motore viene aperto prima di iniziare la prima sintesi.",
+      "Il preriscaldamento dà la precedenza al motore; le tabelle di emoji e simboli vengono caricate in seguito e solo se le relative funzioni sono attive, riducendo il lavoro all’avvio.",
+      "Viene registrato il tempo necessario al motore per essere pronto, così da facilitare la diagnosi della latenza iniziale."
+    ],
+    "pt": [
+      "O mecanismo agora é pré-aquecido em segundo plano para o idioma configurado. Carregar uma voz não bloqueia mais a inicialização do Android e, se necessário, o mecanismo é aberto antes de começar a primeira síntese.",
+      "O pré-aquecimento prioriza o mecanismo; as tabelas de emojis e símbolos são carregadas depois e somente quando esses recursos estão ativados, reduzindo o trabalho durante a inicialização.",
+      "O tempo para o mecanismo ficar pronto é registrado para ajudar a diagnosticar a latência inicial."
+    ],
+    "ja": [
+      "設定された言語の音声エンジンをバックグラウンドで事前に準備するようになりました。音声の読み込みで Android の初期化がブロックされなくなり、準備がまだの場合は最初の合成を話し始める前にエンジンを起動します。",
+      "事前準備ではエンジンを優先します。絵文字と記号のテーブルはその後、機能が有効な場合にのみ読み込まれるため、起動時の処理が減ります。",
+      "起動時の遅延を調べやすくするため、エンジンの準備にかかった時間を記録します。"
+    ],
+    "pl": [
+      "Silnik jest teraz przygotowywany w tle dla skonfigurowanego języka. Ładowanie głosu nie blokuje już inicjalizacji Androida, a jeśli silnik nie jest jeszcze gotowy, zostanie otwarty przed rozpoczęciem pierwszej syntezy.",
+      "Podczas przygotowania priorytet ma silnik; tabele emoji i symboli są ładowane później i tylko wtedy, gdy te funkcje są włączone, co ogranicza pracę podczas uruchamiania.",
+      "Zapisywany jest czas potrzebny na przygotowanie silnika, aby ułatwić diagnozowanie opóźnień przy uruchamianiu."
+    ],
+    "ru": [
+      "Движок теперь заранее запускается в фоновом режиме для выбранного языка. Загрузка голоса больше не блокирует инициализацию Android, а если движок ещё не готов, он открывается до начала первой синтезации.",
+      "При предварительной подготовке приоритет отдаётся движку; таблицы эмодзи и символов загружаются позже и только при включённых функциях, что сокращает работу при запуске.",
+      "Время подготовки движка записывается, чтобы упростить диагностику начальной задержки."
+    ],
+    "tr": [
+      "Motor artık yapılandırılan dil için arka planda önceden hazırlanıyor. Ses yüklemek Android başlatma sürecini artık engellemiyor; motor henüz hazır değilse ilk sentez konuşmaya başlamadan önce açılıyor.",
+      "Ön hazırlıkta motora öncelik veriliyor; emoji ve simge tabloları daha sonra ve yalnızca ilgili özellikler etkinse yüklenerek başlangıçtaki işlem miktarını azaltıyor.",
+      "Başlangıç gecikmesini incelemeye yardımcı olmak için motorun hazır olma süresi kaydediliyor."
     ]
   },
   "apks": [
     {
       "abi": "arm64-v8a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.4/reloquence-full-5.4.4-5404-arm64-v8a-release.apk",
-      "sha256": "a21d7304745cb28789b52d6dc69652ae34298aa3efffcfddc9ed88c05e0a2f7b",
-      "size": 20550366
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.0/reloquence-full-5.5.0-5500-arm64-v8a-release.apk",
+      "sha256": "7ea6939c95e5df40d136887e6dc97ba3090dbfc0adb84907186cee973f2c2fa3",
+      "size": 20553588
     },
     {
       "abi": "armeabi-v7a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.4/reloquence-full-5.4.4-5404-armeabi-v7a-release.apk",
-      "sha256": "a2585d6d2bab995c036a07e4987cfeba665bd377e6405739e5c20b9a148bab22",
-      "size": 18169942
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.0/reloquence-full-5.5.0-5500-armeabi-v7a-release.apk",
+      "sha256": "581e678d6ec1239449910b6fbca2deeef3cf47c066fbca33e731910e7ec90c8d",
+      "size": 18173157
     },
     {
       "abi": "universal",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.4/reloquence-full-5.4.4-5404-universal-release.apk",
-      "sha256": "61c8ca7465ee13986ca90e8c150a24a3b75ea1ca84f07667bcdb0e3fccbe518e",
-      "size": 33641885
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.0/reloquence-full-5.5.0-5500-universal-release.apk",
+      "sha256": "0c4e4c4efc751d8c8272f608d2df35bf311671d34a8c016f9f93a2cf6e7e6f39",
+      "size": 33645110
     }
   ]
 }
