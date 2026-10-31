@@ -2,46 +2,46 @@
   "schema": 1,
   "applicationId": "com.angelonmx.reloquence",
   "edition": "full",
-  "versionName": "5.4.3",
-  "versionCode": 5403,
-  "publishedAt": "2026-10-30T03:21:33Z",
+  "versionName": "5.4.4",
+  "versionCode": 5404,
+  "publishedAt": "2026-10-31T15:50:59Z",
   "minSdk": 23,
   "notes": {
     "es": [
-      "Eliminado el modo de ultrabaja latencia: añadía trabajo al hilo de síntesis y no reducía el retardo; ahora la lectura usa siempre el camino normal.",
-      "Actualizaciones: ya no hay comprobaciones periódicas, intervalos ni notificaciones, ni trabajo en segundo plano que despierte la app. Queda un solo interruptor, «Verificar actualizaciones al iniciar la aplicación».",
-      "El diálogo de actualización se muestra al iniciar sobre cualquier pantalla y enseña cada dato en su línea: versión actual, versión nueva, fecha, peso, arquitectura, edición y cambios, con «Ahora no» a la izquierda y «Actualizar» a la derecha.",
-      "Las copias de seguridad guardan todos los ajustes y la biblioteca de diccionarios, y al restaurar se reconstruyen. La clave del modo retirado se descarta sin avisos ni errores.",
-      "La prosodia conserva el reinicio con los ocho parámetros antes de cada emisión, para que la voz no cambie de tono a mitad de frase.",
-      "Los textos del diálogo de actualización están traducidos en los diez idiomas de la app."
+      "La voz se queda exactamente como la configuraste. El reinicio de prosodia conserva los ocho parámetros, pero ya no anuncia el número de voz en cada frase: ese anuncio vaciaba la cola, rehacía el conversor de audio y cambiaba el romanizador, y era lo que hacía que todo sonara como una exclamación.",
+      "La voz vuelve a aplicarse solo cuando cambia de verdad o cuando el texto trae un cambio de voz propio, sin cortar el audio que ya está en cola.",
+      "La primera frase empieza sin espera añadida por la app: se eliminó la pausa de 200 ms que aguardaba al motor precalentado.",
+      "Actualizaciones: muestra la versión instalada, la edición (completa o ligera), la arquitectura instalada y su tipo (versión de la arquitectura u original), la arquitectura del dispositivo y la que se descargará.",
+      "Al actualizar una instalación universal (original), se descarga el APK de la arquitectura del dispositivo; la edición sigue siendo la misma, completa o ligera.",
+      "Los textos nuevos están traducidos en los diez idiomas de la app."
     ],
     "en": [
-      "Removed ultra-low latency mode: it added work to the synthesis thread without reducing delay; playback now always uses the normal path.",
-      "Updates: no more periodic checks, intervals, or notifications, and no background work waking the app. A single switch remains, “Check for updates when the app starts”.",
-      "The update dialog now appears at launch over any screen and shows each item on its own line: current version, new version, release date, size, architecture, edition, and changes, with “Not now” on the left and “Update” on the right.",
-      "Backups keep every setting and the whole dictionary library, and restoring rebuilds them. The retired mode's key is discarded without warnings or errors.",
-      "Prosody keeps the eight-parameter reset before each utterance, so the voice does not change tone mid-sentence.",
-      "The update dialog texts are translated into all ten app languages."
+      "The voice stays exactly as configured. The prosody reset keeps all eight parameters but no longer announces the voice number on every sentence: that announcement flushed the queue, rebuilt the audio converter, and changed the romanizer, which is what made everything sound like an exclamation.",
+      "The voice is applied again only when it truly changes or when the text contains its own voice change, without cutting off audio already queued.",
+      "The first sentence starts with no delay added by the app: the 200 ms wait for the prewarmed engine is gone.",
+      "Updates: shows the installed version, edition (full or lite), installed architecture and its type (architecture build or original), device architecture, and the architecture that will be downloaded.",
+      "When updating a universal (original) installation, it downloads the APK for the device architecture; the edition stays the same, full or lite.",
+      "The new texts are translated into all ten app languages."
     ]
   },
   "apks": [
     {
       "abi": "arm64-v8a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.3/reloquence-full-5.4.3-5403-arm64-v8a-release.apk",
-      "sha256": "8dad534660a4288901e746c598e6285be29ba37889fc8263eaff0d9ff3560fa3",
-      "size": 20541854
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.4/reloquence-full-5.4.4-5404-arm64-v8a-release.apk",
+      "sha256": "a21d7304745cb28789b52d6dc69652ae34298aa3efffcfddc9ed88c05e0a2f7b",
+      "size": 20550366
     },
     {
       "abi": "armeabi-v7a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.3/reloquence-full-5.4.3-5403-armeabi-v7a-release.apk",
-      "sha256": "7965b244d85bf6066f9ff09bbd733b56dfac2e54ed10b5b2c4c603c37ceff248",
-      "size": 18161431
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.4/reloquence-full-5.4.4-5404-armeabi-v7a-release.apk",
+      "sha256": "a2585d6d2bab995c036a07e4987cfeba665bd377e6405739e5c20b9a148bab22",
+      "size": 18169942
     },
     {
       "abi": "universal",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.3/reloquence-full-5.4.3-5403-universal-release.apk",
-      "sha256": "048540e917c4b647c039f0cf6d00ee76b9358e3e33b23a1bb09c370bdb1b6597",
-      "size": 33633370
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.4.4/reloquence-full-5.4.4-5404-universal-release.apk",
+      "sha256": "61c8ca7465ee13986ca90e8c150a24a3b75ea1ca84f07667bcdb0e3fccbe518e",
+      "size": 33641885
     }
   ]
 }
