@@ -388,6 +388,14 @@
 	<string name="update_current_changelog">Ver cambios de la versión actual</string>
 	<string name="update_current_version">Versión tuya actual</string>
 	<string name="update_current_code">Código de la versión</string>
+	<string name="update_edition">Edición</string>
+	<string name="update_edition_full">Completa</string>
+	<string name="update_edition_lite">Ligera</string>
+	<string name="update_installed_architecture">Arquitectura instalada</string>
+	<string name="update_download_architecture">Arquitectura de la descarga</string>
+	<string name="update_architecture_specific">versión de la arquitectura</string>
+	<string name="update_architecture_universal">original</string>
+	<string name="update_architecture_value">%1$s (%2$s)</string>
 	<string name="update_check_on_launch">Verificar actualizaciones al iniciar la aplicación</string>
 	<string name="update_checking">Buscando actualizaciones…</string>
 	<string name="update_up_to_date">Ya tienes la última versión.</string>

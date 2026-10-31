@@ -390,6 +390,14 @@
 	<string name="update_current_changelog">Bu sürümdeki değişiklikleri gör</string>
 	<string name="update_current_version">Geçerli sürüm</string>
 	<string name="update_current_code">Sürüm kodu</string>
+	<string name="update_edition">Sürüm türü</string>
+	<string name="update_edition_full">Tam</string>
+	<string name="update_edition_lite">Hafif</string>
+	<string name="update_installed_architecture">Yüklü mimari</string>
+	<string name="update_download_architecture">İndirme mimarisi</string>
+	<string name="update_architecture_specific">mimari sürümü</string>
+	<string name="update_architecture_universal">orijinal</string>
+	<string name="update_architecture_value">%1$s (%2$s)</string>
 	<string name="update_checking">Güncellemeler aranıyor…</string>
 	<string name="update_up_to_date">En son sürüme sahipsiniz.</string>
 	<string name="update_available">Güncelleme mevcut: %1$s</string>

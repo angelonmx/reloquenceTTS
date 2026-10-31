@@ -389,6 +389,14 @@
 	<string name="update_current_changelog">View changes in this version</string>
 	<string name="update_current_version">Current version</string>
 	<string name="update_current_code">Version code</string>
+	<string name="update_edition">Edition</string>
+	<string name="update_edition_full">Full</string>
+	<string name="update_edition_lite">Lite</string>
+	<string name="update_installed_architecture">Installed architecture</string>
+	<string name="update_download_architecture">Download architecture</string>
+	<string name="update_architecture_specific">architecture-specific</string>
+	<string name="update_architecture_universal">original</string>
+	<string name="update_architecture_value">%1$s (%2$s)</string>
 	<string name="update_checking">Checking for updates…</string>
 	<string name="update_up_to_date">You have the latest version.</string>
 	<string name="update_available">Update available: %1$s</string>

@@ -146,6 +146,40 @@ class UpdateManifestTest {
 	}
 
 	@Test
+	fun `una instalacion universal descarga el APK exacto de su ABI`() {
+		assertTrue(ApkAbi.isUniversal(ApkAbi.fromEntries(listOf(
+			"lib/arm64-v8a/libengine.so",
+			"lib/armeabi-v7a/libengine.so",
+			"lib/x86_64/libengine.so"
+		))))
+		val chosen = UpdateManifestParser.chooseApk(
+			listOf(apk(abi = "universal"), apk(abi = "arm64-v8a")),
+			listOf("arm64-v8a")
+		)
+		assertEquals("aunque lo instalado sea original, baja arm64-v8a", "arm64-v8a", chosen?.abi)
+	}
+
+	@Test
+	fun `las ABIs se leen de lib y se normalizan`() {
+		val names = listOf(
+			"AndroidManifest.xml",
+			"lib/arm64-v8a/libengine.so",
+			"lib/arm64-v8a/libz.so",
+			"lib/armeabi-v7a/libengine.so"
+		)
+		val abis = ApkAbi.fromEntries(names)
+		assertEquals(setOf("arm64-v8a", "armeabi-v7a"), abis)
+		assertEquals("universal", ApkAbi.label(abis))
+		assertTrue(ApkAbi.isUniversal(abis))
+
+		val specific = ApkAbi.fromEntries(listOf("lib/arm64-v8a/libengine.so"))
+		assertEquals("arm64-v8a", ApkAbi.label(specific))
+		assertFalse(ApkAbi.isUniversal(specific))
+		assertEquals(setOf("arm64-v8a"), ApkAbi.normalize(listOf("arm64")))
+		assertEquals(emptySet<String>(), ApkAbi.fromEntries(listOf("lib/readme.txt")))
+	}
+
+	@Test
 	fun `si no hay ABI exacta se usa el universal`() {
 		val universal = apk(abi = "universal")
 		val chosen = UpdateManifestParser.chooseApk(

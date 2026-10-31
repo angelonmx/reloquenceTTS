@@ -2474,11 +2474,12 @@ private fun WordDialog(
 }
 
 /**
- * 5.4.3: el apartado de actualizaciones.
+ * 5.4.4: el apartado de actualizaciones.
  *
  * El orden es el que se pidió: buscar, ver los cambios de la versión
- * actual, la versión y el interruptor de comprobación al iniciar.
- * Debajo va lo que haya pasado en la última búsqueda.
+ * actual, la versión, la edición y las arquitecturas (instalada, del
+ * dispositivo y de la descarga), y el interruptor de comprobación al
+ * iniciar. Debajo va lo que haya pasado en la última búsqueda.
  *
  * La descarga y la instalación nunca empiezan solas: la
  * comprobación al iniciar solo enseña el diálogo, y siempre con el
@@ -2508,6 +2509,16 @@ private fun UpdatesScreen(
 		InfoRow(
 			stringResource(R.string.update_current_code),
 			com.angelonmx.reloquence.BuildConfig.VERSION_CODE.toString()
+		)
+		InfoRow(stringResource(R.string.update_edition), editionName())
+		InfoRow(
+			stringResource(R.string.update_installed_architecture),
+			architectureValue(updates.installedAbis)
+		)
+		InfoRow(stringResource(R.string.update_device_architecture), deviceAbi())
+		InfoRow(
+			stringResource(R.string.update_download_architecture),
+			architectureValue(updates.downloadAbis)
 		)
 		SwitchRow(
 			label = stringResource(R.string.update_check_on_launch),
@@ -2540,7 +2551,7 @@ private fun UpdatesScreen(
 }
 
 /**
- * 5.4.3: el diálogo de actualización disponible.
+ * 5.4.4: el diálogo de actualización disponible.
  *
  * No es un `AlertDialog` porque los botones tienen que quedar uno a
  * cada extremo del pie y el título centrado arriba. Cada dato va en
@@ -2555,8 +2566,9 @@ private fun UpdateAvailableDialog(updates: UpdatesModel, info: UpdateInfo) {
 	val date = formatUpdateDate(info.publishedAt)
 	val size = formatApkSize(info.apk.size)
 	val device = deviceAbi()
-	val apkAbi = info.apk.abi.ifBlank { device }
-	val edition = stringResource(
+	val apkAbi = ApkAbi.label(ApkAbi.normalize(listOf(info.apk.abi))).ifBlank { device }
+	val edition = editionName()
+	val download = stringResource(
 		if (com.angelonmx.reloquence.BuildConfig.LITE) {
 			R.string.update_download_lite
 		} else {
@@ -2596,6 +2608,20 @@ private fun UpdateAvailableDialog(updates: UpdatesModel, info: UpdateInfo) {
 					Text(
 						stringResource(
 							R.string.labelled_value,
+							stringResource(R.string.update_edition),
+							edition
+						)
+					)
+					Text(
+						stringResource(
+							R.string.labelled_value,
+							stringResource(R.string.update_installed_architecture),
+							architectureValue(updates.installedAbis)
+						)
+					)
+					Text(
+						stringResource(
+							R.string.labelled_value,
 							stringResource(R.string.update_new_version),
 							info.versionName
 						)
@@ -2624,8 +2650,15 @@ private fun UpdateAvailableDialog(updates: UpdatesModel, info: UpdateInfo) {
 					Text(
 						stringResource(
 							R.string.labelled_value,
+							stringResource(R.string.update_download_architecture),
+							architectureValue(updates.downloadAbis)
+						)
+					)
+					Text(
+						stringResource(
+							R.string.labelled_value,
 							stringResource(R.string.update_download_apk),
-							edition
+							download
 						)
 					)
 					if (notes.isNotEmpty()) {
@@ -2695,6 +2728,38 @@ private fun formatApkSize(bytes: Long): String? {
 	} else {
 		String.format(locale, "%.0f kB", bytes / 1024.0)
 	}
+}
+
+/** La edición instalada, con el mismo nombre en toda la pantalla. */
+@Composable
+private fun editionName(): String = stringResource(
+	if (com.angelonmx.reloquence.BuildConfig.LITE) {
+		R.string.update_edition_lite
+	} else {
+		R.string.update_edition_full
+	}
+)
+
+/**
+ * 5.4.4: una arquitectura y su tipo, como se pide en Ajustes:
+ * "arm64-v8a (versión de la arquitectura)" o "universal (original)".
+ */
+@Composable
+private fun architectureValue(abis: Set<String>): String {
+	val normalized = ApkAbi.normalize(abis)
+	if (normalized.isEmpty()) return "—"
+	val type = stringResource(
+		if (ApkAbi.isUniversal(normalized)) {
+			R.string.update_architecture_universal
+		} else {
+			R.string.update_architecture_specific
+		}
+	)
+	return stringResource(
+		R.string.update_architecture_value,
+		ApkAbi.label(normalized),
+		type
+	)
 }
 
 /** La arquitectura principal de este aparato. */

@@ -3,6 +3,29 @@
   "editions": {
     "full": [
       {
+        "versionName": "5.4.4",
+        "versionCode": 5404,
+        "date": "2026-10-31",
+        "notes": {
+          "es": [
+            "La voz se queda exactamente como la configuraste. El reinicio de prosodia conserva los ocho parámetros, pero ya no anuncia el número de voz en cada frase: ese anuncio vaciaba la cola, rehacía el conversor de audio y cambiaba el romanizador, y era lo que hacía que todo sonara como una exclamación.",
+            "La voz vuelve a aplicarse solo cuando cambia de verdad o cuando el texto trae un cambio de voz propio, sin cortar el audio que ya está en cola.",
+            "La primera frase empieza sin espera añadida por la app: se eliminó la pausa de 200 ms que aguardaba al motor precalentado.",
+            "Actualizaciones: muestra la versión instalada, la edición (completa o ligera), la arquitectura instalada y su tipo (versión de la arquitectura u original), la arquitectura del dispositivo y la que se descargará.",
+            "Al actualizar una instalación universal (original), se descarga el APK de la arquitectura del dispositivo; la edición sigue siendo la misma, completa o ligera.",
+            "Los textos nuevos están traducidos en los diez idiomas de la app."
+          ],
+          "en": [
+            "The voice stays exactly as configured. The prosody reset keeps all eight parameters but no longer announces the voice number on every sentence: that announcement flushed the queue, rebuilt the audio converter, and changed the romanizer, which is what made everything sound like an exclamation.",
+            "The voice is applied again only when it truly changes or when the text contains its own voice change, without cutting off audio already queued.",
+            "The first sentence starts with no delay added by the app: the 200 ms wait for the prewarmed engine is gone.",
+            "Updates: shows the installed version, edition (full or lite), installed architecture and its type (architecture build or original), device architecture, and the architecture that will be downloaded.",
+            "When updating a universal (original) installation, it downloads the APK for the device architecture; the edition stays the same, full or lite.",
+            "The new texts are translated into all ten app languages."
+          ]
+        }
+      },
+      {
         "versionName": "5.4.3",
         "versionCode": 5403,
         "date": "2026-10-29",
@@ -181,6 +204,29 @@
       }
     ],
     "lite": [
+      {
+        "versionName": "2.4.4",
+        "versionCode": 2404,
+        "date": "2026-10-31",
+        "notes": {
+          "es": [
+            "La voz se queda exactamente como la configuraste. El reinicio de prosodia conserva los ocho parámetros, pero ya no anuncia el número de voz en cada frase: ese anuncio vaciaba la cola, rehacía el conversor de audio y cambiaba el romanizador, y era lo que hacía que todo sonara como una exclamación.",
+            "La voz vuelve a aplicarse solo cuando cambia de verdad o cuando el texto trae un cambio de voz propio, sin cortar el audio que ya está en cola.",
+            "La primera frase empieza sin espera añadida por la app: se eliminó la pausa de 200 ms que aguardaba al motor precalentado.",
+            "Actualizaciones: muestra la versión instalada, la edición (completa o ligera), la arquitectura instalada y su tipo (versión de la arquitectura u original), la arquitectura del dispositivo y la que se descargará.",
+            "Al actualizar una instalación universal (original), se descarga el APK de la arquitectura del dispositivo; la edición sigue siendo la misma, completa o ligera.",
+            "Los textos nuevos están traducidos en los diez idiomas de la app."
+          ],
+          "en": [
+            "The voice stays exactly as configured. The prosody reset keeps all eight parameters but no longer announces the voice number on every sentence: that announcement flushed the queue, rebuilt the audio converter, and changed the romanizer, which is what made everything sound like an exclamation.",
+            "The voice is applied again only when it truly changes or when the text contains its own voice change, without cutting off audio already queued.",
+            "The first sentence starts with no delay added by the app: the 200 ms wait for the prewarmed engine is gone.",
+            "Updates: shows the installed version, edition (full or lite), installed architecture and its type (architecture build or original), device architecture, and the architecture that will be downloaded.",
+            "When updating a universal (original) installation, it downloads the APK for the device architecture; the edition stays the same, full or lite.",
+            "The new texts are translated into all ten app languages."
+          ]
+        }
+      },
       {
         "versionName": "2.4.3",
         "versionCode": 2403,

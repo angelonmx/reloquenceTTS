@@ -59,15 +59,32 @@ class EvvEngine internal constructor(
 	private var baseGender = -1
 	private var curVolume = -1
 
-	/** El preset del motor (1..8) que applyEmission dejó
-	 *  seleccionado, para que prosodyReset lo vuelva a anunciar antes
-	 *  de los ocho overrides (`` `vN `` primero, parámetros después).
-	 *  Cero es la voz en juego, no un preset, y no anuncia nada.
+	/** El preset del motor (1..8) que [applyEmission] dejó copiado
+	 *  sobre la voz en juego. Cero es "todavía no se aplicó ninguno".
 	 *
 	 *  5.4.2: se guarda ya en la numeración del motor, no en la de la
-	 *  app. Antes se guardaba el índice de [VoicePlan] (0..7) y el
-	 *  reinicio anunciaba una voz distinta de la elegida. */
+	 *  app. Antes se guardaba el índice de [VoicePlan] (0..7) y se
+	 *  copiaba una voz distinta de la elegida.
+	 *
+	 *  5.4.4: [prosodyReset] ya **no** anuncia este número. El `` `vN ``
+	 *  delante de cada trozo pasaba por `changeVoiceRun`, que vacía lo
+	 *  que queda en cola, rehace el conversor de audio y cambia el
+	 *  romanizador; eso era lo que hacía sonar cada frase como una
+	 *  exclamación. La identidad se aplica una sola vez con
+	 *  [EvvBridge.copyVoice], que no dispara ese recorrido. */
 	private var currentVoice = 0
+
+	/**
+	 * 5.4.4: el texto hablado traía un `` `vN `` propio (del usuario o
+	 *  de una entrada de diccionario) y dejó la voz del motor en otro
+	 *  preset. La próxima [applyEmission] tiene que volver a copiar el
+	 *  preset del plan aunque sea el mismo que [currentVoice] recuerda.
+	 *
+	 * Se marca en [speak], que es el único punto por el que entra el
+	 * texto final: el reinicio que arma esta app ya no lleva `` `vN ``,
+	 * así que lo que case aquí es una selección de voz de verdad.
+	 */
+	private var voiceChangedInline = false
 
 	/** Lo que la velocidad y el tono pedidos por última vez dan en
 	 *  los números propios del motor, enviados por delante de cada
@@ -206,12 +223,14 @@ class EvvEngine internal constructor(
 	}
 
 	/**
-	 * Escribe **los ocho** parámetros de [plan] en la voz actual.
+	 * Escribe **los ocho** parámetros de [plan] en la voz actual,
+	 * después de copiar sobre ella el preset que pide el plan (solo
+	 * cuando cambia, o cuando un `` `vN `` inline la dejó en otro).
 	 *
-	 * No copia un preset ni deja ningún hueco: el plan ya viene
-	 * completo (ver [VoicePlan]), así que lo que no se escribe aquí no
-	 * es "lo que hubiera antes". Es la diferencia entre una emisión
-	 * determinista y la voz que cambiaba tras reiniciar el servicio.
+	 * No deja ningún hueco: el plan ya viene completo (ver
+	 * [VoicePlan]), así que lo que no se escribe aquí no es "lo que
+	 * hubiera antes". Es la diferencia entre una emisión determinista
+	 * y la voz que cambiaba tras reiniciar el servicio.
 	 *
 	 * El motor rechaza escrituras mientras está hablando y contesta
 	 * `-1`; por eso devuelve falso y el llamante reintenta. Después de
@@ -229,12 +248,19 @@ class EvvEngine internal constructor(
 		// valores, que es el orden que el motor espera.
 		//
 		// 5.4.2: el plan numera desde cero y el motor desde uno. La
-		// conversión se hace aquí y se guarda ya convertida, para que
-		// [prosodyReset] anuncie el mismo preset que se copió.
+		// conversión se hace aquí y se guarda ya convertida.
+		//
+		// 5.4.4: también se vuelve a copiar si el texto de la emisión
+		// anterior traía un `` `vN `` propio y dejó otra voz puesta.
+		// Sin esto, la identidad se quedaba cambiada hasta reiniciar
+		// el servicio aunque los ocho parámetros ya fueran los del
+		// plan. [EvvBridge.copyVoice] es el camino barato: no pasa por
+		// changeVoiceRun ni corta el audio en cola.
 		val preset = Eci.enginePreset(plan.voice)
-		if (preset != currentVoice) {
+		if (preset != currentVoice || voiceChangedInline) {
 			if (native.copyVoice(handle, preset, Eci.VOICE_CURRENT) < 0) return false
 			currentVoice = preset
+			voiceChangedInline = false
 		}
 		for (param in Eci.SHAPE) {
 			val value = plan.value(param)
@@ -291,6 +317,15 @@ class EvvEngine internal constructor(
 	 * Los códigos son los del motor (eci_text.c): `vs `vb `vf
 	 * `vh `vr `vy `vv `vg.
 	 *
+	 * 5.4.4: **no** se anuncia `` `vN ``. Ese código no es un
+	 * parámetro: pasa por `changeVoiceRun`, que corta lo que queda en
+	 * cola, rehace el conversor de audio y cambia el romanizador. Con
+	 * uno por trozo, cada frase salía con un ataque y una entonación
+	 * distintos: la voz "exclamaba" todo aunque los ocho valores
+	 * fueran los del usuario. La identidad ya la deja puesta
+	 * [applyEmission] con [EvvBridge.copyVoice], y solo se repite si
+	 * el texto trajo un `` `vN `` propio ([voiceChangedInline]).
+	 *
 	 * Si algún valor no es válido, contesta vacío. El llamante
 	 * ([Emission]) lo trata como "no se puede hablar": es preferible
 	 * una emisión pospuesta a una emisión con `-1`.
@@ -300,13 +335,7 @@ class EvvEngine internal constructor(
 		if (wantSpeed < 0 || wantPitch < 0 || baseFluct < 0 || baseHead < 0 ||
 			baseRough < 0 || baseBreath < 0 || curVolume < 0 || baseGender < 0
 		) return ""
-		return buildString {
-			// 5.4: anunciar el preset antes de los ocho overrides, para
-			// que el motor cambie de registro y de dataset (no solo de
-			// parámetros). `vN` copia el preset sobre la voz en juego
-			// y fija OI_VOICENO; sin esto la voz sigue siendo la 1
-			// aunque los ocho valores digan otra cosa.
-			if (currentVoice > 0) append("`v$currentVoice ")
+		buildString {
 			append("`vs").append(wantSpeed).append(' ')
 			append("`vb").append(wantPitch).append(' ')
 			append("`vf").append(baseFluct).append(' ')
@@ -429,6 +458,13 @@ class EvvEngine internal constructor(
 	 *  el motor, `こんにちは` daba 0 muestras. Ver [Eci.encode]. */
 	override fun speak(text: String): Boolean = synchronized(guard) {
 		if (closed) return false
+		// 5.4.4: el texto final puede traer una selección de voz
+		// (`` `vN ``) escrita a mano o puesta por una entrada de
+		// diccionario. El motor la aplica al encolar y se queda con
+		// ella, así que la siguiente emisión tiene que reponer la voz
+		// del plan. Se marca aquí y no antes de hablar, porque un
+		// código que todavía no se ha encolado no ha cambiado nada.
+		if (Dictionaries.hasVoiceSelectText(text)) voiceChangedInline = true
 		val bytes = if (Eci.needsItsOwnCodeSet(language)) Eci.encode(text, language)
 		else WesternText.encode(text)
 		return native.speak(handle, bytes)

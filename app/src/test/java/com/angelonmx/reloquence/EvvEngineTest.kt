@@ -138,7 +138,12 @@ class EvvEngineTest {
 			listOf(3 to Eci.VOICE_CURRENT),
 			bridge.copies
 		)
-		assertTrue("el reinicio anuncia el preset del motor", engine.prosodyReset().contains("`v3 "))
+		val reset = engine.prosodyReset()
+		assertTrue("el reinicio lleva los ocho valores", reset.isNotEmpty())
+		assertFalse(
+			"el reinicio ya no anuncia `vN: eso cortaba el audio en cola",
+			Regex("`v\\d").containsMatchIn(reset)
+		)
 
 		// Aplicar la misma voz otra vez no vuelve a copiar el preset.
 		assertTrue(engine.applyEmission(plan))
@@ -147,12 +152,35 @@ class EvvEngineTest {
 		// Reed es 0 en la app y 1 en el motor; no es "la voz en juego".
 		assertTrue(engine.applyEmission(plan.copy(voice = 0)))
 		assertEquals(1 to Eci.VOICE_CURRENT, bridge.copies.last())
-		assertTrue("Reed se anuncia como 1", engine.prosodyReset().contains("`v1 "))
 
 		// El último preset también cae dentro del rango del motor.
 		assertTrue(engine.applyEmission(plan.copy(voice = Eci.PRESET_NAMES.lastIndex)))
 		assertEquals(Eci.LAST_PRESET to Eci.VOICE_CURRENT, bridge.copies.last())
-		assertTrue(engine.prosodyReset().contains("`v${Eci.LAST_PRESET} "))
+	}
+
+	@Test
+	fun `una seleccion de voz inline se repone en la siguiente emision`() {
+		val bridge = FakeBridge()
+		val (engine, _) = openEngine(bridge)
+		val plan = fullPlan()
+		assertTrue(engine.applyEmission(plan))
+		assertEquals("la primera emisión copia el preset", 1, bridge.copies.size)
+
+		// Texto con una selección de voz propia: el motor la aplica al
+		// encolar y deja de tener el preset del plan.
+		assertTrue(engine.speak("`v7 hola"))
+		assertTrue(engine.applyEmission(plan))
+		assertEquals(
+			"la emisión siguiente vuelve a copiar el preset del plan",
+			2,
+			bridge.copies.size
+		)
+		assertEquals(3 to Eci.VOICE_CURRENT, bridge.copies.last())
+
+		// Un reinicio de prosodia normal no cuenta como cambio de voz.
+		assertTrue(engine.speak("`vs100 `vb60 hola"))
+		assertTrue(engine.applyEmission(plan))
+		assertEquals("sin `vN no hay copia extra", 2, bridge.copies.size)
 	}
 
 	@Test

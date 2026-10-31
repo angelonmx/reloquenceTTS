@@ -38,6 +38,69 @@ data class UpdateApk(
 	val size: Long = 0
 )
 
+/**
+ * 5.4.4: la arquitectura real de un APK.
+ *
+ * Un APK con una sola carpeta `lib/<abi>/` es la versión de esa
+ * arquitectura; uno con varias es el universal, el "original" que se
+ * publicaba antes de repartir por ABI. Se mira el ZIP y no
+ * `ApplicationInfo.nativeLibraryDir`, porque esa ruta solo dice dónde
+ * Android extrajo las librerías y no distingue una instalación
+ * universal de una específica.
+ */
+object ApkAbi {
+
+	/** El nombre canónico que usa el manifiesto para una ABI. */
+	fun canonical(abi: String): String = when (abi.trim().lowercase()) {
+		"arm64", "arm64-v8a", "aarch64" -> "arm64-v8a"
+		"arm", "armv7", "armv7a", "armeabi", "armeabi-v7a" -> "armeabi-v7a"
+		"x86_64", "x86-64" -> "x86_64"
+		"x86", "i686" -> "x86"
+		"universal", "all" -> "universal"
+		else -> abi.trim().lowercase()
+	}
+
+	/** Las ABIs que declara un APK en sus entradas `lib/<abi>/...`. */
+	fun fromEntries(names: Iterable<String>): Set<String> {
+		val out = linkedSetOf<String>()
+		for (raw in names) {
+			val name = raw.replace('\\', '/')
+			if (!name.startsWith("lib/")) continue
+			val rest = name.removePrefix("lib/")
+			val slash = rest.indexOf('/')
+			// Solo `lib/<abi>/<archivo>`; una entrada suelta no es ABI.
+			if (slash <= 0 || slash == rest.lastIndex) continue
+			val abi = canonical(rest.substring(0, slash))
+			if (abi.isNotEmpty()) out += abi
+		}
+		return out
+	}
+
+	/** Normaliza lo que venga del manifiesto, del ZIP o de la pantalla. */
+	fun normalize(abis: Iterable<String>): Set<String> {
+		val out = linkedSetOf<String>()
+		for (raw in abis) {
+			val abi = canonical(raw)
+			if (abi.isNotEmpty()) out += abi
+		}
+		return out
+	}
+
+	/**
+	 * Lo que se enseña: la única ABI del APK, o `universal` cuando
+	 * trae varias. Vacío si no se pudo leer.
+	 */
+	fun label(abis: Set<String>): String = when {
+		abis.isEmpty() -> ""
+		abis.size == 1 && abis.first() != "universal" -> abis.first()
+		else -> "universal"
+	}
+
+	/** Universal también cuando el manifiesto ya lo llama así. */
+	fun isUniversal(abis: Set<String>): Boolean =
+		abis.size > 1 || "universal" in abis
+}
+
 /** La actualización elegida para este dispositivo. */
 data class UpdateInfo(
 	val versionName: String,
@@ -162,12 +225,5 @@ object UpdateManifestParser {
 			?: emptyList()
 	}
 
-	private fun canonicalAbi(abi: String): String = when (abi.trim().lowercase()) {
-		"arm64", "arm64-v8a", "aarch64" -> "arm64-v8a"
-		"arm", "armv7", "armv7a", "armeabi", "armeabi-v7a" -> "armeabi-v7a"
-		"x86_64", "x86-64" -> "x86_64"
-		"x86", "i686" -> "x86"
-		"universal", "all" -> "universal"
-		else -> abi.trim().lowercase()
-	}
+	private fun canonicalAbi(abi: String): String = ApkAbi.canonical(abi)
 }

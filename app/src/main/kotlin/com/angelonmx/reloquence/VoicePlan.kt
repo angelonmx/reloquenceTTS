@@ -16,14 +16,14 @@ package com.angelonmx.reloquence
  * Aquí no hay huecos. Cada uno de los ocho sale con un valor:
  *
  *  - lo que el usuario eligió, tal cual, sin escalarlo ni mezclarlo;
- *  - y si no eligió nada, el valor de sistema explícito de abajo.
+ *  - y si no eligió ese parámetro, el valor del preset de la voz, que
+ *    es lo que conserva su identidad (género, cabeza, fluctuación,
+ *    rugosidad, respiración, tono y volumen). Así una voz femenina
+ *    sigue siendo femenina aunque el usuario no haya tocado nada.
  *
- * Los únicos dos que conservan algo del preset son el tono base (para
- * que la voz siga siendo la que el usuario eligió) y el volumen propio
- * del preset. El resto no: la fluctuación, la cabeza, la rugosidad, la
- * respiración y el género salen de los valores de sistema, porque son
- * los que hacían que dos presets sonaran distintos sin que nadie los
- * tocara.
+ * La velocidad y el volumen tienen además su propia política: la
+ * velocidad sale de [useSystemSpeed] y el volumen de [useSystemVolume]
+ * (neutro cuando manda el sistema), como se explica en [plan].
  *
  * Todo esto es Kotlin puro para poder probarlo sin Android ni el motor
  * nativo: las pruebas construyen el plan y comprueban los ocho valores.
@@ -138,7 +138,9 @@ object VoicePlan {
 	 *
 	 * [shape] es lo que el usuario eligió (ver [Settings.shape]); puede
 	 * traer solo algunos parámetros. [preset] es lo que el preset de esa
-	 * voz trae de fábrica, y solo se usa para el tono base y el volumen.
+	 * voz trae de fábrica, y se usa para cualquier parámetro que el
+	 * usuario no haya elegido, salvo la velocidad y el volumen, que
+	 * tienen la política de [useSystemSpeed] y [useSystemVolume].
 	 *
 	 * [requestRate] y [requestPitch] son los porcentajes de Android. El
 	 * tono del usuario se aplica literal (100%); el del preset se
@@ -214,11 +216,6 @@ object VoicePlan {
 		)
 	}
 
-	/**
-	 * El valor que la interfaz debe enseñar cuando el usuario no ha
-	 * elegido uno. Es el mismo que aplica [plan], para que el
-	 * deslizador no diga una cosa y el motor haga otra.
-	 */
 	/**
 	 * El valor que la interfaz debe enseñar cuando el usuario no ha
 	 * elegido uno. Es el mismo que aplica [plan], para que el

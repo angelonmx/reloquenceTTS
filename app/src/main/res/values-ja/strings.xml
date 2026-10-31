@@ -390,6 +390,14 @@
 	<string name="update_current_changelog">このバージョンの変更点を見る</string>
 	<string name="update_current_version">現在のバージョン</string>
 	<string name="update_current_code">バージョンコード</string>
+	<string name="update_edition">エディション</string>
+	<string name="update_edition_full">フル</string>
+	<string name="update_edition_lite">ライト</string>
+	<string name="update_installed_architecture">インストール済みのアーキテクチャ</string>
+	<string name="update_download_architecture">ダウンロードするアーキテクチャ</string>
+	<string name="update_architecture_specific">アーキテクチャ版</string>
+	<string name="update_architecture_universal">オリジナル</string>
+	<string name="update_architecture_value">%1$s（%2$s）</string>
 	<string name="update_checking">アップデートを確認しています…</string>
 	<string name="update_up_to_date">最新バージョンです。</string>
 	<string name="update_available">アップデートがあります: %1$s</string>

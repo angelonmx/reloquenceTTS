@@ -390,6 +390,14 @@
 	<string name="update_current_changelog">Посмотреть изменения этой версии</string>
 	<string name="update_current_version">Текущая версия</string>
 	<string name="update_current_code">Код версии</string>
+	<string name="update_edition">Издание</string>
+	<string name="update_edition_full">Полная</string>
+	<string name="update_edition_lite">Облегчённая</string>
+	<string name="update_installed_architecture">Установленная архитектура</string>
+	<string name="update_download_architecture">Архитектура загрузки</string>
+	<string name="update_architecture_specific">версия для архитектуры</string>
+	<string name="update_architecture_universal">оригинальная</string>
+	<string name="update_architecture_value">%1$s (%2$s)</string>
 	<string name="update_checking">Проверка обновлений…</string>
 	<string name="update_up_to_date">У вас последняя версия.</string>
 	<string name="update_available">Доступно обновление: %1$s</string>

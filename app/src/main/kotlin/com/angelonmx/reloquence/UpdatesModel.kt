@@ -30,6 +30,23 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 	var available by mutableStateOf<UpdateInfo?>(null)
 		private set
 
+	/** 5.4.4: ABIs que trae la instalación actual, leídas de su APK
+	 *  base y sus splits. Vacío hasta que termina la lectura. */
+	var installedAbis by mutableStateOf<Set<String>>(emptySet())
+		private set
+
+	/** 5.4.4: ABIs del APK pendiente de instalar, si lo hay. */
+	var pendingAbis by mutableStateOf<Set<String>>(emptySet())
+		private set
+
+	/** Las ABIs del APK que se va a descargar o instalar. */
+	val downloadAbis: Set<String>
+		get() {
+			if (pendingApk != null && pendingAbis.isNotEmpty()) return pendingAbis
+			val abi = available?.apk?.abi
+			return if (abi.isNullOrBlank()) emptySet() else ApkAbi.normalize(listOf(abi))
+		}
+
 	var showDialog by mutableStateOf(false)
 		private set
 
@@ -144,9 +161,36 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 				UpdateStatus.Permission
 			}
 		}
+		loadArchitectures(waiting)
 		// 5.4.3: una sola comprobación al abrir la app, nunca en
 		// segundo plano ni repetida cada cierto tiempo.
 		checkAtLaunch()
+	}
+
+	/**
+	 * 5.4.4: leer los ZIP de la app instalada y del APK pendiente
+	 * fuera del hilo principal. Es la única forma fiable de saber si
+	 * lo instalado es una versión de la arquitectura (una carpeta
+	 * `lib/`) o el original universal (varias).
+	 */
+	private fun loadArchitectures(waiting: File?) {
+		viewModelScope.launch {
+			installedAbis = withContext(Dispatchers.IO) {
+				UpdateChecker.installedAbis(app)
+			}
+			if (waiting == null) return@launch
+			val pending = withContext(Dispatchers.IO) {
+				UpdateChecker.apkAbis(waiting)
+			}
+			if (pending.isEmpty()) return@launch
+			pendingAbis = pending
+			// Si la comprobación al iniciar ya trajo el manifiesto, su
+			// ABI manda; solo se rellena el hueco del APK pendiente.
+			val current = available ?: return@launch
+			if (current.apk.abi.isBlank()) {
+				available = current.copy(apk = current.apk.copy(abi = ApkAbi.label(pending)))
+			}
+		}
 	}
 
 	/** El APK pendiente, si el archivo sigue donde se dejó. */
@@ -174,6 +218,7 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 	private fun discardPending(deleteFile: Boolean = true) {
 		val file = pendingApk
 		pendingApk = null
+		pendingAbis = emptySet()
 		prefs.clearPending()
 		if (deleteFile && file != null) runCatching { file.delete() }
 	}
@@ -231,6 +276,7 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 					UpdateChecker.verifyApk(app, downloaded, info)
 				}
 				pendingApk = downloaded
+				pendingAbis = ApkAbi.normalize(listOf(info.apk.abi))
 				prefs.pendingApkPath = downloaded.absolutePath
 				prefs.pendingVersionName = info.versionName
 				prefs.pendingVersionCode = info.versionCode
@@ -244,6 +290,7 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 					UpdateInstaller.install(app, downloaded)
 				}
 				pendingApk = null
+				pendingAbis = emptySet()
 				prefs.clearPending()
 			} catch (e: CancellationException) {
 				throw e
@@ -259,6 +306,7 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 				if (status !is UpdateStatus.Permission) {
 					if (pendingApk === file) {
 						pendingApk = null
+						pendingAbis = emptySet()
 						prefs.clearPending()
 					}
 					file?.delete()
@@ -276,6 +324,7 @@ class UpdatesModel(private val app: Application) : ViewModel() {
 					UpdateInstaller.install(app, file)
 				}
 				pendingApk = null
+				pendingAbis = emptySet()
 				prefs.clearPending()
 			} catch (e: CancellationException) {
 				throw e

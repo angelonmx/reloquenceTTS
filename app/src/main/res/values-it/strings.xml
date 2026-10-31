@@ -391,6 +391,14 @@
 	<string name="update_current_changelog">Vedi le modifiche di questa versione</string>
 	<string name="update_current_version">Versione attuale</string>
 	<string name="update_current_code">Codice versione</string>
+	<string name="update_edition">Edizione</string>
+	<string name="update_edition_full">Completa</string>
+	<string name="update_edition_lite">Leggera</string>
+	<string name="update_installed_architecture">Architettura installata</string>
+	<string name="update_download_architecture">Architettura del download</string>
+	<string name="update_architecture_specific">versione per l\'architettura</string>
+	<string name="update_architecture_universal">originale</string>
+	<string name="update_architecture_value">%1$s (%2$s)</string>
 	<string name="update_checking">Ricerca aggiornamenti…</string>
 	<string name="update_up_to_date">Hai l\'ultima versione.</string>
 	<string name="update_available">Aggiornamento disponibile: %1$s</string>

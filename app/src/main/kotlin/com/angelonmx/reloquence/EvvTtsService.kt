@@ -557,13 +557,14 @@ class EvvTtsService : TextToSpeechService() {
 		if (language == 0 || !EvvEngine.available.contains(language)) return
 		if (warm != null && warmLanguage == language) return
 		// 5.2: si ya hay uno abriéndose para este idioma, no se abre
-		// otro; la emisión que llegue espera a ese (ver [ensureEngine]).
+		// otro. La emisión que llegue no lo espera: abre el suyo si
+		// hace falta y el que llegue tarde se cierra al adoptarlo.
 		if (warmTicket != null && warmTicketLanguage == language) return
 		val rate = s.sampleRateHz
 		val epoch = SettingsSignal.epoch
 		// 5.2: se anuncia que hay un motor en camino antes de abrir
-		// el hilo, para que una emisión que llegue en este instante
-		// sepa que puede esperarlo (ver [ensureEngine]).
+		// el hilo, para que no se lance otro precalentado del mismo
+		// idioma mientras tanto.
 		val ticket = java.util.concurrent.CountDownLatch(1)
 		warmTicket = ticket
 		warmTicketLanguage = language
@@ -1008,20 +1009,15 @@ class EvvTtsService : TextToSpeechService() {
 		// y oírla, y [prewarm] ya lo hizo mientras no había nada que
 		// decir: aquí solo queda cogerla.
 		//
-		// 5.4: si el calentado está en marcha justo para este idioma,
-		// se le da un instante. En el registro real [prewarm] tardaba
-		// 13 ms y la emisión abría un segundo motor 4 ms antes de que
-		// el primero estuviera listo: el calentado se quedaba sin usar
-		// y se pagaban dos aperturas por servicio. La espera es corta
-		// a propósito (200 ms, más de diez veces lo medido): si el
-		// calentado no llega en ese tiempo, la emisión abre el suyo y
-		// no se queda esperando como la versión de 700 ms.
-		val pending = warmTicket
-		if (pending != null && warmTicketLanguage == language) {
-			runCatching {
-				pending.await(200L, java.util.concurrent.TimeUnit.MILLISECONDS)
-			}
-		}
+		// 5.4.4: **no se espera** al calentado. La versión anterior le
+		// daba 200 ms si estaba en marcha, y eso era un retardo que la
+		// app añadía a la primera frase: el motor tarda unos 13 ms en
+		// abrir, así que la espera solo servía para no abrir un
+		// segundo. Ahora gana el que llegue primero: si el calentado ya
+		// está guardado se adopta y se cierra el recién abierto; si el
+		// recién abierto se guarda antes, [prewarm] descarta el suyo al
+		// verlo. Se paga una apertura de más, nunca un silencio. Se
+		// prefiere eso a retrasar lo que el usuario ya pidió decir.
 		val rate = settings?.sampleRateHz ?: Eci.sampleRateHz(1)
 		var made: EvvEngine? = null
 		synchronized(engines) {

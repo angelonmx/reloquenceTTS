@@ -15,6 +15,7 @@ import java.net.SocketTimeoutException
 import java.net.URL
 import java.net.UnknownHostException
 import java.security.MessageDigest
+import java.util.zip.ZipFile
 
 /**
  * 5.4: buscar, descargar y comprobar una actualización.
@@ -202,6 +203,45 @@ object UpdateChecker {
 		} finally {
 			connection.disconnect()
 		}
+	}
+
+	/**
+	 * 5.4.4: las ABIs que contiene un APK, mirando `lib/<abi>/` en su
+	 * ZIP. Devuelve vacío si el archivo no se puede leer; la pantalla
+	 * lo enseña como "—" en vez de inventarse una arquitectura.
+	 */
+	fun apkAbis(file: File): Set<String> {
+		if (!file.isFile) return emptySet()
+		return try {
+			ZipFile(file).use { zip ->
+				ApkAbi.fromEntries(
+					zip.entries().asSequence().map { it.name }.asIterable()
+				)
+			}
+		} catch (e: Exception) {
+			emptySet()
+		}
+	}
+
+	/**
+	 * 5.4.4: las ABIs de la instalación actual. Se miran el APK base
+	 * y sus splits: una instalación universal trae varias carpetas
+	 * `lib/`, una de arquitectura trae una sola. Así se puede decir si
+	 * lo instalado es "versión de la arquitectura" u "original".
+	 */
+	fun installedAbis(context: Context): Set<String> {
+		val info = try {
+			context.packageManager.getPackageInfo(context.packageName, 0)
+		} catch (e: PackageManager.NameNotFoundException) {
+			return emptySet()
+		}
+		val application = info.applicationInfo ?: return emptySet()
+		val files = ArrayList<File>(1 + (application.splitSourceDirs?.size ?: 0))
+		files.add(File(application.sourceDir))
+		application.splitSourceDirs?.forEach { files.add(File(it)) }
+		val out = linkedSetOf<String>()
+		for (file in files) out += apkAbis(file)
+		return out
 	}
 
 	/**
