@@ -568,6 +568,7 @@ class EvvTtsService : TextToSpeechService() {
 		val ticket = java.util.concurrent.CountDownLatch(1)
 		warmTicket = ticket
 		warmTicketLanguage = language
+		val startedNs = System.nanoTime()
 		diag(
 			"engine", "event" to "prewarm_start",
 			"language" to (Eci.bcp47Of(language) ?: "?"),
@@ -576,9 +577,8 @@ class EvvTtsService : TextToSpeechService() {
 		)
 		Thread({
 			try {
-				Eci.localeOf(language)?.first?.let {
-					CldrData.prewarm(it, s.readUnicodeSymbols)
-				}
+				// Prioriza el motor: inflar CLDR antes de eciNewEx competía
+				// con la inicialización que determina la primera voz.
 				val made = EvvEngine.open(language, rate) ?: return@Thread
 				// 5.3: el motor calentado solo se abre; el plan de voz se
 				// aplica únicamente en el path de emisión
@@ -604,7 +604,8 @@ class EvvTtsService : TextToSpeechService() {
 						"engine", "event" to "prewarm_ready",
 						"language" to (Eci.bcp47Of(language) ?: "?"),
 						"engine" to identity(made),
-						"rate" to made.sampleRateHz.toString()
+						"rate" to made.sampleRateHz.toString(),
+						"elapsed_ms" to ((System.nanoTime() - startedNs) / 1_000_000L).toString()
 					)
 				} else {
 					diag(
@@ -617,6 +618,11 @@ class EvvTtsService : TextToSpeechService() {
 				// La instancia calentada anterior se cierra fuera del
 				// candado: close() espera a que no quede ningún lector.
 				if (old != null && old !== made) old.close()
+				if (keep) {
+					Eci.localeOf(language)?.first?.let {
+						CldrData.prewarm(it, s.processEmojis, s.readUnicodeSymbols)
+					}
+				}
 			} catch (e: Throwable) {
 				diagError(
 					"prewarm_failed",
@@ -913,9 +919,11 @@ class EvvTtsService : TextToSpeechService() {
 		if (findVoice(name) != null) TextToSpeech.SUCCESS else TextToSpeech.ERROR
 
 	override fun onLoadVoice(name: String?): Int {
-		val found = findVoice(name) ?: return TextToSpeech.ERROR
-		ensureEngine(found.language) ?: return TextToSpeech.ERROR
-		return TextToSpeech.SUCCESS
+		// El framework consulta la voz durante su propia inicialización.
+		// Abrir aquí el motor bloquea ese camino; la instancia se prepara
+		// en segundo plano desde onCreate y, si aún no está lista, se abre
+		// antes de sintetizar la primera solicitud.
+		return if (findVoice(name) != null) TextToSpeech.SUCCESS else TextToSpeech.ERROR
 	}
 
 	override fun onGetDefaultVoiceNameFor(lang: String?, country: String?, variant: String?): String? {

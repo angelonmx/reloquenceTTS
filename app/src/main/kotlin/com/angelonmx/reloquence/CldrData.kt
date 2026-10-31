@@ -38,9 +38,9 @@ internal object CldrData {
 
 	/** Deja leída la tabla del idioma antes de la primera emisión.
 	 *  El primer emoji no debe pagar el gzip en el hilo de síntesis. */
-	fun prewarm(lang: String, unicode: Boolean) {
+	fun prewarm(lang: String, emojis: Boolean, unicode: Boolean) {
 		if (app == null) return
-		emojiTable(assetCode(lang))
+		if (emojis) emojiTable(assetCode(lang))
 		if (unicode) loadNames()
 	}
 

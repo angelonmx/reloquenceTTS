@@ -33,6 +33,34 @@ def notes_for(entry: dict | None, language: str) -> list[str]:
     return notes.get(language) or notes.get("en") or notes.get("es") or []
 
 
+def append_localized_notes(lines: list[str], entry: dict | None) -> None:
+    labels = {
+        "es": "Español",
+        "en": "English",
+        "fr": "Français",
+        "de": "Deutsch",
+        "it": "Italiano",
+        "pt": "Português",
+        "ja": "日本語",
+        "pl": "Polski",
+        "ru": "Русский",
+        "tr": "Türkçe",
+    }
+    notes = entry.get("notes", {}) if entry else {}
+    for language, label in labels.items():
+        translated = notes.get(language) or (
+            notes_for(entry, language) if language == "es" else []
+        )
+        if not translated:
+            continue
+        if language == "es":
+            lines.extend(f"- {note}" for note in translated)
+        else:
+            lines.extend(["", f"<details><summary>{label}</summary>", ""])
+            lines.extend(f"- {note}" for note in translated)
+            lines.extend(["", "</details>"])
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--versions", type=Path, default=Path("version.properties"))
@@ -60,28 +88,14 @@ def main() -> int:
         "Android pedirá confirmación antes de instalar.",
         "",
     ]
-    for note in notes_for(full, "es"):
-        lines.append(f"- {note}")
-    english = notes_for(full, "en")
-    if english:
-        lines += ["", "<details><summary>English</summary>", ""]
-        for note in english:
-            lines.append(f"- {note}")
-        lines += ["", "</details>"]
+    append_localized_notes(lines, full)
 
     lines += [
         "",
         f"## reloquenceTTS Lite {lite_name}",
         "",
     ]
-    for note in notes_for(lite, "es"):
-        lines.append(f"- {note}")
-    english = notes_for(lite, "en")
-    if english:
-        lines += ["", "<details><summary>English</summary>", ""]
-        for note in english:
-            lines.append(f"- {note}")
-        lines += ["", "</details>"]
+    append_localized_notes(lines, lite)
 
     lines += [
         "",
