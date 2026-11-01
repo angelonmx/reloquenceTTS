@@ -270,6 +270,37 @@ class EvvEngineTest {
 	}
 
 	@Test
+	fun `la primera emision tras una parada vuelve a aplicar el plan y el tono del sistema`() {
+		val bridge = FakeBridge()
+		val (engine, handle) = openEngine(bridge)
+		val plan = VoicePlan.plan(
+			voice = 2,
+			shape = fullShape(),
+			preset = emptyMap(),
+			requestRate = 150,
+			requestPitch = 150,
+			useSystemSpeed = false,
+			useSystemVolume = false,
+			volumeGain = 100
+		)
+		assertTrue(engine.applyEmission(plan))
+		engine.setRatePercent(50)
+		engine.setPitchPercent(50)
+		engine.stop()
+
+		assertEquals(
+			Emission.Result.Spoken,
+			Emission.speak(engine, plan, "hola", pause = {}) { reset -> reset + "hola" }
+		)
+		assertEquals(
+			SpeechRate.speedForPercent(100, 150),
+			bridge.getVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_SPEED)
+		)
+		assertEquals(90, bridge.getVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_PITCH_BASELINE))
+		assertEquals(30, bridge.getVoiceParam(handle, Eci.VOICE_CURRENT, Eci.VOICE_PITCH_FLUCTUATION))
+	}
+
+	@Test
 	fun `motor cerrado no aplica ni restablece`() {
 		val bridge = FakeBridge()
 		val (engine, _) = openEngine(bridge)

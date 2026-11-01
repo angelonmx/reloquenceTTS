@@ -190,9 +190,9 @@ val updateBaseUrl = (
 ).trim().trimEnd('/')
 
 /**
- * 5.4: las compilaciones de GitHub Actions bajan las bibliotecas
- * nativas de un artefacto y no tienen que volver a compilar el motor.
- * En local no se usa: el valor por defecto es compilarlo.
+ * Permite omitir el motor nativo en comprobaciones de CI que solo
+ * compilan Kotlin. El flujo de release construye el motor expresamente
+ * antes de empaquetar cada edición.
  */
 val skipNative = (findProperty("evvdroid.skipNative") as String?)?.toBoolean() ?: false
 
@@ -455,8 +455,7 @@ val renameApks = tasks.register("renameApks") {
 }
 
 tasks.named("preBuild") {
-	// 5.4: en CI las bibliotecas llegan en un artefacto y el motor no
-	// se vuelve a compilar. En local se compila como siempre.
+	// El release ya construyó el motor como paso explícito.
 	if (!skipNative) dependsOn(buildNative)
 }
 

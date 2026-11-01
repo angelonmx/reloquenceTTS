@@ -89,22 +89,35 @@ object Emission {
 		build: (String) -> String
 	): Result {
 		if (body.isBlank()) return Result.Empty
-		if (!plan.isComplete) return Result.NotApplied
+		val reset = prepare(target, plan, retries, pause) ?: return Result.NotApplied
+		onReset(reset)
+		val text = build(reset)
+		if (text.isBlank()) return Result.Empty
+		return if (target.speak(text)) Result.Spoken else Result.Rejected
+	}
+
+	/**
+	 * Aplica el plan y devuelve los códigos que lo reafirman en el
+	 * texto. Se comparte con la preparación del diccionario para que
+	 * ambos caminos reintenten igual y nunca usen un estado anterior.
+	 */
+	fun prepare(
+		target: Target,
+		plan: VoicePlan.Plan,
+		retries: Int = 4,
+		pause: (Long) -> Unit = { Thread.sleep(it) }
+	): String? {
+		if (!plan.isComplete) return null
 		var attempts = 0
 		while (true) {
 			if (target.applyEmission(plan)) break
 			attempts++
-			if (attempts >= retries) return Result.NotApplied
+			if (attempts >= retries) return null
 			pause(50L * attempts)
 		}
 		target.setRatePercent(plan.ratePercent)
 		target.setPitchPercent(plan.pitchPercent)
 		target.setVolumePercent(plan.volumeGain)
-		val reset = target.prosodyReset()
-		if (reset.isBlank()) return Result.NotApplied
-		onReset(reset)
-		val text = build(reset)
-		if (text.isBlank()) return Result.Empty
-		return if (target.speak(text)) Result.Spoken else Result.Rejected
+		return target.prosodyReset().takeUnless { it.isBlank() }
 	}
 }

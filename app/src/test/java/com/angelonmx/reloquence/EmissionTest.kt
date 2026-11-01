@@ -120,6 +120,18 @@ class EmissionTest {
 	}
 
 	@Test
+	fun `la preparacion del diccionario reintenta y devuelve la prosodia del plan`() {
+		val target = FakeTarget(applyResults = mutableListOf(false, true))
+		val reset = Emission.prepare(target, plan(), pause = {})
+
+		assertEquals("`vs50 `vb50 ", reset)
+		assertEquals(
+			listOf("apply", "apply", "rate=100", "pitch=100", "volume=100", "reset"),
+			target.calls
+		)
+	}
+
+	@Test
 	fun `agotar los reintentos no habla nada`() {
 		val target = FakeTarget(applyResults = mutableListOf(false, false, false, false, false))
 		val result = Emission.speak(target, plan(), "hola", retries = 4, pause = {}) { reset ->

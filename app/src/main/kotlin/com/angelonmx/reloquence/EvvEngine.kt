@@ -350,7 +350,7 @@ class EvvEngine internal constructor(
 	}
 
 	/**
-	 * Restablece el estado de prosodia del motor tras una [stop].
+	 * Restablece explícitamente el estado de prosodia ya aplicado.
 	 *
 	 * Vuelve a escribir los ocho parámetros base que dejó la última
 	 * [applyEmission] sobre la voz en juego, para que una emisión
@@ -358,8 +358,12 @@ class EvvEngine internal constructor(
 	 * no deje residuo (tono, velocidad o inflexión pegados) en la
 	 * siguiente. No cambia la voz seleccionada ni el diccionario.
 	 *
-	 * Aplicarlo varias veces es inofensivo: reafirma los mismos ocho
-	 * valores que ya tiene el motor, así que no acumula estado.
+	 * No debe llamarse desde el callback de parada: el hilo nativo aún
+	 * puede estar desenrollándose. La siguiente [applyEmission] vuelve a
+	 * escribir el plan completo antes de hablar.
+	 *
+	 * Aplicarlo varias veces es inofensivo una vez que el motor está
+	 * inactivo: reafirma los mismos ocho valores, sin acumular estado.
 	 */
 	fun resetProsody() = synchronized(guard) {
 		if (closed) return
@@ -509,8 +513,8 @@ class EvvEngine internal constructor(
 
 	fun stop() = synchronized(guard) {
 		if (!closed) native.stop(handle)
-		// 5.3: constar que el motor se detuvo y quedó listo para ser
-		// restablecido por [resetProsody] antes de la siguiente emisión.
+		// La siguiente emisión reescribe los ocho parámetros después de
+		// que el callback nativo termine de desenrollarse.
 		Timber.i("motor detenido: engine=%d", id)
 	}
 

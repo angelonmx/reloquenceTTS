@@ -60,24 +60,14 @@ jobs:
       - name: Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Commit del motor
-        id: engine
+      # Se compila en cada release, sin reutilizar bibliotecas nativas
+      # de una ejecución anterior. Cada edición tiene sus propios idiomas.
+      - name: Compilar el motor nativo
+        env:
+          EDITION: ${{ matrix.edition }}
         run: |
           set -euo pipefail
-          echo "sha=$(git -C native/openevv rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      # El motor tarda varios minutos por ABI y no cambia entre
-      # releases. La clave lleva el commit del submódulo, la edición
-      # y las ABI, así que un cambio en cualquiera invalida la caché.
-      - name: Caché del motor nativo
-        uses: actions/cache@v4
-        with:
-          path: |
-            native/openevv/build
-            app/build/${{ matrix.edition }}/native/jniLibs
-          key: native-${{ matrix.edition }}-${{ steps.engine.outputs.sha }}-${{ hashFiles('.gitmodules', 'native/patches/**', 'native/android.mk', 'native/build-native.sh') }}-arm64-v8a-armeabi-v7a
-          restore-keys: |
-            native-${{ matrix.edition }}-${{ steps.engine.outputs.sha }}-
+          ./gradlew :app:buildNative "-Pevvdroid.edition=$EDITION" --stacktrace
 
       - name: Leer la versión
         id: version
@@ -128,6 +118,7 @@ jobs:
           set -euo pipefail
           ./gradlew :app:assembleRelease \
             "-Pevvdroid.edition=$EDITION" \
+            "-Pevvdroid.skipNative=true" \
             "-Preloquence.updateBaseUrl=https://raw.githubusercontent.com/$REPO/main/updates" \
             --stacktrace
 

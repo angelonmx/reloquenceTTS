@@ -142,12 +142,12 @@ object VoicePlan {
 	 * usuario no haya elegido, salvo la velocidad y el volumen, que
 	 * tienen la política de [useSystemSpeed] y [useSystemVolume].
 	 *
-	 * [requestRate] y [requestPitch] son los porcentajes de Android. El
-	 * tono del usuario se aplica literal (100%); el del preset se
-	 * escala por el porcentaje del sistema. La velocidad siempre se
-	 * escala por el porcentaje del sistema, que es lo que respeta el
-	 * ritmo que pide el lector de pantalla; [useSystemSpeed] decide si
-	 * la base es la del sistema (50) o la que eligió el usuario.
+	 * [requestRate] y [requestPitch] son los porcentajes de Android y se
+	 * aplican sobre la base de voz elegida o heredada del preset. La
+	 * velocidad también se escala por el porcentaje del sistema, que es
+	 * lo que respeta el ritmo que pide el lector de pantalla;
+	 * [useSystemSpeed] decide si la base es la del sistema (50) o la que
+	 * eligió el usuario.
 	 */
 	fun plan(
 		voice: Int,
@@ -200,11 +200,9 @@ object VoicePlan {
 			// El cliente manda hasta el tope que ya tiene la propia
 			// aplicación; por encima se recorta a ese tope.
 			ratePercent = sanePercent(requestRate).coerceAtMost(MAX_RATE_PERCENT),
-			// El tono elegido por el usuario manda literal: el sistema no
-			// lo vuelve a escalar. El que viene del preset sí se escala,
-			// que es lo que hace que el deslizador de tono del lector
-			// siga funcionando sin haber elegido nada aquí.
-			pitchPercent = if (pitchFromUser) NEUTRAL_PERCENT else sanePercent(requestPitch),
+			// Android siempre aporta su porcentaje de tono, incluso si
+			// hay una base elegida en la app.
+			pitchPercent = sanePercent(requestPitch),
 			volumeGain = volumeGain.coerceIn(0, 500),
 			pitchFromUser = pitchFromUser,
 			speedFromUser = speedFromUser,

@@ -1361,19 +1361,14 @@ class EvvTtsService : TextToSpeechService() {
 		// repone sola; el diccionario no tiene por qué olvidarse.
 		val live = ArrayList<EvvEngine>()
 		synchronized(engines) { live.addAll(engines.values) }
-		var reset = false
+		// No escribir parámetros aquí: el motor todavía puede estar
+		// desenrollando su callback de audio. La siguiente emisión aplica
+		// el plan completo cuando el motor vuelve a aceptar escrituras.
 		for (held in live) {
 			held.stop()
-			// 5.3: restablecer el estado de prosodia del motor tras
-			// cada parada, para que una emisión cortada a mitad de una
-			// inflexión no deje residuo (tono, velocidad o inflexión
-			// pegados) en la siguiente.
-			held.resetProsody()
-			reset = true
 		}
 		diag(
-			"engine", "event" to "stop_reset",
-			"stop_reset" to reset.toString(),
+			"engine", "event" to "stop_abort",
 			"engines" to live.size.toString(),
 			"service" to serviceNumber.toString()
 		)
@@ -1829,33 +1824,15 @@ class EvvTtsService : TextToSpeechService() {
 			// entrada de diccionario-- se limpia antes de hablar. La
 			// palabra se dice entera y la voz no se mueve.
 			val ignoreTags = s?.ignoreVoiceTags == true
-			// [Emission.speak] vuelve a aplicar el plan antes de cada
-			// trozo, así que el motor siempre habla con el plan de esta
-			// emisión y nunca con lo que dejara el trozo anterior. Se
-			// aplica aquí también, antes del reinicio que limpia el
-			// diccionario, para que [prosodyReset] devuelva códigos
-			// válidos incluso en el primer trozo de un motor recién
-			// abierto. Aplicar el mismo plan dos veces no acumula
-			// estado ([EvvEngine.applyEmission] es idempotente).
-			if (!ignoreTags) target.applyEmission(ready.plan)
-			// 5.4.1: la velocidad y el tono de la emisión tienen que
-			// estar puestos **antes** de [prosodyReset], porque ese
-			// reinicio se arma con lo que el motor tiene en ese
-			// momento. Antes se calculaba justo después de
-			// [applyEmission], así que el guard del diccionario
-			// volvía a la velocidad y al tono base y la primera
-			// sustitución sonaba distinta; [Emission.speak] lo
-			// corregía después, pero demasiado tarde para ese guard.
-			if (!ignoreTags) {
-				target.setRatePercent(ready.plan.ratePercent)
-				target.setPitchPercent(ready.plan.pitchPercent)
-				target.setVolumePercent(ready.plan.volumeGain)
-			}
-			// El reinicio de la ventana solo protege las sustituciones
-			// del diccionario. La emisión vuelve a pedir el suyo en
-			// [Emission.speak] antes de cada trozo, que es el que de
-			// verdad se manda por delante.
-			val guard = if (ignoreTags) "" else target.prosodyReset()
+			// Se prepara el plan antes de sustituir el diccionario y se
+			// vuelve a aplicar antes de cada trozo en [Emission.speak].
+			// Ambos caminos usan los mismos reintentos para no reutilizar
+			// parámetros antiguos si el motor aún está abortando.
+			val guard = if (ignoreTags) "" else Emission.prepare(target, ready.plan)
+				?: run {
+					postponed(target, ready.plan, session)
+					return false
+				}
 			val sub = Dictionaries.substitute(prepared, subEntries, guard)
 			val said = if (ignoreTags) Prosody.stripVoiceCodes(sub) else sub
 			if (!ignoreTags && Dictionaries.hasVoiceSelectText(said)) onVoiceSelect()

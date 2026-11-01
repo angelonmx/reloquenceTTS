@@ -163,8 +163,9 @@ gh run watch --repo angelonmx/reloquenceTTS
 
 El flujo hace esto:
 
-1. compila el motor nativo y los APK de `full` y `lite` en paralelo, para
-   `arm64-v8a`, `armeabi-v7a` y universal;
+1. compila desde el submódulo el motor nativo de cada edición en cada
+   ejecución, sin reutilizar una caché; después compila sus APK `full` y
+   `lite` para `arm64-v8a`, `armeabi-v7a` y universal;
 2. firma cada APK con los secretos;
 3. comprueba la firma con `apksigner`;
 4. crea o actualiza la release `v<versión full>` con todos los APK;
@@ -181,8 +182,9 @@ git tag v5.5.1
 git push origin v5.5.1
 ```
 
-La primera compilación tarda más porque compila el motor desde cero. Las
-siguientes reutilizan la caché del submódulo y de Gradle.
+Cada publicación vuelve a compilar el motor nativo antes de generar los APK.
+GitHub Actions conserva la caché de Gradle, pero no reutiliza bibliotecas
+nativas de ejecuciones anteriores.
 
 ## 6. Comprobar que la app lo ve
 

@@ -10,8 +10,8 @@ import org.junit.Test
  * `-1` o con lo que dejó la anterior.
  *
  * Estas pruebas no tocan Android ni el motor: comprueban los ocho
- * valores que [VoicePlan.plan] entrega y que lo elegido por el usuario
- * se aplica tal cual, sin escalarlo ni mezclarlo con el preset.
+ * valores que [VoicePlan.plan] entrega: la forma de voz elegida se
+ * conserva como base y los porcentajes pedidos por Android se aplican.
  */
 class VoicePlanTest {
 
@@ -42,7 +42,7 @@ class VoicePlanTest {
 	}
 
 	@Test
-	fun `lo elegido por el usuario se aplica literal aunque el preset diga otra cosa`() {
+	fun `la voz elegida conserva su base y aplica el tono pedido por Android`() {
 		val shape = mapOf(
 			Eci.VOICE_GENDER to 1,
 			Eci.VOICE_HEAD_SIZE to 12,
@@ -76,7 +76,16 @@ class VoicePlanTest {
 				plan.value(param)
 			)
 		}
-		assertEquals("el tono del usuario no se escala", 100, plan.pitchPercent)
+		assertEquals("se conserva el tono del usuario como base", 77, plan.value(Eci.VOICE_PITCH_BASELINE))
+		assertEquals("el porcentaje de tono de Android también se respeta", 150, plan.pitchPercent)
+		assertEquals("el tono efectivo respeta el tope del motor", 100, plan.effectivePitch())
+		val lowerBase = VoicePlan.plan(
+			voice = 1,
+			shape = mapOf(Eci.VOICE_PITCH_BASELINE to 40),
+			preset = emptyPreset,
+			requestPitch = 150
+		)
+		assertEquals("el tono del sistema se escala sobre la base elegida", 60, lowerBase.effectivePitch())
 		assertEquals("la tasa sí se escala por el sistema", 150, plan.ratePercent)
 		assertEquals("la ganancia se respeta", 80, plan.volumeGain)
 		assertTrue(plan.pitchFromUser)
@@ -94,6 +103,7 @@ class VoicePlanTest {
 		)
 		assertEquals("el preset manda si el usuario no tocó el tono", 60, plan.value(Eci.VOICE_PITCH_BASELINE))
 		assertEquals("y se escala como pide Android", 150, plan.pitchPercent)
+		assertEquals("tono efectivo", 90, plan.effectivePitch())
 		assertEquals("con volumen del sistema, el motor usa 100 no el preset", VoicePlan.NEUTRAL_PERCENT, plan.value(Eci.VOICE_VOLUME))
 		assertFalse(plan.pitchFromUser)
 	}
@@ -186,7 +196,7 @@ class VoicePlanTest {
 		assertEquals("lo pedido por el cliente", "409", pairs["rate_raw"])
 		assertEquals("lo que se aplica", "409", pairs["rate_pct"])
 		assertEquals("lo pedido por el cliente", "120", pairs["pitch_raw"])
-		assertEquals("el tono del usuario manda literal", "100", pairs["pitch_pct"])
+		assertEquals("el porcentaje de tono pedido se aplica", "120", pairs["pitch_pct"])
 		assertTrue(pairs.containsKey("volume_gain"))
 		assertEquals("la base configurada", "50", pairs["speed_cfg"])
 		assertEquals(
