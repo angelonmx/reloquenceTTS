@@ -3,6 +3,21 @@
   "editions": {
     "full": [
       {
+        "versionName": "5.5.2",
+        "versionCode": 5502,
+        "date": "2026-10-31",
+        "notes": {
+          "es": [
+            "La voz conserva sus parámetros de prosodia al detener y reanudar la lectura; el tono y la velocidad solicitados por Android se aplican de forma consistente.",
+            "El motor nativo se recompila en cada publicación antes de generar los APK."
+          ],
+          "en": [
+            "Voice prosody settings are now preserved when speech is stopped and resumed; Android's requested pitch and rate are applied consistently.",
+            "The native engine is rebuilt for every release before the APKs are generated."
+          ]
+        }
+      },
+      {
         "versionName": "5.5.1",
         "versionCode": 5501,
         "date": "2026-10-31",
@@ -308,6 +323,21 @@
       }
     ],
     "lite": [
+      {
+        "versionName": "2.5.2",
+        "versionCode": 2502,
+        "date": "2026-10-31",
+        "notes": {
+          "es": [
+            "La voz conserva sus parámetros de prosodia al detener y reanudar la lectura; el tono y la velocidad solicitados por Android se aplican de forma consistente.",
+            "El motor nativo se recompila en cada publicación antes de generar los APK."
+          ],
+          "en": [
+            "Voice prosody settings are now preserved when speech is stopped and resumed; Android's requested pitch and rate are applied consistently.",
+            "The native engine is rebuilt for every release before the APKs are generated."
+          ]
+        }
+      },
       {
         "versionName": "2.5.1",
         "versionCode": 2501,
