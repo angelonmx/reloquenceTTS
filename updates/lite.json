@@ -2,38 +2,40 @@
   "schema": 1,
   "applicationId": "com.angelonmx.reloquence.lite",
   "edition": "lite",
-  "versionName": "2.5.2",
-  "versionCode": 2502,
-  "publishedAt": "2026-11-01T02:22:58Z",
+  "versionName": "2.5.3",
+  "versionCode": 2503,
+  "publishedAt": "2026-11-02T00:25:12Z",
   "minSdk": 23,
   "notes": {
     "es": [
-      "La voz conserva sus parámetros de prosodia al detener y reanudar la lectura; el tono y la velocidad solicitados por Android se aplican de forma consistente.",
-      "El motor nativo se recompila en cada publicación antes de generar los APK."
+      "Los perfiles de voz reemplazan los ajustes anteriores de esa voz, para que la inflexión elegida no quede mezclada con valores antiguos.",
+      "La síntesis de textos medianos usa una primera ventana más corta para empezar a hablar antes.",
+      "Flanger y eco usan TarsosDSP; se añade el perfil de locución profesional y su licencia se consulta desde Acerca de."
     ],
     "en": [
-      "Voice prosody settings are now preserved when speech is stopped and resumed; Android's requested pitch and rate are applied consistently.",
-      "The native engine is rebuilt for every release before the APKs are generated."
+      "Voice profiles now replace that voice's previous overrides, so the selected inflection is not mixed with stale values.",
+      "Medium-length text now uses a shorter first synthesis window to start speaking sooner.",
+      "Flanger and echo now use TarsosDSP; a professional narration profile and in-app license notice are included."
     ]
   },
   "apks": [
     {
       "abi": "arm64-v8a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.2/reloquence-lite-2.5.2-2502-arm64-v8a-release.apk",
-      "sha256": "c928ba100342cd94643811e9585a5936e1262660868b562ea77c699e2c943951",
-      "size": 7121993
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.3/reloquence-lite-2.5.3-2503-arm64-v8a-release.apk",
+      "sha256": "e7182f598528249681e2e945fe2fadc48c4f742906be20b31ba55843cfcabe46",
+      "size": 7141168
     },
     {
       "abi": "armeabi-v7a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.2/reloquence-lite-2.5.2-2502-armeabi-v7a-release.apk",
-      "sha256": "2727a15c1af51b4cb2cbd02398ed1669cd065d322c958247091bd67ba9d4e18d",
-      "size": 6690178
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.3/reloquence-lite-2.5.3-2503-armeabi-v7a-release.apk",
+      "sha256": "288bec9427a18624f55ab5fc2a7c51de22d3a0dff347781da0d79057671c98f2",
+      "size": 6709369
     },
     {
       "abi": "universal",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.2/reloquence-lite-2.5.2-2502-universal-release.apk",
-      "sha256": "7c59e495c6d8b87b297c010e56eacc5fbdf0f7f8d4a41cfcdd40a1304983db50",
-      "size": 9075704
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v5.5.3/reloquence-lite-2.5.3-2503-universal-release.apk",
+      "sha256": "bc43e36368d01fa2429d2b2ddaf59befc481e8146b069a38dcf7885f2cc296cb",
+      "size": 9094876
     }
   ]
 }
