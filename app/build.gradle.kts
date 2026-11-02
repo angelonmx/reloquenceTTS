@@ -573,6 +573,7 @@ dependencies {
 	// lo que oye es lo mismo. Ver [needsMlKit] para la demostración
 	// de que el resultado no puede cambiar nada con dos motores de
 	// español, que es lo que hace falta para quitarlo.
+	implementation(libs.tarsos.dsp.core)
 	implementation(libs.mlkit.language.id)
 	implementation(libs.androidx.profileinstaller)
 

@@ -963,7 +963,10 @@ class Settings(context: Context) {
 
 	fun writeShape(voice: Int, values: Map<Int, Int>) {
 		write {
-			for (param in PER_VOICE) values[param]?.let { putInt(keyOf(voice, param), it) }
+			for (param in PER_VOICE) {
+				remove(keyOf(voice, param))
+				values[param]?.let { putInt(keyOf(voice, param), Eci.clampVoice(param, it)) }
+			}
 		}
 		values[Eci.VOICE_SPEED]?.let { speed = it }
 	}

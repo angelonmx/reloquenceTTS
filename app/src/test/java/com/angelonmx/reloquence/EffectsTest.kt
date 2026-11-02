@@ -547,6 +547,45 @@ class EffectsTest {
 	}
 
 	@Test
+	fun `Tarsos effects keep timing across differently sized streaming blocks`() {
+		val source = Signal.voice(frames)
+		val whole = Signal.toBytes(source)
+		val streamed = Signal.toBytes(source)
+		val wholeChain = chain(echoMix = 75, flanger = true)
+		val streamedChain = chain(echoMix = 75, flanger = true)
+		wholeChain.process(whole, whole.size)
+
+		var offset = 0
+		val blockSizes = intArrayOf(240, 512, 96, 1024, 360)
+		var blockIndex = 0
+		while (offset < streamed.size) {
+			val size = minOf(blockSizes[blockIndex % blockSizes.size] * 2, streamed.size - offset)
+			val block = streamed.copyOfRange(offset, offset + size)
+			streamedChain.process(block, block.size)
+			block.copyInto(streamed, offset)
+			offset += size
+			blockIndex++
+		}
+
+		var worstDifference = 0
+		for (i in source.indices) {
+			val offset = i * 2
+			val wholeSample = ((whole[offset].toInt() and 0xFF) or
+				(whole[offset + 1].toInt() shl 8)).toShort().toInt()
+			val streamedSample = ((streamed[offset].toInt() and 0xFF) or
+				(streamed[offset + 1].toInt() shl 8)).toShort().toInt()
+			worstDifference = maxOf(
+				worstDifference,
+				kotlin.math.abs(wholeSample - streamedSample)
+			)
+		}
+		assertTrue(
+			"los efectos deben conservar el reloj entre bloques; diferencia máxima=$worstDifference",
+			worstDifference <= 4
+		)
+	}
+
+	@Test
 	fun `every level effect changes the signal above zero`() {
 		val voice = Signal.voice(frames)
 		val cases: List<Pair<String, AudioFx.Chain>> = listOf(

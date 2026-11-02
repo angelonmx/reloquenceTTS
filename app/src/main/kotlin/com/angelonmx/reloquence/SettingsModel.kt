@@ -2929,6 +2929,13 @@ class SettingsModel(private val app: Application) : ViewModel() {
 				systemSpeed = true,
 				hdEnhance = true
 			),
+			"Locución profesional" to Settings.VoicePatch(
+				baseVoice = 4,
+				speed = Eci.DEFAULT_SPEED + 2,
+				systemSpeed = true,
+				hdEnhance = true,
+				body = true
+			),
 			"Narración" to Settings.VoicePatch(
 				baseVoice = 0,
 				speed = Eci.DEFAULT_SPEED - 10,
@@ -2942,7 +2949,13 @@ class SettingsModel(private val app: Application) : ViewModel() {
 		 *  "noche", 3 "radio" y 2 "podcast" casi idénticos).
 		 *  "Podcast" trae la cadena completa que antes solo tenía
 		 *  "Podcast pro". Nuevo: "Metálica" (modulador en anillo). */
-		val BUILTIN_FX: Map<String, Settings.FxPatch> = mapOf(			"Plano" to Settings.FxPatch(),
+		val BUILTIN_FX: Map<String, Settings.FxPatch> = mapOf(
+			"Plano" to Settings.FxPatch(),
+			"Voz profesional" to Settings.FxPatch(
+				bands = intArrayOf(-1, 0, 1, 1, 2, 2, 1, 0, 0, 0),
+				presence = 2, comp = true, deesser = true,
+				normalizer = true, highpass = true
+			),
 			"Voz clara" to Settings.FxPatch(intArrayOf(0, 0, 0, 1, 3, 4, 3, 1, 0, 0), 0, 0, 3, 0),
 			"Voz cristalina" to Settings.FxPatch(
 				bands = intArrayOf(0, 0, 0, 1, 2, 3, 4, 3, 2, 1), presence = 4,

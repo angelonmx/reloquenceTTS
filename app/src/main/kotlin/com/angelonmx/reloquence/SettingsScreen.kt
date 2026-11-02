@@ -51,6 +51,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
@@ -71,6 +72,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.IOException
 
 /**
  * 5.2: copiar al portapapeles del sistema.
@@ -2868,6 +2872,9 @@ private fun updateFailureText(failure: UpdateFailure): String = stringResource(
 private fun AboutScreen(state: SettingsModel, modifier: Modifier = Modifier, onBack: () -> Unit) {
 	BackHandler(onBack = onBack)
 	val ctx = LocalContext.current
+	var showTarsosLicense by remember { mutableStateOf(false) }
+	var tarsosLicense by remember { mutableStateOf<String?>(null) }
+	var tarsosLicenseFailed by remember { mutableStateOf(false) }
 	fun openUrl(url: String) {
 		runCatching {
 			ctx.startActivity(
@@ -2875,6 +2882,44 @@ private fun AboutScreen(state: SettingsModel, modifier: Modifier = Modifier, onB
 					.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
 			)
 		}
+	}
+	LaunchedEffect(showTarsosLicense) {
+		if (showTarsosLicense && tarsosLicense == null && !tarsosLicenseFailed) {
+			try {
+				tarsosLicense = withContext(Dispatchers.IO) {
+					ctx.assets.open("GPL-3.0.txt").bufferedReader().use { it.readText() }
+				}
+			} catch (_: IOException) {
+				tarsosLicenseFailed = true
+			}
+		}
+	}
+	if (showTarsosLicense) {
+		AlertDialog(
+			onDismissRequest = { showTarsosLicense = false },
+			title = { Text(stringResource(R.string.about_tarsos_license_title)) },
+			text = {
+				Box(
+					modifier = Modifier
+						.heightIn(max = 480.dp)
+						.verticalScroll(rememberScrollState())
+				) {
+					Text(
+						text = tarsosLicense
+							?: if (tarsosLicenseFailed) {
+								stringResource(R.string.about_tarsos_license_error)
+							} else {
+								stringResource(R.string.about_tarsos_license_loading)
+							}
+					)
+				}
+			},
+			confirmButton = {
+				TextButton(onClick = { showTarsosLicense = false }) {
+					Text(stringResource(R.string.about_close))
+				}
+			}
+		)
 	}
 	Column(
 		modifier = modifier
@@ -2899,6 +2944,17 @@ private fun AboutScreen(state: SettingsModel, modifier: Modifier = Modifier, onB
 			style = MaterialTheme.typography.bodyMedium,
 			modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
 		)
+		Text(
+			text = stringResource(R.string.about_tarsos_notice),
+			style = MaterialTheme.typography.bodyMedium,
+			modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+		)
+		ActionRow(stringResource(R.string.about_tarsos_source)) {
+			openUrl("https://github.com/angelonmx/reloquenceTTS")
+		}
+		ActionRow(stringResource(R.string.about_tarsos_license_title)) {
+			showTarsosLicense = true
+		}
 		ActionRow(stringResource(R.string.about_whatsapp), { openUrl("https://wa.me/523411119890") })
 		ActionRow(stringResource(R.string.about_instagram), { openUrl("https://instagram.com/angjl25.lv") })
 		ActionRow(stringResource(R.string.about_support_group), { openUrl("https://chat.whatsapp.com/C5GiTCXrD1t6Jj64uwT5An?s=cl&p=a&mlu=4&ilr=4") })

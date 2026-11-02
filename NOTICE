@@ -32,6 +32,22 @@ No se incluye ningún diccionario de pronunciación. Los diccionarios que
 merecen la pena pertenecen a quien los escribió, y el más conocido no
 lleva licencia, así que la app permite importarlos pero no los copia.
 
+4. TarsosDSP 2.5.
+
+   Copyright (C) Joren Six. La cadena PCM de flanger y eco usa
+   TarsosDSP bajo
+   GNU GPL versión 3. La copia completa de la licencia se incluye en
+   `app/src/main/assets/GPL-3.0.txt` y también se puede consultar desde
+   Acerca de en la aplicación. El código fuente de esta aplicación,
+   incluidos los adaptadores y los scripts de compilación, está en
+   https://github.com/angelonmx/reloquenceTTS.
+
+   Al distribuir la aplicación combinada con TarsosDSP, debe cumplirse
+   la GPL-3.0 para el conjunto distribuido. La licencia MIT de `LICENSE`
+   sigue aplicándose a los archivos propios del repositorio y no se
+   sustituye ni se atribuye a TarsosDSP. TarsosDSP se proporciona sin
+   garantía, conforme a los términos de la GPL-3.0.
+
 IBM, ViaVoice y Embedded ViaVoice son marcas de International Business
 Machines Corporation. Eloquence es una marca de su respectivo titular.
 Este proyecto no está afiliado, respaldado ni soportado por IBM,

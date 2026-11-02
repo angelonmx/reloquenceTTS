@@ -1,9 +1,15 @@
 package com.angelonmx.reloquence
 
+import be.tarsos.dsp.AudioEvent
+import be.tarsos.dsp.effects.DelayEffect
+import be.tarsos.dsp.effects.FlangerEffect
+import be.tarsos.dsp.io.TarsosDSPAudioFormat
+import kotlin.math.abs
+
 /** Operaciones PCM pequeñas sobre el audio ya sintetizado.
  *
- *  Todo corre en el hilo de síntesis, muestra por muestra, así que
- *  no hay nada que bloquee ni nada que reservar.
+ *  Todo corre en el hilo de síntesis. Los adaptadores por bloques
+ *  reutilizan buffers mientras se mantenga el tamaño del bloque.
  */
 object AudioFx {
 
@@ -290,11 +296,11 @@ object AudioFx {
 			Maximizer(rateHz, maximizerMix.coerceIn(0, 100) / 100.0)
 		} else null
 		private val chorusFx: Chorus? = if (chorus) Chorus(rateHz) else null
-		private val flangerFx: Flanger? = if (flanger) Flanger(rateHz) else null
+		private val tarsosEffects: TarsosEffects? =
+			if (flanger || echoMix.coerceIn(0, 100) > 0) {
+				TarsosEffects(rateHz, flanger, echoMix.coerceIn(0, 100), echoDelayMs)
+			} else null
 		private val phaserFx: Phaser? = if (phaser) Phaser(rateHz) else null
-		private val echo: Echo? = if (echoMix.coerceIn(0, 100) > 0) {
-			Echo(rateHz, echoMix.coerceIn(0, 100) / 100.0, echoDelayMs)
-		} else null
 		private val reverb: Reverb? = if (reverbMix.coerceIn(0, 100) > 0) {
 			Reverb(rateHz, reverbMix.coerceIn(0, 100) / 100.0, reverbSize)
 		} else null
@@ -343,8 +349,8 @@ object AudioFx {
 			comp == null && tremolo == null && vibrato == null && ringmod == null && fuzz == null &&
 			wah == null && maximizer == null && chorusFx == null && crush == null &&
 			tape == null && sub == null &&
-			flangerFx == null && phaserFx == null && phone == null && lowcut == null &&
-			echo == null && reverb == null && exciter == null && warm == null && hdPresence == null &&
+			tarsosEffects == null && phaserFx == null && phone == null && lowcut == null &&
+			reverb == null && exciter == null && warm == null && hdPresence == null &&
 			deess == null && driveFx == null && normFx == null &&
 			bodyBass == null && bodyTop == null && bodyAir == null && boost == 1.0
 
@@ -381,9 +387,7 @@ object AudioFx {
 			val fTape = tape
 		val fSub = sub
 		val fChorus = chorusFx
-			val fFlanger = flangerFx
 			val fPhaser = phaserFx
-			val fEcho = echo
 			val fReverb = reverb
 			val fLimiter = limiter
 			val frames = n / 2
@@ -421,10 +425,8 @@ object AudioFx {
 				if (fFuzz != null) s = fFuzz.run(s)
 				if (fWah != null) s = fWah.run(s)
 				if (fChorus != null) s = fChorus.run(s)
-				if (fFlanger != null) s = fFlanger.run(s)
 				if (fPhaser != null) s = fPhaser.run(s)
 				if (fTape != null) s = fTape.run(s)
-				if (fEcho != null) s = fEcho.run(s)
 				if (fReverb != null) s = fReverb.run(s)
 				if (fSub != null) s = fSub.run(s)
 				// Maximizador al final cuando está activo (limita él);
@@ -440,6 +442,71 @@ object AudioFx {
 				i++
 			}
 			rampDone = rampTo
+			tarsosEffects?.process(buffer, n)
+		}
+
+		/** TarsosDSP processors operate on reusable float blocks. */
+		private class TarsosEffects(
+			rateHz: Int,
+			flanger: Boolean,
+			echoMix: Int,
+			echoDelayMs: Int
+		) {
+			private val rate = rateHz.coerceAtLeast(8000)
+			private val format = TarsosDSPAudioFormat(rate.toFloat(), 16, 1, true, false)
+			private val event = AudioEvent(format)
+			private val flangerProcessor: FlangerEffect? =
+				if (flanger) FlangerEffect(0.005, 0.5, rate.toDouble(), 0.5) else null
+			private val delayProcessor: DelayEffect? =
+				if (echoMix > 0) DelayEffect(
+					echoDelayMs.coerceIn(80, 600) / 1000.0,
+					0.5,
+					rate.toDouble()
+				) else null
+			private val delayAmount = echoMix.coerceIn(0, 100) / 100.0
+			private var floats = FloatArray(0)
+			private var dry = FloatArray(0)
+			private var bytesProcessed = 0L
+
+			fun process(buffer: ByteArray, byteCount: Int) {
+				val frames = (byteCount / 2).coerceAtMost(buffer.size / 2)
+				if (frames == 0) return
+				if (floats.size != frames) floats = FloatArray(frames)
+				if (delayProcessor != null && dry.size != frames) dry = FloatArray(frames)
+
+				for (i in 0 until frames) {
+					val offset = i * 2
+					val sample = (buffer[offset].toInt() and 0xFF) or
+						(buffer[offset + 1].toInt() shl 8)
+					floats[i] = sample.toShort() / 32768.0f
+					if (delayProcessor != null) dry[i] = floats[i]
+				}
+
+				event.setFloatBuffer(floats)
+				event.setOverlap(0)
+				event.setBytesProcessed(bytesProcessed)
+				event.setBytesProcessing(frames * 2)
+				delayProcessor?.process(event)
+				if (delayProcessor != null) {
+					for (i in 0 until frames) {
+						val original = dry[i]
+						val delayed = floats[i] - original
+						floats[i] = (original * (1.0 - delayAmount * 0.5) +
+							delayed * delayAmount).toFloat()
+					}
+				}
+				flangerProcessor?.process(event)
+
+				for (i in 0 until frames) {
+					val signal = floats[i].toDouble()
+					val safe = if (abs(signal) <= 1.0) signal else fastTanh(signal)
+					val sample = (safe * 32767.0).toInt().coerceIn(-32768, 32767)
+					val offset = i * 2
+					buffer[offset] = (sample and 0xFF).toByte()
+					buffer[offset + 1] = ((sample shr 8) and 0xFF).toByte()
+				}
+				bytesProcessed += frames * 2L
+			}
 		}
 
 		/** Diez picos en serie (receta RBJ, Q = 1). Solo las bandas
@@ -800,38 +867,6 @@ object AudioFx {
 			}
 		}
 
-		/** Flanger: retardo cortito modulado con realimentación,
-		 *  el silbido de nave espacial. */
-		private class Flanger(rateHz: Int) {
-			private val buf = DoubleArray((rateHz * 0.01).toInt().coerceAtLeast(64))
-			private var at = 0
-			private var phase = 0.0
-			private val step = 2.0 * Math.PI * 0.5 / rateHz
-			private val base = rateHz * 0.003
-			private val swing = rateHz * 0.002
-
-			fun run(s: Double): Double {
-				phase += step
-				if (phase > 2.0 * Math.PI) phase -= 2.0 * Math.PI
-				val delay = base + swing * (0.5 + 0.5 * Math.sin(phase))
-				val back = at - delay
-				val i0 = Math.floor(back).toInt()
-				val frac = (back - i0).toFloat()
-				val size = buf.size
-				val a = buf[(i0 % size + size) % size]
-				val b = buf[((i0 + 1) % size + size) % size]
-				val wet = a + (b - a) * frac
-				buf[at] = s + wet * FEEDBACK
-				at = (at + 1) % size
-				return s * (1.0 - MIX) + wet * MIX
-			}
-
-			private companion object {
-				const val FEEDBACK = 0.55
-				const val MIX = 0.5
-			}
-		}
-
 		/** Excitador de claridad: realza armónicos agudos con
 		 *  saturación suave sobre la banda alta. [mix] de 0 a 1.
 		 *  Es lo que hace que 32k/48k suenen con más aire que 11k. */
@@ -1164,27 +1199,6 @@ object AudioFx {
 				val norm = s / 32768.0
 				val sat = fastTanh(norm * 2.0)
 				return (norm * 0.55 + sat * 0.55) * 32768.0
-			}
-		}
-
-		/** Eco simple: una repetición a [delayMs] con realimentación
-		 *  suave y oscurecida (el eco pierde agudos en cada vuelta,
-		 *  estilo dub, en vez de repetirse metálico). [mix] de 0 a 1. */
-		private class Echo(rateHz: Int, private val mix: Double, delayMs: Int = 220) {
-			private val buf = DoubleArray((rateHz * delayMs.coerceIn(80, 600) / 1000.0).toInt().coerceAtLeast(64))
-			private var at = 0
-			private var lp = 0.0
-
-			fun run(s: Double): Double {
-				val delayed = buf[at]
-				lp += DAMP * (delayed - lp)
-				buf[at] = s + lp * 0.35
-				at = (at + 1) % buf.size
-				return s * (1.0 - mix * 0.5) + delayed * mix * 0.5
-			}
-
-			private companion object {
-				const val DAMP = 0.35
 			}
 		}
 

@@ -63,7 +63,7 @@ object TextPieces {
 		val cap = max.coerceIn(500, 20000)
 		val n = text.length
 		if (n == 0) return@sequence
-		if (n <= cap) {
+		if (n <= FIRST_WINDOW_CHARS) {
 			yield(text)
 			return@sequence
 		}

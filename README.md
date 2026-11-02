@@ -136,5 +136,12 @@ propios avisos: léelos en [NOTICE](NOTICE) antes de redistribuir la app. En
 particular, los datos de voz no están cubiertos por la MIT y no se pueden
 relicenciar desde aquí.
 
+La aplicación también incluye TarsosDSP 2.5, bajo GPL-3.0. Al distribuir la
+aplicación combinada, hay que cumplir esa licencia y proporcionar su copia,
+incluida en `app/src/main/assets/GPL-3.0.txt`; el código fuente correspondiente
+está en este repositorio. La pantalla Acerca de muestra el aviso y permite
+consultar el texto completo. La GPL de la distribución combinada no cambia la
+licencia MIT de los archivos propios cuando se distribuyen por separado.
+
 Este es un proyecto independiente. No está afiliado ni respaldado por ningún
 fabricante de motores de voz, tienda o plataforma.

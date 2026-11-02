@@ -348,6 +348,11 @@
 	<string name="about_whatsapp">WhatsApp</string>
 	<string name="about_whatsapp_hint">If you want to report an error or contact me, you can use the following contact methods:</string>
 	<string name="about_contact_hint">Support group and contacts:</string>
+	<string name="about_tarsos_notice">Audio effects include TarsosDSP 2.5 by Joren Six under GPL-3.0. The program is distributed under those terms, may be shared under the license, and is provided without warranty. Source code is available on GitHub.</string>
+	<string name="about_tarsos_source">Source code on GitHub</string>
+	<string name="about_tarsos_license_title">GNU General Public License version 3</string>
+	<string name="about_tarsos_license_loading">Loading license…</string>
+	<string name="about_tarsos_license_error">The bundled copy of the license could not be opened. See https://www.gnu.org/licenses/gpl-3.0.html.</string>
 	<string name="about_support_group">Support group (WhatsApp)</string>
 	<string name="about_telegram">Telegram</string>
 	<string name="about_telegram_hint">@angjl25lv</string>

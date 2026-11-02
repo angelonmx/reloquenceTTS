@@ -359,6 +359,11 @@
 	<string name="about_whatsapp">WhatsApp</string>
 	<string name="about_whatsapp_hint">Si deseas informar algún error o contactarme, puedes utilizar los siguientes medios de contacto:</string>
 	<string name="about_contact_hint">Grupo de soporte y contactos:</string>
+	<string name="about_tarsos_notice">Los efectos de audio incluyen TarsosDSP 2.5, de Joren Six, bajo GPL-3.0. El programa se distribuye bajo esos términos, puede compartirse conforme a la licencia y se ofrece sin garantía. El código fuente está disponible en GitHub.</string>
+	<string name="about_tarsos_source">Código fuente en GitHub</string>
+	<string name="about_tarsos_license_title">Licencia GNU GPL versión 3</string>
+	<string name="about_tarsos_license_loading">Cargando la licencia…</string>
+	<string name="about_tarsos_license_error">No se pudo abrir la copia incluida de la licencia. Consulta https://www.gnu.org/licenses/gpl-3.0.html.</string>
 	<string name="about_support_group">Grupo de soporte (WhatsApp)</string>
 	<string name="about_telegram">Telegram</string>
 	<string name="about_telegram_hint">@angjl25lv</string>

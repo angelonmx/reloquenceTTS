@@ -28,6 +28,18 @@ class TextPiecesTest {
 	}
 
 	@Test
+	fun `medium text still uses the short first window`() {
+		val text = "palabra ".repeat(100)
+		val windows = TextPieces.windows(text).toList()
+		assertTrue("el texto debe dividirse antes de procesar todo el bloque", windows.size > 1)
+		assertTrue(
+			"la primera ventana debe respetar el límite de latencia",
+			windows.first().length <= TextPieces.FIRST_WINDOW_CHARS
+		)
+		assertEquals(text, windows.joinToString(""))
+	}
+
+	@Test
 	fun `windows keep every character in order`() {
 		val text = buildString {
 			repeat(120) {
