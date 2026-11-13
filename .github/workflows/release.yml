@@ -19,7 +19,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Instala JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -27,9 +27,11 @@ jobs:
       - name: Instala Android SDK y NDK
         uses: android-actions/setup-android@v3
         with:
-          api-level: 36
-          build-tools: 37.0.0
-          ndk: 26.1.10909125
+          packages: |
+            platform-tools
+            platforms;android-36
+            build-tools;37.0.0
+            ndk;26.1.10909125
 
       - name: Dale permiso a gradlew
         run: chmod +x gradlew
@@ -66,16 +68,9 @@ jobs:
               *-universal-*) abi=universal ;;
               *) abi=unknown ;;
             esac
-            if grep -q '^full.versionName=' version.properties; then
-              vn=$(grep '^full.versionName=' version.properties | cut -d= -f2)
-              vc=$(grep '^full.versionCode=' version.properties | cut -d= -f2)
-              cp "$apk" "dist/full/release/reloquence-full-${vn}-${vc}-${abi}-release.apk"
-            fi
-            if grep -q '^lite.versionName=' version.properties; then
-              vn=$(grep '^lite.versionName=' version.properties | cut -d= -f2)
-              vc=$(grep '^lite.versionCode=' version.properties | cut -d= -f2)
-              cp "$apk" "dist/lite/release/reloquence-lite-${vn}-${vc}-${abi}-release.apk"
-            fi
+            vn=$(grep '^full.versionName=' version.properties | cut -d= -f2)
+            vc=$(grep '^full.versionCode=' version.properties | cut -d= -f2)
+            cp "$apk" "dist/full/release/reloquence-full-${vn}-${vc}-${abi}-release.apk"
           done
 
       - name: Crea la release y sube APKs
