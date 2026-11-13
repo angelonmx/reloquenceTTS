@@ -138,4 +138,3 @@ jobs:
           git add updates/full.json updates/lite.json
           git commit -m "Actualiza manifiestos updates/ para ${TAG}" || echo "No hubo cambios en los manifiestos"
           git push origin HEAD:main
-# fix
