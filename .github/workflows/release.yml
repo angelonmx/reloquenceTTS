@@ -8,15 +8,17 @@ on:
         required: true
         default: 'v1.0.0'
 
+permissions:
+  contents: write
+
 jobs:
   build-firmar-publicar:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout del repositorio (incluye el submódulo del motor OpenEVI)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Instala JDK 17
         uses: actions/setup-java@v5
@@ -24,13 +26,45 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Instala Android SDK y NDK
+      - name: Instala Android SDK 36 y NDK 26.1
         run: |
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platform-tools" "platforms;android-36" "build-tools;37.0.0" "ndk;26.1.10909125"
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          SDKM="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKM" ]; then
+            SDKM=$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          fi
+          echo "SDK: $SDK_ROOT"
+          echo "sdkmanager: $SDKM"
+          test -x "$SDKM"
+          yes | "$SDKM" --licenses >/dev/null 2>&1 || true
+          "$SDKM" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;26.1.10909125"
+          {
+            echo "ANDROID_HOME=$SDK_ROOT"
+            echo "ANDROID_SDK_ROOT=$SDK_ROOT"
+            echo "ANDROID_NDK_HOME=$SDK_ROOT/ndk/26.1.10909125"
+          } >> "$GITHUB_ENV"
+          test -x "$SDK_ROOT/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang"
+          echo "Android 16 (API 36) y NDK 26.1 listos."
 
       - name: Dale permiso de ejecución a gradlew
         run: chmod +x gradlew
+
+      - name: Comprueba los secretos de firma
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            value=$(printenv "$name" || true)
+            if [ -z "$value" ]; then
+              echo "::error::Falta el secreto $name en Settings > Secrets and variables > Actions"
+              exit 1
+            fi
+          done
+          echo "Secretos de firma presentes."
 
       - name: Configura la firma desde los secretos del repositorio
         env:
@@ -39,22 +73,30 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/mifirma.keystore"
+          set -euo pipefail
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/mifirma.keystore"
           cat > keystore.properties <<EOF
           storeFile=$RUNNER_TEMP/mifirma.keystore
           storePassword=$KEYSTORE_PASSWORD
           keyAlias=$KEY_ALIAS
           keyPassword=$KEY_PASSWORD
           EOF
+          test -s "$RUNNER_TEMP/mifirma.keystore"
+          echo "Firma configurada."
 
       - name: Compila edición Full (motor nativo + APKs firmados)
-        run: ./gradlew clean assembleRelease
+        run: ./gradlew clean assembleRelease "-Pevvdroid.abis=arm64-v8a,armeabi-v7a"
 
       - name: Guarda los APKs de Full
         run: |
+          set -euo pipefail
           mkdir -p dist/full/release
+          vn=$(grep '^full.versionName=' version.properties | cut -d= -f2)
+          vc=$(grep '^full.versionCode=' version.properties | cut -d= -f2)
+          found=0
           for apk in app/build/outputs/apk/release/*.apk; do
             [ -f "$apk" ] || continue
+            found=1
             base=$(basename "$apk")
             case "$base" in
               *-arm64-v8a-*) abi=arm64-v8a ;;
@@ -62,19 +104,24 @@ jobs:
               *-universal-*) abi=universal ;;
               *) abi=unknown ;;
             esac
-            vn=$(grep '^full.versionName=' version.properties | cut -d= -f2)
-            vc=$(grep '^full.versionCode=' version.properties | cut -d= -f2)
             cp "$apk" "dist/full/release/reloquence-full-${vn}-${vc}-${abi}-release.apk"
           done
+          test "$found" = 1
+          ls -l dist/full/release/
 
       - name: Compila edición Lite (motor nativo + APKs firmados)
-        run: ./gradlew clean assembleRelease "-Pevvdroid.edition=lite"
+        run: ./gradlew clean assembleRelease "-Pevvdroid.abis=arm64-v8a,armeabi-v7a" "-Pevvdroid.edition=lite"
 
       - name: Guarda los APKs de Lite
         run: |
+          set -euo pipefail
           mkdir -p dist/lite/release
+          vn=$(grep '^lite.versionName=' version.properties | cut -d= -f2)
+          vc=$(grep '^lite.versionCode=' version.properties | cut -d= -f2)
+          found=0
           for apk in app/build/outputs/apk/release/*.apk; do
             [ -f "$apk" ] || continue
+            found=1
             base=$(basename "$apk")
             case "$base" in
               *-arm64-v8a-*) abi=arm64-v8a ;;
@@ -82,10 +129,10 @@ jobs:
               *-universal-*) abi=universal ;;
               *) abi=unknown ;;
             esac
-            vn=$(grep '^lite.versionName=' version.properties | cut -d= -f2)
-            vc=$(grep '^lite.versionCode=' version.properties | cut -d= -f2)
             cp "$apk" "dist/lite/release/reloquence-lite-${vn}-${vc}-${abi}-release.apk"
           done
+          test "$found" = 1
+          ls -l dist/lite/release/
 
       - name: Crea la release y sube los APKs
         id: create_release
@@ -95,9 +142,16 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.tag }}
           name: Reloquence ${{ github.event.inputs.tag }}
-          body: "Versión 1.0.0 — ediciones Full y Lite, compiladas y firmadas en GitHub Actions (no en PC local).\n\nIncluye los idiomas del motor y todos los parámetros de voz.\n\nFull: com.angelonmx.reloquence\nLite: com.angelonmx.reloquence.lite"
+          body: |
+            Versión 1.0.0 — ediciones Full y Lite, compiladas y firmadas en GitHub Actions (no en PC local).
+
+            Incluye los idiomas del motor y todos los parámetros de voz.
+
+            - Full: `com.angelonmx.reloquence`
+            - Lite: `com.angelonmx.reloquence.lite`
           draft: false
           prerelease: false
+          fail_on_unmatched_files: true
           files: |
             dist/full/release/*.apk
             dist/lite/release/*.apk
@@ -107,8 +161,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: angelonmx/reloquenceTTS
         run: |
+          set -euo pipefail
           TAG=${{ github.event.inputs.tag }}
           BASE="https://github.com/${REPO}/releases/download/${TAG}"
+          mkdir -p updates
           for edition in full lite; do
             if [ "$edition" = full ]; then
               vn=$(grep '^full.versionName=' version.properties | cut -d= -f2)
@@ -132,6 +188,8 @@ jobs:
             done
             echo "]}" >> "updates/${edition}.json"
           done
+          cat updates/full.json
+          cat updates/lite.json
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git"
