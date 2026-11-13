@@ -2,27 +2,27 @@ package com.angelonmx.reloquence
 
 import java.text.Normalizer
 
-/**
- * Android text turned into the Windows Western bytes the engine reads.
+/** Texto de Android convertido en lo que el motor lee.
  *
- * The engine takes single bytes in the language's own code set, which for
- * every language IBM shipped is the Windows Western set. UTF-16 is not an
- * option here: the engine allows the wide code set only for Chinese, Japanese
- * and Korean, and asking for it in English gets the text read as bytes and
- * stopped at the first high byte, which is one character of speech.
+ *  El motor toma bytes simples en el juego de caracteres propio
+ *  del idioma, que para cada idioma que IBM envió es el conjunto
+ *  Occidental de Windows. UTF-16 no es una opción aquí: el motor
+ *  permite el conjunto de caracteres amplio solo para chino,
+ *  japonés y coreano, y pedirlo en inglés hace que el texto se
+ *  lea como bytes y se detenga en el primer byte alto, que es
+ *  un carácter de habla.
  *
- * So anything outside that set has to become something inside it before the
- * engine sees it. A screen reader is handed curly quotes, dashes, emoji and
- * names in scripts Eloquence never knew, and dropping them silently is worse
- * than saying the nearest thing.
- *
- * The two languages that read something else are [EngineText]'s business, and
- * [flatten] is the half of this they still want.
+ *  Así que cualquier cosa fuera de ese conjunto tiene que
+ *  convertirse en algo dentro de él antes de que el motor la
+ *  vea. Un lector de pantalla recibe comillas tipográficas,
+ *  guiones, emoji y nombres en guiones que Eloquencia nunca
+ *  conoció, y dejarlos caer en silencio es peor que decir lo
+ *  más cercano.
  */
 object WesternText {
 
-	/** The typographic characters that turn up in ordinary text and have a
-	 *  plain equivalent worth saying. */
+	/** Los caracteres tipográficos que aparecen en texto normal
+	 *  y tienen un equivalente sencillo digno de decir. */
 	private val PLAIN = mapOf(
 		'‘' to "'", '’' to "'", '‚' to "'", '‛' to "'",
 		'“' to "\"", '”' to "\"", '„' to "\"", '‟' to "\"",
@@ -43,12 +43,55 @@ object WesternText {
 	private const val HIGHEST = 0xFF
 
 	/**
-	 * The bytes to hand the engine, without a terminator: the native side adds
-	 * one, and a nought anywhere inside would end the text early, so there is
-	 * none in what comes back.
+	 * Los bytes para entregarle al motor, sin un terminador:
+	 * el lado nativo añade uno, y un cero en cualquier lugar
+	 * dentro terminaría el texto temprano, así que no hay
+	 * ninguno en lo que vuelve.
 	 */
 	fun encode(text: String): ByteArray {
-		val flat = flatten(text) { false }
+		// 5.1: Android puede entregar el texto descompuesto (NFD),
+		// sobre todo cuando la tilde viene de otra app. El motor lee
+		// un byte por carácter y no conoce las marcas combinantes, así
+		// que "versio\u0301n" se convertía en "versio n" y perdía el
+		// acento. Se compone primero y el motor recibe la letra que
+		// espera, sin tocar las mayúsculas ni la puntuación.
+		val composed = Normalizer.normalize(text, Normalizer.Form.NFC)
+		val flat = StringBuilder(composed.length)
+		var i = 0
+		while (i < composed.length) {
+			val c = composed[i]
+			val plain = PLAIN[c]
+			when {
+				plain != null -> flat.append(plain)
+				// 4.4: un cero termina el texto para el motor, así que
+				// un cero suelto es la forma más corta de callarlo
+				// entero. Ya se quitaba; ahora se quita con los demás
+				// controles, porque el motor no los quiere en ninguna
+				// parte.
+				c.code == 0 -> flat.append(' ')
+				// 4.4: los controles de ISO (0x01-0x1F y 0x7F) se
+				// pasaban tal cual. [EmojiSpeech] ni los nombra, así
+				// que llegaban enteros al motor sin que nadie los
+				// hubiera tocado, y no hay forma de saber qué hace la
+				// máquina con un texto que mezcla eso. Son bytes sin
+				// letra detrás, que es exactamente lo que el módulo
+				// no sabe analizar, así que un espacio es lo único
+				// seguro. El tabulador y el salto de línea se
+				// conservan como espacio también: separan palabras y
+				// quitarlos juntaría dos que deben ir sueltas.
+				Character.isISOControl(c) -> flat.append(' ')
+				c.code <= HIGHEST -> flat.append(c)
+				else -> flat.append(fallback(composed, i))
+			}
+			// 4.4: solo se avanza de dos en dos si el carácter es de
+			// verdad un surrogate alto **seguido de uno bajo**. Antes
+			// avanzaba dos en cuanto el primero fuese alto, y con un
+			// alto suelto ("\uD83DA") eso se comía la A de después:
+			// el texto no sonaba, se perdía. Un emoji de verdad
+			// (alto + bajo) se avanza igual, porque el segundo carácter
+			// es un bajo y la condición se cumple.
+			i += if (isPairedHighSurrogate(composed, i)) 2 else 1
+		}
 		val out = ByteArray(flat.length)
 		for (n in flat.indices) {
 			val c = flat[n].code
@@ -57,44 +100,25 @@ object WesternText {
 		return out
 	}
 
-	/**
-	 * [text] with everything outside the byte set turned into something inside
-	 * it, and nothing written down as bytes yet.
-	 *
-	 * [own] says which characters above the set the language reads itself, so
-	 * that they are left standing rather than flattened. For the languages IBM
-	 * shipped that is none, and then what comes back is a character a byte.
-	 */
-	fun flatten(text: String, own: (Char) -> Boolean): String {
-		val flat = StringBuilder(text.length)
-		var i = 0
-		while (i < text.length) {
-			val c = text[i]
-			val plain = PLAIN[c]
-			when {
-				own(c) -> flat.append(c)
-				plain != null -> flat.append(plain)
-				c.code == 0 -> flat.append(' ')
-				c.code <= HIGHEST -> flat.append(c)
-				else -> flat.append(fallback(text, i))
-			}
-			i += if (Character.isHighSurrogate(c) && i + 1 < text.length) 2 else 1
-		}
-		return flat.toString()
-	}
+	/** Un surrogate alto que sí lleva su bajo detrás, o sea un
+	 *  carácter de más de un byte. */
+	private fun isPairedHighSurrogate(text: String, at: Int): Boolean =
+		Character.isHighSurrogate(text[at]) &&
+			at + 1 < text.length &&
+			Character.isLowSurrogate(text[at + 1])
 
 	/**
-	 * What to say for a character the code set has no room for. An accent that
-	 * decomposes gives up its base letter, which turns a name like Dvořák into
-	 * one the engine can read; everything else becomes a space rather than a
-	 * noise.
+	 * Qué decir por un carácter que el juego de caracteres
+	 * no tiene lugar para. Un acento que se descompone cede
+	 * su letra base, lo que convierte un nombre como Dvořák en
+	 * uno que el motor puede leer; todo lo demás se convierte
+	 * en un espacio en lugar de un ruido.
 	 */
 	private fun fallback(text: String, at: Int): String {
-		val c = text[at]
-		val one = if (Character.isHighSurrogate(c) && at + 1 < text.length) {
+		val one = if (isPairedHighSurrogate(text, at)) {
 			text.substring(at, at + 2)
 		} else {
-			c.toString()
+			text[at].toString()
 		}
 		val stripped = Normalizer.normalize(one, Normalizer.Form.NFD)
 			.filter { it.code <= HIGHEST && !isCombining(it) }

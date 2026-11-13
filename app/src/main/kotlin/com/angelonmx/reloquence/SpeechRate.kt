@@ -1,34 +1,40 @@
 package com.angelonmx.reloquence
 
 /**
- * Android's speech rate, turned into one of the engine's speed numbers.
+ * La velocidad de habla de Android, convertida en uno de los
+ * números de velocidad del motor.
  *
- * Android means a multiplier: 100 is the voice as it is, 200 is twice as fast,
- * and the system slider goes well above that. The engine's speed is 0 to 250
- * and is nothing like linear in how fast it actually speaks. Measured on one
- * sentence, with everything else about the voice held still:
+ * Android significa un multiplicador: 100 es la voz tal como está,
+ * 200 es el doble de rápido, y el deslizador del sistema va mucho más
+ * allá que eso. La velocidad del motor es de 0 a 250 y no es nada
+ * lineal en lo rápido que habla de verdad. Medido en una frase, con
+ * todo lo demás de la voz quieto:
  *
- *     speed   50   100   150    200    250
- *     times  1.0   2.7   7.0   16.6   21.2
+ *     velocidad  50   100   150    200    250
+ *     veces     1.0   2.7   7.0   16.6   21.2
  *
- * So the percentage cannot simply multiply the speed number. That is wrong by a
- * lot at the top: it turns a rate of 400, four times, into speed 200, which is
- * sixteen times and far too fast to follow. A watch ships with the rate turned
- * up, so that is where it bites first.
+ * Así que el porcentaje no puede simplemente multiplicar el número
+ * de velocidad. Eso está equivocado por mucho arriba: convierte una
+ * velocidad de 400, cuatro veces, en velocidad 200, que es dieciséis
+ * veces y mucho demasiado rápido para seguir. Un reloj sale con la
+ * velocidad subida, así que es ahí donde pica primero.
  *
- * [TIMES] is that measurement. Reading it forwards says how many times the
- * default speed a given speed number is; reading it backwards turns a wanted
- * multiplier back into a speed number. Both interpolate between the points.
+ * [TIMES] es esa medición. Leerla hacia delante dice cuántas veces
+ * la velocidad-50 habla una velocidad dada; leerla al revés convierte
+ * un multiplicador querido de vuelta en un número de velocidad. Ambas
+ * interpolan entre los puntos.
  *
- * The curve flattens near the top, so very large rates saturate rather than
- * running away. That is the engine's own ceiling and not a limit imposed here.
+ * La curva se aplana cerca del tope, así que las tasas muy grandes
+ * se saturan en lugar de correr fuera de control. Eso es el techo
+ * propio del motor y no un límite impuesto aquí.
  */
 object SpeechRate {
 
-	/** Speed numbers, and how many times the speed-50 rate each one speaks at.
-	 *  Measured with one sentence at 11,025 Hz; the numbers came out identical
-	 *  for two voices with different defaults, so speed is the only thing that
-	 *  decides duration and one table serves every voice. */
+	/** Números de velocidad, y cuántas veces la tasa de velocidad-50
+	 *  habla cada uno. Medido con una frase a 11,025 Hz; los números
+	 *  salieron idénticos para dos voces con valores distintos, así que
+	 *  la velocidad es lo único que decide la duración y una tabla sirve
+	 *  para cada voz. */
 	private val SPEED = intArrayOf(0, 5, 10, 20, 30, 40, 50, 60, 70, 85, 100, 125, 150, 175, 200, 225, 250)
 
 	private val TIMES = doubleArrayOf(
@@ -36,7 +42,7 @@ object SpeechRate {
 		1.976, 2.740, 4.383, 6.986, 11.801, 16.633, 20.427, 21.170
 	)
 
-	/** How many times the speed-50 rate [speed] speaks at. */
+	/** Cuántas veces la tasa de velocidad-50 habla [speed]. */
 	fun timesFor(speed: Int): Double {
 		val want = speed.coerceIn(SPEED.first(), SPEED.last())
 		for (i in 1 until SPEED.size) {
@@ -48,7 +54,7 @@ object SpeechRate {
 		return TIMES.last()
 	}
 
-	/** The speed number that speaks [times] the speed-50 rate. */
+	/** El número de velocidad que habla [times] la tasa de velocidad-50. */
 	fun speedFor(times: Double): Int {
 		if (times <= TIMES.first()) return SPEED.first()
 		for (i in 1 until TIMES.size) {
@@ -61,8 +67,8 @@ object SpeechRate {
 	}
 
 	/**
-	 * The speed number for [percent] of the rate [base] speaks at, where 100 is
-	 * the voice left alone.
+	 * El número de velocidad para [percent] de la tasa que [base]
+	 * habla, donde 100 es la voz dejada en paz.
 	 */
 	fun speedForPercent(base: Int, percent: Int): Int {
 		if (percent == 100) return base

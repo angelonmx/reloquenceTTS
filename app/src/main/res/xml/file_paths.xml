@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+	<cache-path name="backups" path="backups/" />
+	<cache-path name="dicts" path="dicts/" />
+	<cache-path name="profiles" path="profiles/" />
+	<cache-path name="diagnostico" path="diagnostico/" />
+</paths>

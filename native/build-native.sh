@@ -149,8 +149,9 @@ for abi in $ABIS; do
 	rsp="$engine/$build/objects.rsp"
 	: > "$rsp"
 	for o in "$engine/$objdir"/*.o; do
-		winpath "$o" >> "$rsp"
-		echo >> "$rsp"
+		# Quoted: the project may live under a path with spaces and the
+		# linker's response file splits on whitespace otherwise.
+		printf '"%s"\n' "$(winpath "$o")" >> "$rsp"
 	done
 	# The Delta machine keeps addresses in 32-bit values, so a 64-bit build
 	# wants the low arena the engine's Makefile turns on for itself.

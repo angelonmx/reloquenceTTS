@@ -6,21 +6,25 @@ import android.media.AudioManager
 import android.media.AudioTrack
 import android.os.Handler
 import android.os.HandlerThread
-import android.util.Log
+import timber.log.Timber
 
 /**
- * An engine of its own for the settings screen, and somewhere to hear it.
+ * Un motor propio para la pantalla de ajustes, y un lugar
+ * para escucharlo.
  *
- * Tuning a voice by writing a setting down, leaving, and waiting for the
- * screen reader to say something else in it is not tuning. So the settings
- * screen keeps an instance of its own and speaks into an AudioTrack, which is
- * the one place in this program that plays audio itself: the engine that
- * TalkBack drives hands its samples to Android and never sees a device.
+ * Ajustar una voz escribiendo un ajuste, yendose, y esperando
+ * a que el lector de pantalla diga otra cosa en ella no es
+ * ajustar. Así que la pantalla de ajustes conserva una
+ * instancia propia y habla en un AudioTrack, que es el único
+ * lugar en este programa que reproduce audio propio: el motor
+ * con el que TalkBack habla entrega sus muestras a Android y
+ * nunca ve un dispositivo.
  *
- * Everything runs on one background thread, so a preview asked for while
- * another is speaking replaces it rather than overlapping.
+ * Todo corre en un solo hilo de fondo, así que una vista
+ * previa pedida mientras otra está hablando la reemplaza en
+ * lugar de solaparse.
  */
-class EvvPreview(private var language: Int) {
+class EvvPreview(private val language: Int) {
 
 	private val thread = HandlerThread("evv-preview").apply { start() }
 	private val work = Handler(thread.looper)
@@ -34,18 +38,20 @@ class EvvPreview(private var language: Int) {
 	@Volatile
 	private var generation = 0
 
-	/** How many bytes of audio have gone to the track. Nothing in the app reads
-	 *  it; it is what lets a test say the preview really played, which is worth
-	 *  having because a preview that quietly plays nothing looks exactly like
-	 *  one that works. */
+	/** Cuántos bytes de audio han ido al track. Nada en la
+	 *  app lo lee; es lo que deja decir a una prueba que la
+	 *  vista previa realmente sonó, lo cual es útil porque una
+	 *  vista previa que reproduce nada en silencio se ve exactamente
+	 *  como una que funciona. */
 	@Volatile
 	var bytesPlayed: Long = 0L
 		private set
 
-	/** Whether a sample is still being spoken, and whether the last one was
-	 *  heard all the way out. Nothing in the app reads either; they are what
-	 *  lets a test say the tail was not cut off, which is invisible from
-	 *  outside because every byte was handed over either way. */
+	/** Si una muestra aún se está hablando, y si la última se
+	 *  escuchó completa. Nada en la app lee ninguno de los
+	 *  dos; son lo que deja decir a una prueba que la cola no se
+	 *  cortó, lo cual es invisible desde fuera porque cada byte
+	 *  fue entregado de todas formas. */
 	@Volatile
 	var playing: Boolean = false
 		private set
@@ -54,90 +60,184 @@ class EvvPreview(private var language: Int) {
 	var drained: Boolean = false
 		private set
 
-	/** Reads what a preset is set to. Answers an empty map until the engine has
-	 *  opened, which is the first thing the thread does. */
+	/** Lee lo que tiene un preset ajustado. Contesta un mapa
+	 *  vacío hasta que el motor ha abierto, que es lo primero
+	 *  que hace el hilo. */
 	fun presetShape(index: Int): Map<Int, Int> = engine?.presetShape(index) ?: emptyMap()
+
+	/** Lee un parámetro de la voz actual de la vista previa. */
+	fun getVoiceParam(param: Int): Int = engine?.getVoiceParam(param) ?: -1
 
 	fun open(then: (() -> Unit)? = null) {
 		work.post {
-			if (engine == null) engine = EvvEngine.open(language)
+			if (engine == null) engine = EvvEngine.open(language, Eci.sampleRateHz(1))
 			then?.let { Handler(android.os.Looper.getMainLooper()).post(it) }
 		}
 	}
 
-	/** Speaks in [want] from now on.
-	 *
-	 *  An instance is made for one language and cannot be moved to another, so
-	 *  this puts the one in hand down and opens another. It happens on the work
-	 *  thread like everything else, and the new one is opened there and then
-	 *  rather than at the next sample: [presetShape] reads the engine, and the
-	 *  screen asks it as soon as the language changes. */
-	fun useLanguage(want: Int, then: (() -> Unit)? = null) {
-		stopSpeaking()
-		work.post {
-			if (want != language) {
-				language = want
-				engine?.close()
-				engine = EvvEngine.open(want)
-			}
-			then?.let { Handler(android.os.Looper.getMainLooper()).post(it) }
-		}
-	}
-
-	/** Says [text] in [voice] with [shape] on it, stopping whatever was being
-	 *  said. */
-	fun say(text: String, voice: Int, shape: Map<Int, Int>, rateHz: Int) {
-		// Whatever is being said stops first, and the turn this utterance
-		// belongs to is taken after that -- stopping is what moves the count
-		// on, so reading it first would leave this utterance holding a number
-		// that is already stale and it would never be spoken at all.
+	/** Dice [texto] en [voz] con [forma] encima, al [volumen]
+	 *  pedido y con [words] aplicadas en el texto, deteniendo lo
+	 *  que se estuviera diciendo. Con [fx] la muestra suena como hablará:
+	 *  ecualizador y reverb cuando están en vigor. La sustitución
+	 *  del diccionario se hace aquí con la voz ya limpia, dejando
+	 *  detrás lo que la devuelve: los códigos de una palabra no se
+	 *  pegan en lo que sigue. */
+	fun say(
+		text: String, voice: Int, shape: Map<Int, Int>, rateHz: Int,
+		volume: Int, words: List<Pair<String, String>>, fx: AudioFx.Chain? = null,
+		prosody: String = "", ignoreTags: Boolean = false,
+		useSystemSpeed: Boolean = true
+	) {
+		// Lo que se estaba hablando se detiene primero, y
+		// el turno al que pertenece esta emisión se toma después
+		// -- detenerse es lo que mueve el contador hacia
+		// adelante, así que leerlo primero dejaría esta emisión
+		// sosteniendo un número que ya es viejo y nunca se
+		// hablaría.
 		stopSpeaking()
 		val mine = generation
 		work.post {
 			if (mine != generation) return@post
-			val e = engine ?: EvvEngine.open(language)?.also { engine = it } ?: return@post
+			val e = engine ?: EvvEngine.open(language, Eci.sampleRateHz(1))?.also { engine = it } ?: return@post
 			e.setSampleRate(rateHz)
-			e.applyVoice(voice, shape)
-			if (!e.speak(text)) {
-				Log.e(TAG, "the engine refused the sample")
-				return@post
+			// 5.4.2: la lista se sustituye en el texto antes de hablar,
+			// así que no se enseña al motor ni hay estado que olvidar.
+			val plan = VoicePlan.plan(
+				voice = voice,
+				shape = shape,
+				preset = e.presetShape(voice),
+				requestRate = 100,
+				requestPitch = 100,
+				useSystemSpeed = useSystemSpeed,
+				volumeGain = volume
+			)
+			when (Emission.speak(e, plan, text) { reset ->
+				// 4.3: con el interruptor de ignorar códigos encendido,
+				// la muestra suena exactamente como va a sonar el
+				// servicio: sin reinicio delante (no hay códigos que
+				// neutralizar) y con el texto limpio de anotaciones.
+				val sub = Dictionaries.substitute(
+					text, words, if (ignoreTags) prosody else reset + prosody
+				)
+				// Sin cola de reseteo al final: cada muestra re-aplica
+				// la voz entera antes de hablar, así que no hay nada
+				// que deshacer, y la cola tras el punto final confunde
+				// la entonación. Los códigos del usuario mandan.
+				val said = if (ignoreTags) Prosody.stripVoiceCodes(sub) else sub
+				if (said.isBlank()) "" else if (ignoreTags) said else reset + prosody + said
+			}) {
+				Emission.Result.Spoken -> play(e, mine, fx)
+				Emission.Result.Empty -> Unit
+				Emission.Result.Rejected -> Timber.e("el motor rechazó la muestra")
+				Emission.Result.NotApplied -> Timber.e("no se pudo aplicar la voz de la muestra")
 			}
-			play(e, mine)
 		}
 	}
 
-	private fun play(e: EvvEngine, mine: Int) {
-		playing = true
+	/** Dice por turnos para la muestra del modo alternar:
+	 *  cada [Triple] trae voz, forma y texto ya con pausas.
+	 *  Todo corre en una sola pasada del hilo, un turno tras
+	 *  otro con su propia voz aplicada. */
+	fun sayAlternating(
+		segments: List<Triple<Int, Map<Int, Int>, String>>, rateHz: Int,
+		volume: Int, words: List<Pair<String, String>>, fx: AudioFx.Chain? = null,
+		prosody: String = "", ignoreTags: Boolean = false,
+		useSystemSpeed: Boolean = true
+	) {
+		if (segments.isEmpty()) return
+		stopSpeaking()
+		val mine = generation
+		work.post {
+			if (mine != generation) return@post
+			val e = engine ?: EvvEngine.open(language, Eci.sampleRateHz(1))?.also { engine = it } ?: return@post
+			e.setSampleRate(rateHz)
+			// 5.4.2: ver [say]; la sustitución cubre la lista.
+			for ((at, triple) in segments.withIndex()) {
+				val (voice, shape, text) = triple
+				if (mine != generation) return@post
+				val plan = VoicePlan.plan(
+					voice = voice,
+					shape = shape,
+					preset = e.presetShape(voice),
+					requestRate = 100,
+					requestPitch = 100,
+					useSystemSpeed = useSystemSpeed,
+					volumeGain = volume
+				)
+				// 4.3: ver [say]; mismo criterio que el servicio.
+				when (Emission.speak(e, plan, text) { reset ->
+					val sub = Dictionaries.substitute(
+						text, words, if (ignoreTags) prosody else reset + prosody
+					)
+					val said = if (ignoreTags) Prosody.stripVoiceCodes(sub) else sub
+					if (said.isBlank()) "" else if (ignoreTags) said else reset + prosody + said
+				}) {
+					Emission.Result.Spoken -> play(e, mine, fx)
+					Emission.Result.Empty -> Unit
+					Emission.Result.Rejected -> {
+						Timber.e("el motor rechazó la muestra alterna")
+						return@post
+					}
+					Emission.Result.NotApplied -> {
+						Timber.e("no se pudo aplicar la voz alterna de la muestra")
+						return@post
+					}
+				}
+			}
+		}
+	}
+
+	private fun play(e: EvvEngine, mine: Int, fx: AudioFx.Chain? = null) {		playing = true
 		drained = false
 		val rate = e.sampleRateHz
 		val minimum = AudioTrack.getMinBufferSize(
 			rate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT
 		)
 		val size = if (minimum > 0) maxOf(minimum, CHUNK * 4) else CHUNK * 4
-		val t = AudioTrack.Builder()
-			.setAudioAttributes(
-				AudioAttributes.Builder()
-					.setUsage(AudioAttributes.USAGE_ASSISTANT)
-					.setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-					.build()
-			)
-			.setAudioFormat(
-				AudioFormat.Builder()
-					.setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-					.setSampleRate(rate)
-					.setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-					.build()
-			)
-			.setBufferSizeInBytes(size)
-			.setTransferMode(AudioTrack.MODE_STREAM)
-			.build()
+		// 4.3: el track se pide con tres intentos, porque el Builder
+		// falla en mas aparatos de los que deberia, y antes eso
+		// significaba una muestra en silencio sin mas explicacion.
+		// Primero el Builder con la tasa pedida; si el aparato la
+		// rechaza, el constructor de toda la vida, que es mas
+		// indulgente; y si tampoco, a la tasa que el propio aparato
+		// dice que usa, que es donde la mayoria de las
+		// implementaciones de HAL resuelven la conversion. Con eso, una
+		// marca que no acepta 48 kHz sigue escuchando la muestra en vez
+		// de callar.
+		val t = openTrack(rate, size) ?: run {
+			Timber.e("el aparato no dio pista de audio para la muestra")
+			playing = false
+			return
+		}
+		// 4.3: si el aparato ha obligado a otra tasa, de esa hay que
+		// medir el fundido y el vaciado. Con la del motor, el fundido
+		// saldria mal y el "suena entero" mintiria.
+		val out = t.sampleRate.takeIf { it > 0 } ?: rate
 		track = t
-		t.play()
+		runCatching { t.play() }.onFailure {
+			Timber.e(it, "el AudioTrack no pudo arrancar")
+			runCatching { t.release() }
+			if (track === t) track = null
+			playing = false
+			return
+		}
 		val buffer = ByteArray(CHUNK)
+		val gain = e.volumeGain
 		var written = 0L
+		var first = true
 		while (mine == generation) {
 			val n = e.read(buffer)
 			if (n <= 0) break
+			// Fundido de arranque (15 ms, igual potencia): sin esto
+			// el transitorio de los filtros sonaba como un
+			// golpecito al empezar a hablar, sobre todo a
+			// 44k/48k con el HD fuerte.
+			if (first) {
+				first = false
+				AudioFx.fadeIn(buffer, n, out)
+			}
+			AudioFx.gain(buffer, n, gain)
+			fx?.process(buffer, n)
 			var at = 0
 			while (at < n && mine == generation) {
 				val wrote = t.write(buffer, at, n - at)
@@ -148,13 +248,15 @@ class EvvPreview(private var language: Int) {
 			}
 		}
 		if (mine == generation) {
-			// Waited out before stopping rather than after. The track holds
-			// most of a second, which is the last few words of a short sample,
-			// and release() cuts that off; stop() would let it play but also
-			// puts the playback head back to nought, so there would be nothing
-			// left to watch. So this waits for the head to reach the end of
-			// what was written while the track is still running.
-			drained = waitToDrain(t, mine, written, rate)
+			// Se esperó antes de detener en lugar de después.
+			// El track sostiene la mayoría de un segundo, que es
+			// las últimas palabras de una muestra corta, y
+			// release() la corta; stop() la dejaría sonar pero
+			// también pondría la cabeza de reproducción a cero,
+			// así que no quedaría nada para ver. Así que esto
+			// espera a que la cabeza llegue al final de lo
+			// escrito mientras el track sigue corriendo.
+			drained = waitToDrain(t, mine, written, out)
 			runCatching { t.stop() }
 		} else {
 			runCatching { t.pause(); t.flush(); t.stop() }
@@ -164,11 +266,92 @@ class EvvPreview(private var language: Int) {
 		playing = false
 	}
 
-	/** Answers whether everything written was actually heard. */
+	/**
+	 * 4.3: una pista de audio monofono PCM a [rate], o nada si el
+	 * aparato no deja.
+	 *
+	 * Tres maneras, de la que mejor se les da a la que peor: el
+	 * Builder (la de ahora, la unica que admite atributos de audio
+	 * decentes), el constructor viejo (mas indulgente con tasas raras)
+	 * y, en ultimo caso, la tasa que el propio aparato declara, que
+	 * es donde la mayoria de las implementaciones de HAL resuelven la
+	 * conversion. Con una sola, un modelo antiguo o una marca con un
+	 * HAL caprichoso se quedaba sin muestras y sin decir nada.
+	 */
+	private fun openTrack(rate: Int, size: Int): AudioTrack? {
+		runCatching {
+			AudioTrack.Builder()
+				.setAudioAttributes(
+					AudioAttributes.Builder()
+						.setUsage(AudioAttributes.USAGE_ASSISTANT)
+						.setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+						.build()
+				)
+				.setAudioFormat(
+					AudioFormat.Builder()
+						.setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+						.setSampleRate(rate)
+						.setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+						.build()
+				)
+				.setBufferSizeInBytes(size)
+				.setTransferMode(AudioTrack.MODE_STREAM)
+				.build()
+		}.getOrNull()?.let { return it }
+		// El constructor con atributos, que dentro de la plataforma es
+		// un camino distinto al Builder y acepta tasas que el Builder
+		// rehúsa.
+		runCatching {
+			AudioTrack(
+				AudioAttributes.Builder()
+					.setUsage(AudioAttributes.USAGE_ASSISTANT)
+					.setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+					.build(),
+				AudioFormat.Builder()
+					.setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+					.setSampleRate(rate)
+					.setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+					.build(),
+				size, AudioTrack.MODE_STREAM, AudioManager.AUDIO_SESSION_ID_GENERATE
+			)
+		}.getOrNull()?.let { return it }
+		// El aparato dice cual es la suya, y a esa se conforma todo el
+		// mundo: es la tasa para la que el HAL tiene ruta.
+		val native = runCatching {
+			AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC)
+		}.getOrDefault(0)
+		if (native <= 0 || native == rate) {
+			Timber.e("el aparato no tiene salida de audio para la muestra")
+			return null
+		}
+		Timber.i("la muestra suena a $native Hz en vez de a $rate")
+		return runCatching {
+			AudioTrack.Builder()
+				.setAudioAttributes(
+					AudioAttributes.Builder()
+						.setUsage(AudioAttributes.USAGE_ASSISTANT)
+						.setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+						.build()
+				)
+				.setAudioFormat(
+					AudioFormat.Builder()
+						.setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+						.setSampleRate(native)
+						.setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+						.build()
+				)
+				.setBufferSizeInBytes(size * native / rate.coerceAtLeast(1))
+				.setTransferMode(AudioTrack.MODE_STREAM)
+				.build()
+		}.getOrNull()
+	}
+
+	/** Contesta si todo lo escrito se escuchó realmente. */
 	private fun waitToDrain(t: AudioTrack, mine: Int, frames: Long, rate: Int): Boolean {
 		if (frames <= 0L) return true
-		// However long the audio is, plus a margin, so a track that stops
-		// reporting cannot hold this thread for ever.
+		// Tenga el tiempo que tenga el audio, más un margen,
+		// para que un track que deja de reportar no pueda
+		// mantener este hilo para siempre.
 		val giveUp = System.currentTimeMillis() + frames * 1000L / rate + MARGIN_MS
 		while (mine == generation && System.currentTimeMillis() < giveUp) {
 			val head = runCatching { t.playbackHeadPosition.toLong() and 0xFFFFFFFFL }
@@ -200,7 +383,6 @@ class EvvPreview(private var language: Int) {
 	}
 
 	private companion object {
-		const val TAG = "evvdroid"
 		const val CHUNK = 4096
 		const val BYTES_PER_FRAME = 2
 		const val MARGIN_MS = 750L

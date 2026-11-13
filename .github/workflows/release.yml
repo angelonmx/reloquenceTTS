@@ -87,52 +87,20 @@ jobs:
       - name: Compila edición Full (motor nativo + APKs firmados)
         run: ./gradlew clean assembleRelease "-Pevvdroid.abis=arm64-v8a,armeabi-v7a"
 
-      - name: Guarda los APKs de Full
+      - name: Verifica los APKs de Full
         run: |
           set -euo pipefail
-          mkdir -p dist/full/release
-          vn=$(grep '^full.versionName=' version.properties | cut -d= -f2)
-          vc=$(grep '^full.versionCode=' version.properties | cut -d= -f2)
-          found=0
-          for apk in app/build/outputs/apk/release/*.apk; do
-            [ -f "$apk" ] || continue
-            found=1
-            base=$(basename "$apk")
-            case "$base" in
-              *-arm64-v8a-*) abi=arm64-v8a ;;
-              *-armeabi-v7a-*) abi=armeabi-v7a ;;
-              *-universal-*) abi=universal ;;
-              *) abi=unknown ;;
-            esac
-            cp "$apk" "dist/full/release/reloquence-full-${vn}-${vc}-${abi}-release.apk"
-          done
-          test "$found" = 1
           ls -l dist/full/release/
+          test -n "$(ls -A dist/full/release/*.apk 2>/dev/null)"
 
       - name: Compila edición Lite (motor nativo + APKs firmados)
         run: ./gradlew clean assembleRelease "-Pevvdroid.abis=arm64-v8a,armeabi-v7a" "-Pevvdroid.edition=lite"
 
-      - name: Guarda los APKs de Lite
+      - name: Verifica los APKs de Lite
         run: |
           set -euo pipefail
-          mkdir -p dist/lite/release
-          vn=$(grep '^lite.versionName=' version.properties | cut -d= -f2)
-          vc=$(grep '^lite.versionCode=' version.properties | cut -d= -f2)
-          found=0
-          for apk in app/build/outputs/apk/release/*.apk; do
-            [ -f "$apk" ] || continue
-            found=1
-            base=$(basename "$apk")
-            case "$base" in
-              *-arm64-v8a-*) abi=arm64-v8a ;;
-              *-armeabi-v7a-*) abi=armeabi-v7a ;;
-              *-universal-*) abi=universal ;;
-              *) abi=unknown ;;
-            esac
-            cp "$apk" "dist/lite/release/reloquence-lite-${vn}-${vc}-${abi}-release.apk"
-          done
-          test "$found" = 1
           ls -l dist/lite/release/
+          test -n "$(ls -A dist/lite/release/*.apk 2>/dev/null)"
 
       - name: Crea la release y sube los APKs
         id: create_release

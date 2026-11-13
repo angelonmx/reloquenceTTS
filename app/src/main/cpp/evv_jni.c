@@ -13,6 +13,7 @@
 
 #include <jni.h>
 #include <pthread.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -33,6 +34,24 @@
    engine to take the work up before it stops waiting for that. */
 #define START_SPINS 200
 
+/* How long a reader waits for samples before deciding the engine has wedged.
+   Frames are 1024 samples, so 128 ms even at 8 kHz: ten seconds of nothing is
+   not a slow utterance, it is a stuck engine, and a reader that waits for it
+   for ever is what the system reports as a stopped text-to-speech engine. */
+#define READ_TIMEOUT_SEC 10
+
+/* How long speak waits for the previous utterance's worker to leave the engine
+   before it stops waiting politely and aborts it. Short, because the polite
+   wait is only ever going to end by itself when the previous utterance really
+   did finish, and that has already happened by the time speak is called; if it
+   has not, the worker is stuck and waiting longer only adds silence. */
+#define IDLE_GRACE_SEC 2
+
+/* What read answers when the engine gave up waiting for samples. Distinct from
+   the -1 of a stop, because the caller has to do something about it: throw the
+   instance away rather than speak through it again. */
+#define WEDGED (-2)
+
 typedef struct {
 	ECIHand         eci;
 	pthread_mutex_t lock;
@@ -51,6 +70,21 @@ typedef struct {
 	int             pending;
 	int             busy;
 	int             quitting;
+	/* 5.0: a timed-out read is not the same as a normal stop. The
+	 * worker may still be inside the engine; remembering this keeps
+	 * speak from reusing the instance and keeps destroy from freeing
+	 * memory under a thread that has not returned. */
+	int             wedged;
+	int             exited;
+	pthread_cond_t  exit_cond;
+	/* How many callers are inside read right now. 4.2: a service
+	 * that is being torn down while the synthesis thread is waiting
+	 * for samples used to free the ring out from under it, and the
+	 * process went down with it. abort() wakes the readers and
+	 * destroy() waits for this to go back to zero before it frees
+	 * anything. Kotlin counts its own readers too, for the window
+	 * between deciding to call read and being inside it. */
+	int             readers;
 	unsigned char*  text;
 	ECIDictHand     dict;
 	short           frame[FRAME_SAMPLES];
@@ -118,6 +152,8 @@ static void* worker_loop(void* data) {
 		while (!in->pending && !in->quitting)
 			pthread_cond_wait(&in->work, &in->lock);
 		if (in->quitting) {
+			in->exited = 1;
+			pthread_cond_broadcast(&in->exit_cond);
 			pthread_mutex_unlock(&in->lock);
 			return NULL;
 		}
@@ -155,12 +191,61 @@ static jboolean finished(instance* in) {
 }
 
 /* Waits for the worker to be out of the engine, which is what makes it safe to
-   put the next utterance in. The lock must not be held. */
-static void wait_until_idle(instance* in) {
+   put the next utterance in. The lock must not be held.
+ *
+ * This used to wait with no deadline at all, which turns one wedged engine into
+ * a service that never speaks again: the synthesis thread of the framework is
+ * the only thread that drives an utterance, so a wait here with no end is a
+ * wait forever, and the symptom is silence rather than a crash, which is why it
+ * is so hard to trace back.
+ *
+ * A stuck worker is inside the engine's own callback with the ring full, and
+ * the only thing that unparks it is the abort flag. So the first deadline is
+ * not "give up", it is "stop waiting politely and go and stop it". Only if
+ * that does not work either is the answer no, and the caller drops the
+ * instance and opens another.
+ *
+ * Returns 1 when the engine is idle, 0 when it could not be got out of. */
+static int wait_until_idle(instance* in) {
+	struct timespec deadline;
+	int gave_up = 0;
 	pthread_mutex_lock(&in->lock);
-	while (in->busy)
-		pthread_cond_wait(&in->work, &in->lock);
+	if (in->wedged) {
+		pthread_mutex_unlock(&in->lock);
+		return 0;
+	}
+	clock_gettime(CLOCK_REALTIME, &deadline);
+	deadline.tv_sec += IDLE_GRACE_SEC;
+	while (in->busy) {
+		if (pthread_cond_timedwait(&in->work, &in->lock, &deadline) == ETIMEDOUT)
+			break;
+	}
+	if (in->busy) {
+		/* Polite wait is over. Ask the engine to stop, which is what
+		 * releases a thread parked in on_message, and give it a
+		 * moment to unwind. */
+		in->aborted = 1;
+		pthread_cond_broadcast(&in->room);
+		pthread_cond_broadcast(&in->filled);
+		pthread_cond_broadcast(&in->work);
+		clock_gettime(CLOCK_REALTIME, &deadline);
+		deadline.tv_sec += IDLE_GRACE_SEC;
+		while (in->busy) {
+			if (pthread_cond_timedwait(&in->work, &in->lock, &deadline) == ETIMEDOUT) {
+				gave_up = 1;
+				break;
+			}
+		}
+	}
 	pthread_mutex_unlock(&in->lock);
+	if (gave_up) {
+		pthread_mutex_lock(&in->lock);
+		in->wedged = 1;
+		pthread_mutex_unlock(&in->lock);
+		LOGE("el hilo del motor no salio del motor tras %d s dos veces",
+			IDLE_GRACE_SEC);
+	}
+	return !gave_up;
 }
 
 /* Runs on the engine's synthesis thread. It may not call back into the same
@@ -174,10 +259,22 @@ static int ECICALL on_message(ECIHand handle, ECIMessage message, int param, voi
 	want = (size_t)param * sizeof(short);
 	if (want == 0)
 		return eciDataProcessed;
+	if (want > RING_BYTES) {
+		/* The ring can never fit this frame, so waiting for room
+		 * would wait forever while holding the engine thread. */
+		LOGE("frame of %zu bytes does not fit the ring", want);
+		pthread_mutex_lock(&in->lock);
+		in->aborted = 1;
+		in->wedged = 1;
+		pthread_cond_broadcast(&in->filled);
+		pthread_cond_broadcast(&in->work);
+		pthread_mutex_unlock(&in->lock);
+		return eciDataAbort;
+	}
 	pthread_mutex_lock(&in->lock);
-	while (!in->aborted && RING_BYTES - in->count < want)
+	while (!in->aborted && !in->quitting && RING_BYTES - in->count < want)
 		pthread_cond_wait(&in->room, &in->lock);
-	if (in->aborted) {
+	if (in->aborted || in->quitting) {
 		pthread_mutex_unlock(&in->lock);
 		return eciDataAbort;
 	}
@@ -188,7 +285,7 @@ static int ECICALL on_message(ECIHand handle, ECIMessage message, int param, voi
 	return eciDataProcessed;
 }
 
-JNIEXPORT jlong JNICALL Java_org_evvdroid_EvvNative_create(JNIEnv* env, jclass cls, jint language) {
+JNIEXPORT jlong JNICALL Java_com_angelonmx_reloquence_EvvNative_create(JNIEnv* env, jclass cls, jint language) {
 	instance* in;
 	(void)env;
 	(void)cls;
@@ -200,21 +297,32 @@ JNIEXPORT jlong JNICALL Java_org_evvdroid_EvvNative_create(JNIEnv* env, jclass c
 		free(in);
 		return 0;
 	}
-	in->eci = eciNewEx(language);
-	if (in->eci == NULL_ECI_HAND) {
-		LOGE("eciNewEx(%#x) gave no instance", language);
-		free(in->ring);
-		free(in);
-		return 0;
-	}
 	pthread_mutex_init(&in->lock, NULL);
 	pthread_cond_init(&in->room, NULL);
 	pthread_cond_init(&in->filled, NULL);
 	pthread_cond_init(&in->work, NULL);
+	pthread_cond_init(&in->exit_cond, NULL);
+	in->eci = eciNewEx(language);
+	if (in->eci == NULL_ECI_HAND) {
+		LOGE("eciNewEx(%#x) gave no instance", language);
+		pthread_cond_destroy(&in->exit_cond);
+		pthread_cond_destroy(&in->work);
+		pthread_cond_destroy(&in->filled);
+		pthread_cond_destroy(&in->room);
+		pthread_mutex_destroy(&in->lock);
+		free(in->ring);
+		free(in);
+		return 0;
+	}
 	eciRegisterCallback(in->eci, on_message, in);
 	if (!eciSetOutputBuffer(in->eci, FRAME_SAMPLES, in->frame)) {
 		LOGE("the engine refused the output buffer");
 		eciDelete(in->eci);
+		pthread_cond_destroy(&in->exit_cond);
+		pthread_cond_destroy(&in->work);
+		pthread_cond_destroy(&in->filled);
+		pthread_cond_destroy(&in->room);
+		pthread_mutex_destroy(&in->lock);
 		free(in->ring);
 		free(in);
 		return 0;
@@ -222,6 +330,11 @@ JNIEXPORT jlong JNICALL Java_org_evvdroid_EvvNative_create(JNIEnv* env, jclass c
 	if (pthread_create(&in->worker, NULL, worker_loop, in) != 0) {
 		LOGE("no thread to run the engine on");
 		eciDelete(in->eci);
+		pthread_cond_destroy(&in->exit_cond);
+		pthread_cond_destroy(&in->work);
+		pthread_cond_destroy(&in->filled);
+		pthread_cond_destroy(&in->room);
+		pthread_mutex_destroy(&in->lock);
 		free(in->ring);
 		free(in);
 		return 0;
@@ -230,7 +343,17 @@ JNIEXPORT jlong JNICALL Java_org_evvdroid_EvvNative_create(JNIEnv* env, jclass c
 	return (jlong)(intptr_t)in;
 }
 
-JNIEXPORT void JNICALL Java_org_evvdroid_EvvNative_destroy(JNIEnv* env, jclass cls, jlong handle) {
+/* Wakes everybody waiting on this instance and nothing else: the engine
+ * thread, and a reader parked in read. No memory is released here, so
+ * it is safe to call while somebody is still inside.
+ *
+ * 4.2: this is what lets Kotlin tell the engine to stop before it
+ * waits for its readers to leave. Freeing the ring while the synthesis
+ * thread was parked in pthread_cond_wait on it is what took the
+ * process down when the TTS framework unbound a service that was in
+ * the middle of an utterance, which the system then reports as a
+ * stopped engine with an offer to clear the cache. */
+JNIEXPORT void JNICALL Java_com_angelonmx_reloquence_EvvNative_abort(JNIEnv* env, jclass cls, jlong handle) {
 	instance* in = unwrap(handle);
 	(void)env;
 	(void)cls;
@@ -243,9 +366,54 @@ JNIEXPORT void JNICALL Java_org_evvdroid_EvvNative_destroy(JNIEnv* env, jclass c
 	pthread_cond_broadcast(&in->filled);
 	pthread_cond_broadcast(&in->work);
 	pthread_mutex_unlock(&in->lock);
-	/* The abort flag is what brings the worker out of the engine: the next
-	   buffer it is offered is answered eciDataAbort and eciSynchronize
-	   returns. Nothing is asked of the engine from this thread. */
+	/* 5.0: abort only wakes. Kotlin already counts its readers and
+	 * destroy waits for them; blocking here too doubled the wait on
+	 * the main thread that calls close(). */
+}
+
+JNIEXPORT void JNICALL Java_com_angelonmx_reloquence_EvvNative_destroy(JNIEnv* env, jclass cls, jlong handle) {
+	instance* in = unwrap(handle);
+	(void)env;
+	(void)cls;
+	if (in == NULL)
+		return;
+	struct timespec deadline;
+	int readers_left;
+	int exited;
+	pthread_mutex_lock(&in->lock);
+	in->aborted = 1;
+	in->quitting = 1;
+	pthread_cond_broadcast(&in->room);
+	pthread_cond_broadcast(&in->filled);
+	pthread_cond_broadcast(&in->work);
+	clock_gettime(CLOCK_REALTIME, &deadline);
+	deadline.tv_sec += IDLE_GRACE_SEC;
+	while (in->readers > 0) {
+		if (pthread_cond_timedwait(&in->filled, &in->lock, &deadline) == ETIMEDOUT)
+			break;
+	}
+	readers_left = in->readers;
+	exited = in->exited || !in->running;
+	if (!exited && in->running) {
+		clock_gettime(CLOCK_REALTIME, &deadline);
+		deadline.tv_sec += IDLE_GRACE_SEC;
+		while (!in->exited) {
+			if (pthread_cond_timedwait(&in->exit_cond, &in->lock, &deadline) == ETIMEDOUT)
+				break;
+		}
+		exited = in->exited;
+	}
+	pthread_mutex_unlock(&in->lock);
+	/* 5.0: a worker that is still inside the engine, or a reader that
+	 * has not left, means this instance is not ours to free. Leaking a
+	 * few kilobytes on a teardown is better than pulling the ring out
+	 * from under the engine thread. The handle is gone from Kotlin's
+	 * side, so nothing will touch it again. */
+	if (readers_left > 0 || !exited) {
+		LOGE("destroy: leaking instance (%d readers, worker %s)",
+			readers_left, exited ? "gone" : "still inside");
+		return;
+	}
 	if (in->running) {
 		pthread_join(in->worker, NULL);
 		in->running = 0;
@@ -253,6 +421,7 @@ JNIEXPORT void JNICALL Java_org_evvdroid_EvvNative_destroy(JNIEnv* env, jclass c
 	if (in->dict != NULL_DICT_HAND)
 		eciDeleteDict(in->eci, in->dict);
 	eciDelete(in->eci);
+	pthread_cond_destroy(&in->exit_cond);
 	pthread_cond_destroy(&in->room);
 	pthread_cond_destroy(&in->filled);
 	pthread_cond_destroy(&in->work);
@@ -269,24 +438,44 @@ JNIEXPORT void JNICALL Java_org_evvdroid_EvvNative_destroy(JNIEnv* env, jclass c
  * the engine allows only for Chinese, Japanese and Korean; Kotlin has already
  * turned it into that set. It is kept until the next utterance because nothing
  * here knows whether the engine copied it. */
-JNIEXPORT jboolean JNICALL Java_org_evvdroid_EvvNative_speak(JNIEnv* env, jclass cls, jlong handle, jbyteArray text) {
+JNIEXPORT jboolean JNICALL Java_com_angelonmx_reloquence_EvvNative_speak(JNIEnv* env, jclass cls, jlong handle, jbyteArray text) {
 	instance*      in = unwrap(handle);
 	jsize          n;
 	unsigned char* buf;
 	(void)cls;
 	if (in == NULL || text == NULL)
 		return JNI_FALSE;
+	pthread_mutex_lock(&in->lock);
+	if (in->wedged || in->quitting || !in->running) {
+		pthread_mutex_unlock(&in->lock);
+		return JNI_FALSE;
+	}
+	pthread_mutex_unlock(&in->lock);
 	n = (*env)->GetArrayLength(env, text);
 	buf = (unsigned char*)malloc((size_t)n + 1);
 	if (buf == NULL)
 		return JNI_FALSE;
 	(*env)->GetByteArrayRegion(env, text, 0, n, (jbyte*)buf);
 	buf[n] = 0;
-	wait_until_idle(in);
+	/* If the previous worker could not be got out of the engine even after
+	 * aborting it, this instance is not going to work again. Saying no is
+	 * what makes the service drop it and open another, which is the
+	 * difference between one lost utterance and a service that never
+	 * speaks again. */
+	if (!wait_until_idle(in)) {
+		free(buf);
+		return JNI_FALSE;
+	}
 	pthread_mutex_lock(&in->lock);
+	if (in->wedged || in->quitting) {
+		pthread_mutex_unlock(&in->lock);
+		free(buf);
+		return JNI_FALSE;
+	}
 	in->aborted = 0;
 	in->started = 0;
 	in->done = 0;
+	in->wedged = 0;
 	in->busy = 1;
 	in->head = in->tail = in->count = 0;
 	pthread_mutex_unlock(&in->lock);
@@ -312,12 +501,34 @@ JNIEXPORT jboolean JNICALL Java_org_evvdroid_EvvNative_speak(JNIEnv* env, jclass
 }
 
 /* Bytes out, blocking until there are some. Answers 0 at the end of the
-   utterance and -1 when it was stopped. */
-JNIEXPORT jint JNICALL Java_org_evvdroid_EvvNative_read(JNIEnv* env, jclass cls, jlong handle, jbyteArray dst) {
+   utterance and -1 when it was stopped or the instance is going away.
+   4.0: sin malloc por chunk. El servicio pide 1-8k, así que un
+   buffer de pila basta y ahorra un alloc+free por lectura (miles
+   por minuto en TalkBack). Solo lo grande va a malloc.
+ *
+ * 4.2, dos cosas más:
+ *
+ * - La espera tiene plazo. El motor entrega marcos de 1024 muestras,
+ *   que a 8 kHz son 128 ms, así que diez segundos de silencio ya no
+ *   son una emisión lenta: son un motor que se quedó parado. Antes
+ *   esta espera no tenía fin, así que un motor colgado dejaba al
+ *   hilo de síntesis esperando para siempre y el sistema acababa
+ *   dando el motor por parado. Al vencer el plazo se contesta 0, que
+ *   es "se acabó", y la emisión se cierra sola.
+ *
+ * - Entra y sale con la cuenta de lectores. destroy() no suelta el
+ *   búfer hasta que no queda nadie dentro, que es el caso de un
+ *   servicio que se desmonta a mitad de una frase.
+ */
+JNIEXPORT jint JNICALL Java_com_angelonmx_reloquence_EvvNative_read(JNIEnv* env, jclass cls, jlong handle, jbyteArray dst) {
 	instance*      in = unwrap(handle);
 	size_t         room;
-	size_t         got;
-	unsigned char* scratch;
+	size_t         got = 0;
+	unsigned char  stack[8192];
+	unsigned char* scratch = stack;
+	int            heap = 0;
+	int            answer;
+	int            wedged = 0;
 	(void)cls;
 	if (in == NULL || dst == NULL)
 		return -1;
@@ -325,33 +536,73 @@ JNIEXPORT jint JNICALL Java_org_evvdroid_EvvNative_read(JNIEnv* env, jclass cls,
 	if (room == 0)
 		return -1;
 	pthread_mutex_lock(&in->lock);
-	while (in->count == 0 && !in->done && !in->aborted)
-		pthread_cond_wait(&in->filled, &in->lock);
-	if (in->aborted) {
+	if (in->quitting) {
 		pthread_mutex_unlock(&in->lock);
 		return -1;
 	}
-	if (in->count == 0) {
+	if (in->wedged) {
 		pthread_mutex_unlock(&in->lock);
-		return 0;
+		return WEDGED;
 	}
-	got = in->count < room ? in->count : room;
-	scratch = (unsigned char*)malloc(got);
-	if (scratch == NULL) {
-		pthread_mutex_unlock(&in->lock);
-		return -1;
+	in->readers++;
+	while (in->count == 0 && !in->done && !in->aborted) {
+		struct timespec deadline;
+		clock_gettime(CLOCK_REALTIME, &deadline);
+		deadline.tv_sec += READ_TIMEOUT_SEC;
+		if (pthread_cond_timedwait(&in->filled, &in->lock, &deadline) == ETIMEDOUT) {
+			/* Ni audio, ni fin, ni parada: el motor se quedó parado.
+			 * 5.0: no se toca busy ni done. El worker puede seguir
+			 * dentro del motor; marcarlo libre aquí era lo que
+			 * permitía cerrar y liberar mientras aún escribía. Se
+			 * contesta WEDGED, el servicio suelta la instancia y
+			 * destroy() espera con plazo antes de liberar. */
+			in->wedged = 1;
+			in->aborted = 1;
+			pthread_cond_broadcast(&in->room);
+			pthread_cond_broadcast(&in->filled);
+			pthread_cond_broadcast(&in->work);
+			wedged = 1;
+			break;
+		}
 	}
-	take(in, scratch, got);
-	pthread_cond_signal(&in->room);
+	if (wedged) {
+		answer = WEDGED;
+	} else if (in->aborted || in->quitting) {
+		answer = -1;
+	} else if (in->count == 0) {
+		answer = 0;
+	} else {
+		got = in->count < room ? in->count : room;
+		if (got > sizeof(stack)) {
+			scratch = (unsigned char*)malloc(got);
+			if (scratch == NULL) {
+				answer = -1;
+				got = 0;
+			} else {
+				heap = 1;
+				take(in, scratch, got);
+				pthread_cond_signal(&in->room);
+				answer = (jint)got;
+			}
+		} else {
+			take(in, scratch, got);
+			pthread_cond_signal(&in->room);
+			answer = (jint)got;
+		}
+	}
+	if (--in->readers == 0 && in->quitting)
+		pthread_cond_broadcast(&in->filled);
 	pthread_mutex_unlock(&in->lock);
-	(*env)->SetByteArrayRegion(env, dst, 0, (jsize)got, (const jbyte*)scratch);
-	free(scratch);
-	return (jint)got;
+	/* Fuera del candado: ya no se toca in, solo el buffer propio. */
+	if (answer > 0)
+		(*env)->SetByteArrayRegion(env, dst, 0, (jsize)answer, (const jbyte*)scratch);
+	if (heap) free(scratch);
+	return answer;
 }
 
 /* Wakes the callback before asking the engine to stop, since the callback may
    be waiting for room that a stopped reader will never make. */
-JNIEXPORT void JNICALL Java_org_evvdroid_EvvNative_stop(JNIEnv* env, jclass cls, jlong handle) {
+JNIEXPORT void JNICALL Java_com_angelonmx_reloquence_EvvNative_stop(JNIEnv* env, jclass cls, jlong handle) {
 	instance* in = unwrap(handle);
 	(void)env;
 	(void)cls;
@@ -393,7 +644,7 @@ static int ensure_dict(instance* in) {
 
 /* Hands a file to the engine's own dictionary loader. Answers one of the
    eciDict codes, so nought is success. */
-JNIEXPORT jint JNICALL Java_org_evvdroid_EvvNative_loadDictionary(JNIEnv* env, jclass cls, jlong handle, jint volume, jstring path) {
+JNIEXPORT jint JNICALL Java_com_angelonmx_reloquence_EvvNative_loadDictionary(JNIEnv* env, jclass cls, jlong handle, jint volume, jstring path) {
 	instance*   in = unwrap(handle);
 	const char* name;
 	jint        answer;
@@ -410,7 +661,7 @@ JNIEXPORT jint JNICALL Java_org_evvdroid_EvvNative_loadDictionary(JNIEnv* env, j
 
 /* Teaches one word, which is the other way in and the one that does not depend
    on the engine agreeing about a file format. */
-JNIEXPORT jint JNICALL Java_org_evvdroid_EvvNative_teachWord(JNIEnv* env, jclass cls, jlong handle, jint volume, jbyteArray key, jbyteArray say) {
+JNIEXPORT jint JNICALL Java_com_angelonmx_reloquence_EvvNative_teachWord(JNIEnv* env, jclass cls, jlong handle, jint volume, jbyteArray key, jbyteArray say) {
 	instance*      in = unwrap(handle);
 	jsize          keyLen;
 	jsize          sayLen;
@@ -435,7 +686,7 @@ JNIEXPORT jint JNICALL Java_org_evvdroid_EvvNative_teachWord(JNIEnv* env, jclass
 
 /* What a key was taught, or nothing. This is how a test says a dictionary
    really went in rather than that a call answered nought. */
-JNIEXPORT jstring JNICALL Java_org_evvdroid_EvvNative_lookUpWord(JNIEnv* env, jclass cls, jlong handle, jint volume, jbyteArray key) {
+JNIEXPORT jstring JNICALL Java_com_angelonmx_reloquence_EvvNative_lookUpWord(JNIEnv* env, jclass cls, jlong handle, jint volume, jbyteArray key) {
 	instance*      in = unwrap(handle);
 	jsize          keyLen;
 	unsigned char* want;
@@ -458,7 +709,7 @@ JNIEXPORT jstring JNICALL Java_org_evvdroid_EvvNative_lookUpWord(JNIEnv* env, jc
 
 /* Puts the set aside and takes it away, so the engine is back to the language's
    own dictionary. */
-JNIEXPORT void JNICALL Java_org_evvdroid_EvvNative_forgetDictionaries(JNIEnv* env, jclass cls, jlong handle) {
+JNIEXPORT void JNICALL Java_com_angelonmx_reloquence_EvvNative_forgetDictionaries(JNIEnv* env, jclass cls, jlong handle) {
 	instance* in = unwrap(handle);
 	(void)env;
 	(void)cls;
@@ -469,42 +720,42 @@ JNIEXPORT void JNICALL Java_org_evvdroid_EvvNative_forgetDictionaries(JNIEnv* en
 	in->dict = NULL_DICT_HAND;
 }
 
-JNIEXPORT jint JNICALL Java_org_evvdroid_EvvNative_setParam(JNIEnv* env, jclass cls, jlong handle, jint param, jint value) {
+JNIEXPORT jint JNICALL Java_com_angelonmx_reloquence_EvvNative_setParam(JNIEnv* env, jclass cls, jlong handle, jint param, jint value) {
 	instance* in = unwrap(handle);
 	(void)env;
 	(void)cls;
 	return in == NULL ? -1 : eciSetParam(in->eci, param, value);
 }
 
-JNIEXPORT jint JNICALL Java_org_evvdroid_EvvNative_getParam(JNIEnv* env, jclass cls, jlong handle, jint param) {
+JNIEXPORT jint JNICALL Java_com_angelonmx_reloquence_EvvNative_getParam(JNIEnv* env, jclass cls, jlong handle, jint param) {
 	instance* in = unwrap(handle);
 	(void)env;
 	(void)cls;
 	return in == NULL ? -1 : eciGetParam(in->eci, param);
 }
 
-JNIEXPORT jint JNICALL Java_org_evvdroid_EvvNative_setVoiceParam(JNIEnv* env, jclass cls, jlong handle, jint voice, jint param, jint value) {
+JNIEXPORT jint JNICALL Java_com_angelonmx_reloquence_EvvNative_setVoiceParam(JNIEnv* env, jclass cls, jlong handle, jint voice, jint param, jint value) {
 	instance* in = unwrap(handle);
 	(void)env;
 	(void)cls;
 	return in == NULL ? -1 : eciSetVoiceParam(in->eci, voice, param, value);
 }
 
-JNIEXPORT jint JNICALL Java_org_evvdroid_EvvNative_getVoiceParam(JNIEnv* env, jclass cls, jlong handle, jint voice, jint param) {
+JNIEXPORT jint JNICALL Java_com_angelonmx_reloquence_EvvNative_getVoiceParam(JNIEnv* env, jclass cls, jlong handle, jint voice, jint param) {
 	instance* in = unwrap(handle);
 	(void)env;
 	(void)cls;
 	return in == NULL ? -1 : eciGetVoiceParam(in->eci, voice, param);
 }
 
-JNIEXPORT jint JNICALL Java_org_evvdroid_EvvNative_copyVoice(JNIEnv* env, jclass cls, jlong handle, jint from, jint to) {
+JNIEXPORT jint JNICALL Java_com_angelonmx_reloquence_EvvNative_copyVoice(JNIEnv* env, jclass cls, jlong handle, jint from, jint to) {
 	instance* in = unwrap(handle);
 	(void)env;
 	(void)cls;
 	return in == NULL ? -1 : eciCopyVoice(in->eci, from, to);
 }
 
-JNIEXPORT jintArray JNICALL Java_org_evvdroid_EvvNative_languages(JNIEnv* env, jclass cls) {
+JNIEXPORT jintArray JNICALL Java_com_angelonmx_reloquence_EvvNative_languages(JNIEnv* env, jclass cls) {
 	unsigned int found[32];
 	int          n = 0;
 	jintArray    out;
@@ -522,7 +773,7 @@ JNIEXPORT jintArray JNICALL Java_org_evvdroid_EvvNative_languages(JNIEnv* env, j
 	return out;
 }
 
-JNIEXPORT jstring JNICALL Java_org_evvdroid_EvvNative_version(JNIEnv* env, jclass cls) {
+JNIEXPORT jstring JNICALL Java_com_angelonmx_reloquence_EvvNative_version(JNIEnv* env, jclass cls) {
 	char buffer[ECI_VERSION_LENGTH];
 	(void)cls;
 	memset(buffer, 0, sizeof buffer);

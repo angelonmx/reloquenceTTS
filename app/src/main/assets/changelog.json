@@ -1,4 +1,5 @@
 {
+  "schema": 1,
   "editions": {
     "full": [
       {
@@ -7,18 +8,35 @@
         "date": "2026-11-12",
         "notes": {
           "es": [
-            "Primera publicación de ReloquenceTTS versión 1.0.",
-            "Se integró el motor OpenEVV completo con doce idiomas: inglés (EE. UU. y Reino Unido), español (España y Latinoamérica), francés (Francia y Canadá), alemán, italiano, polaco, japonés, finés y portugués (Brasil).",
-            "El español de Latinoamérica se muestra como tal y no como español de México.",
-            "Se eliminó la edición lite: la versión full redujo bastante su tamaño y ya cubre todas las necesidades.",
-            "Las bibliotecas nativas van comprimidas en el APK para que pese lo menos posible."
+            "Primera versión 1.0: motor OpenEVI integrado con diez idiomas (inglés de EE. UU. y del Reino Unido, español de España y de Latinoamérica, francés de Francia y de Canadá, alemán, italiano, japonés y polaco).",
+            "Todos los parámetros de voz conectados al motor: género, velocidad, tono, inflexión, tamaño de cabeza, aspereza, respiración y volumen, con perfiles y efectos.",
+            "Diccionario, importación y exportación, copias de voz, diagnóstico y actualizaciones desde la propia app.",
+            "Compilación y firma automáticas en GitHub Actions, sin depender del PC."
           ],
           "en": [
-            "First release of ReloquenceTTS version 1.0.",
-            "The full OpenEVV engine is integrated with twelve languages: English (US and UK), Spanish (Spain and Latin America), French (France and Canada), German, Italian, Polish, Japanese, Finnish and Portuguese (Brazil).",
-            "Latin American Spanish is shown as such, not as Mexican Spanish.",
-            "The lite edition was removed: the full edition reduced its size considerably and now covers all needs.",
-            "Native libraries are compressed in the APK to keep it as small as possible."
+            "First 1.0 release: OpenEVI engine wired to ten languages (US and UK English, Spain and Latin American Spanish, France and Canada French, German, Italian, Japanese and Polish).",
+            "Every voice parameter is connected to the engine: gender, speed, pitch, inflection, head size, roughness, breathiness and volume, with profiles and effects.",
+            "Dictionary, import and export, voice backups, diagnostics and in-app updates.",
+            "Built and signed automatically on GitHub Actions, with no local PC involved."
+          ]
+        }
+      }
+    ],
+    "lite": [
+      {
+        "versionName": "1.0.0",
+        "versionCode": 1000,
+        "date": "2026-11-12",
+        "notes": {
+          "es": [
+            "Primera versión 1.0 Lite: la misma app con las dos voces de español (España y Latinoamérica) del motor OpenEVI.",
+            "Todos los parámetros de voz, perfiles, efectos, diccionario y actualizaciones de la edición Full.",
+            "Compilada y firmada automáticamente en GitHub Actions."
+          ],
+          "en": [
+            "First 1.0 Lite release: the same app with the two Spanish voices (Spain and Latin America) from the OpenEVI engine.",
+            "All voice parameters, profiles, effects, dictionary and updates from the Full edition.",
+            "Built and signed automatically on GitHub Actions."
           ]
         }
       }

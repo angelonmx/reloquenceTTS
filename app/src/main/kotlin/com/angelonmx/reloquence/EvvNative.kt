@@ -1,8 +1,55 @@
 package com.angelonmx.reloquence
 
-/** The JNI surface. Every call here is thread safe except [speak] and [read],
- *  which belong to whichever thread is driving one utterance. */
-internal object EvvNative {
+/**
+ * La interfaz JNI. Cada llamada aquí es segura para hilos
+ * excepto [speak] y [read], que pertenecen al hilo que
+ * impulsa una emisión.
+ *
+ * [EvvBridge] se separa para que [EvvEngine] se pueda probar en la
+ * máquina sin la biblioteca nativa: las pruebas inyectan un doble
+ * de prueba y no necesitan `libevvjni`.
+ */
+internal interface EvvBridge {
+
+	fun create(language: Int): Long
+
+	fun destroy(handle: Long)
+
+	/**
+	 * 4.2: despierta a quien esté esperando dentro de la instancia
+	 * (el hilo del motor y un lector en [read]) **sin soltar nada**.
+	 * Es lo que permite cerrar una instancia que está siendo leída:
+	 * primero se aborta, luego se espera a que el lector salga, y solo
+	 * entonces [destroy] libera.
+	 */
+	fun abort(handle: Long)
+
+	fun speak(handle: Long, text: ByteArray): Boolean
+
+	/** Llena [dst] con bytes PCM. Contesta 0 al final de la emisión
+	 *  y -1 cuando se detuvo o algo salió mal. */
+	fun read(handle: Long, dst: ByteArray): Int
+
+	fun stop(handle: Long)
+
+	fun setParam(handle: Long, param: Int, value: Int): Int
+
+	fun setVoiceParam(handle: Long, voice: Int, param: Int, value: Int): Int
+
+	fun getVoiceParam(handle: Long, voice: Int, param: Int): Int
+
+	fun copyVoice(handle: Long, from: Int, to: Int): Int
+
+	fun teachWord(handle: Long, volume: Int, key: ByteArray, say: ByteArray): Int
+
+	fun forgetDictionaries(handle: Long)
+
+	fun languages(): IntArray
+
+	fun version(): String
+}
+
+internal object EvvNative : EvvBridge {
 
 	@Volatile
 	var loadError: Throwable? = null
@@ -21,38 +68,31 @@ internal object EvvNative {
 		loaded = ok
 	}
 
-	external fun create(language: Int): Long
+	override external fun create(language: Int): Long
 
-	external fun destroy(handle: Long)
+	override external fun destroy(handle: Long)
 
-	external fun speak(handle: Long, text: ByteArray): Boolean
+	override external fun abort(handle: Long)
 
-	/** Fills [dst] with PCM bytes. Answers 0 at the end of the utterance and
-	 *  -1 when it was stopped or something went wrong. */
-	external fun read(handle: Long, dst: ByteArray): Int
+	override external fun speak(handle: Long, text: ByteArray): Boolean
 
-	external fun stop(handle: Long)
+	override external fun read(handle: Long, dst: ByteArray): Int
 
-	external fun setParam(handle: Long, param: Int, value: Int): Int
+	override external fun stop(handle: Long)
 
-	external fun getParam(handle: Long, param: Int): Int
+	override external fun setParam(handle: Long, param: Int, value: Int): Int
 
-	external fun setVoiceParam(handle: Long, voice: Int, param: Int, value: Int): Int
+	override external fun setVoiceParam(handle: Long, voice: Int, param: Int, value: Int): Int
 
-	external fun getVoiceParam(handle: Long, voice: Int, param: Int): Int
+	override external fun getVoiceParam(handle: Long, voice: Int, param: Int): Int
 
-	external fun copyVoice(handle: Long, from: Int, to: Int): Int
+	override external fun copyVoice(handle: Long, from: Int, to: Int): Int
 
-	/** Answers one of the eciDict codes, so nought is success. */
-	external fun loadDictionary(handle: Long, volume: Int, path: String): Int
+	override external fun teachWord(handle: Long, volume: Int, key: ByteArray, say: ByteArray): Int
 
-	external fun teachWord(handle: Long, volume: Int, key: ByteArray, say: ByteArray): Int
+	override external fun forgetDictionaries(handle: Long)
 
-	external fun lookUpWord(handle: Long, volume: Int, key: ByteArray): String?
+	override external fun languages(): IntArray
 
-	external fun forgetDictionaries(handle: Long)
-
-	external fun languages(): IntArray
-
-	external fun version(): String
+	override external fun version(): String
 }
