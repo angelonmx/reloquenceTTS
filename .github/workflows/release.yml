@@ -1,0 +1,94 @@
+name: Publicar (release)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Etiqueta de la release (ej. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build-firmar-publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Instala JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Instala Android SDK y NDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 36
+          build-tools: 37.0.0
+          ndk: 26.1.10909125
+
+      - name: Dale permiso a gradlew
+        run: chmod +x gradlew
+
+      - name: Configura la firma desde los secretos
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/mifirma.keystore"
+          cat > keystore.properties <<EOF
+          storeFile=$RUNNER_TEMP/mifirma.keystore
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Compila Full y Lite
+        run: |
+          ./gradlew clean assembleRelease
+          ./gradlew clean assembleRelease "-Pevvdroid.edition=lite"
+
+      - name: Copia APKs a dist/
+        run: |
+          mkdir -p dist/full/release dist/lite/release
+          for apk in app/build/outputs/apk/release/*.apk; do
+            [ -f "$apk" ] || continue
+            base=$(basename "$apk")
+            case "$base" in
+              *-arm64-v8a-*) abi=arm64-v8a ;;
+              *-armeabi-v7a-*) abi=armeabi-v7a ;;
+              *-universal-*) abi=universal ;;
+              *) abi=unknown ;;
+            esac
+            if grep -q '^full.versionName=' version.properties; then
+              vn=$(grep '^full.versionName=' version.properties | cut -d= -f2)
+              vc=$(grep '^full.versionCode=' version.properties | cut -d= -f2)
+              cp "$apk" "dist/full/release/reloquence-full-${vn}-${vc}-${abi}-release.apk"
+            fi
+            if grep -q '^lite.versionName=' version.properties; then
+              vn=$(grep '^lite.versionName=' version.properties | cut -d= -f2)
+              vc=$(grep '^lite.versionCode=' version.properties | cut -d= -f2)
+              cp "$apk" "dist/lite/release/reloquence-lite-${vn}-${vc}-${abi}-release.apk"
+            fi
+          done
+
+      - name: Crea la release y sube APKs
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: Reloquence ${{ github.event.inputs.tag }}
+          body: "Versión 1.0.0 — ediciones Full y Lite, compiladas y firmadas en GitHub Actions.\n\nFull: com.angelonmx.reloquence\nLite: com.angelonmx.reloquence.lite"
+          draft: false
+          prerelease: false
+          files: |
+            dist/full/release/*.apk
+            dist/lite/release/*.apk
