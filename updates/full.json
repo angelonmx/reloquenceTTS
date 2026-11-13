@@ -1,4 +1,43 @@
-{"edition":"full","tag":"v1.0.0","apks":[
-{"abi":"arm64-v8a","versionName":"1.0.0","versionCode":1000,"sha256":"80ea0ad7c4dabb5cfc85dfda60ab85d56bfc68865502402192f4c39d06f77009","size":23880510,"url":"https://github.com/angelonmx/reloquenceTTS/releases/download/v1.0.0/reloquence-full-1.0.0-1000-arm64-v8a-release.apk"},
-{"abi":"armeabi-v7a","versionName":"1.0.0","versionCode":1000,"sha256":"e15e84dd92cbacc29f89602ed2ae690ed7fac89357c40635603b6326e8890a46","size":21101869,"url":"https://github.com/angelonmx/reloquenceTTS/releases/download/v1.0.0/reloquence-full-1.0.0-1000-armeabi-v7a-release.apk"},
-{"abi":"universal","versionName":"1.0.0","versionCode":1000,"sha256":"9279bd99d96e96cae75fd9dc15f0eb6ad5d408e9670621bfb12614fcec87c67b","size":39892121,"url":"https://github.com/angelonmx/reloquenceTTS/releases/download/v1.0.0/reloquence-full-1.0.0-1000-universal-release.apk"}]}
+{
+  "schema": 1,
+  "applicationId": "com.angelonmx.reloquence",
+  "edition": "full",
+  "versionName": "1.0.0",
+  "versionCode": 1000,
+  "publishedAt": "2026-11-13",
+  "minSdk": 23,
+  "notes": {
+    "es": [
+      "Primera versión 1.0: motor OpenEVI integrado con diez idiomas (inglés de EE. UU. y del Reino Unido, español de España y de Latinoamérica, francés de Francia y de Canadá, alemán, italiano, japonés y polaco).",
+      "Todos los parámetros de voz conectados al motor: género, velocidad, tono, inflexión, tamaño de cabeza, aspereza, respiración y volumen, con perfiles y efectos.",
+      "Diccionario, importación y exportación, copias de voz, diagnóstico y actualizaciones desde la propia app.",
+      "Compilación y firma automáticas en GitHub Actions, sin depender del PC."
+    ],
+    "en": [
+      "First 1.0 release: OpenEVI engine wired to ten languages (US and UK English, Spain and Latin American Spanish, France and Canada French, German, Italian, Japanese and Polish).",
+      "Every voice parameter is connected to the engine: gender, speed, pitch, inflection, head size, roughness, breathiness and volume, with profiles and effects.",
+      "Dictionary, import and export, voice backups, diagnostics and in-app updates.",
+      "Built and signed automatically on GitHub Actions, with no local PC involved."
+    ]
+  },
+  "apks": [
+    {
+      "abi": "arm64-v8a",
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.0.0/reloquence-full-1.0.0-1000-arm64-v8a-release.apk",
+      "sha256": "80ea0ad7c4dabb5cfc85dfda60ab85d56bfc68865502402192f4c39d06f77009",
+      "size": 23880510
+    },
+    {
+      "abi": "armeabi-v7a",
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.0.0/reloquence-full-1.0.0-1000-armeabi-v7a-release.apk",
+      "sha256": "e15e84dd92cbacc29f89602ed2ae690ed7fac89357c40635603b6326e8890a46",
+      "size": 21101869
+    },
+    {
+      "abi": "universal",
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.0.0/reloquence-full-1.0.0-1000-universal-release.apk",
+      "sha256": "9279bd99d96e96cae75fd9dc15f0eb6ad5d408e9670621bfb12614fcec87c67b",
+      "size": 39892121
+    }
+  ]
+}

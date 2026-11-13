@@ -128,34 +128,80 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: angelonmx/reloquenceTTS
+          TAG: ${{ github.event.inputs.tag }}
         run: |
           set -euo pipefail
-          TAG=${{ github.event.inputs.tag }}
           BASE="https://github.com/${REPO}/releases/download/${TAG}"
-          mkdir -p updates
-          for edition in full lite; do
-            if [ "$edition" = full ]; then
-              vn=$(grep '^full.versionName=' version.properties | cut -d= -f2)
-              vc=$(grep '^full.versionCode=' version.properties | cut -d= -f2)
-            else
-              vn=$(grep '^lite.versionName=' version.properties | cut -d= -f2)
-              vc=$(grep '^lite.versionCode=' version.properties | cut -d= -f2)
-            fi
-            echo "{\"edition\":\"$edition\",\"tag\":\"$TAG\",\"apks\":[" > "updates/${edition}.json"
-            first=true
-            for apk in dist/$edition/release/*.apk; do
-              [ -f "$apk" ] || continue
-              sha=$(sha256sum "$apk" | cut -d' ' -f1)
-              size=$(stat -c%s "$apk")
-              name=$(basename "$apk")
-              url="${BASE}/${name}"
-              abi=$(echo "$name" | sed 's/.*-\(arm64-v8a\|armeabi-v7a\|universal\)-release\.apk/\1/')
-              if $first; then first=false; else echo "," >> "updates/${edition}.json"; fi
-              printf '{"abi":"%s","versionName":"%s","versionCode":%s,"sha256":"%s","size":%s,"url":"%s"}' \
-                "$abi" "$vn" "$vc" "$sha" "$size" "$url" >> "updates/${edition}.json"
-            done
-            echo "]}" >> "updates/${edition}.json"
-          done
+          export BASE TAG
+          # El formato lo fija app/src/main/kotlin/.../UpdateManifest.kt:
+          # applicationId, edition, versionName y versionCode van arriba;
+          # cada APK lleva abi, url, sha256 y size. Cualquier otro orden
+          # hace que la app rechace la actualización.
+          python3 - <<'PY'
+          import datetime
+          import glob
+          import hashlib
+          import json
+          import os
+          import re
+
+          base = os.environ["BASE"]
+          app_ids = {
+              "full": "com.angelonmx.reloquence",
+              "lite": "com.angelonmx.reloquence.lite",
+          }
+
+          def prop(name):
+              with open("version.properties", encoding="utf-8") as handle:
+                  for line in handle:
+                      line = line.strip()
+                      if line.startswith(name + "="):
+                          return line.split("=", 1)[1].strip()
+              raise SystemExit(f"Falta {name} en version.properties")
+
+          with open("app/src/main/assets/changelog.json", encoding="utf-8") as handle:
+              changelog = json.load(handle)
+
+          os.makedirs("updates", exist_ok=True)
+          for edition in ("full", "lite"):
+              version_name = prop(f"{edition}.versionName")
+              version_code = int(prop(f"{edition}.versionCode"))
+              entries = changelog.get("editions", {}).get(edition, [])
+              entry = next((e for e in entries if e.get("versionCode") == version_code), {})
+              apks = []
+              for path in sorted(glob.glob(f"dist/{edition}/release/*.apk")):
+                  name = os.path.basename(path)
+                  match = re.search(r"-(arm64-v8a|armeabi-v7a|x86_64|x86|universal)-release\.apk$", name)
+                  if not match:
+                      raise SystemExit(f"No se pudo leer la ABI de {name}")
+                  digest = hashlib.sha256()
+                  with open(path, "rb") as handle:
+                      for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                          digest.update(chunk)
+                  apks.append({
+                      "abi": match.group(1),
+                      "url": f"{base}/{name}",
+                      "sha256": digest.hexdigest(),
+                      "size": os.path.getsize(path),
+                  })
+              if not apks:
+                  raise SystemExit(f"No hay APK de {edition}")
+              manifest = {
+                  "schema": 1,
+                  "applicationId": app_ids[edition],
+                  "edition": edition,
+                  "versionName": version_name,
+                  "versionCode": version_code,
+                  "publishedAt": datetime.datetime.now(datetime.timezone.utc).date().isoformat(),
+                  "minSdk": 23,
+                  "notes": entry.get("notes", {}),
+                  "apks": apks,
+              }
+              with open(f"updates/{edition}.json", "w", encoding="utf-8") as handle:
+                  json.dump(manifest, handle, ensure_ascii=False, indent=2)
+                  handle.write("\n")
+              print(f"{edition}: {len(apks)} APK, {version_name} ({version_code})")
+          PY
           cat updates/full.json
           cat updates/lite.json
           git config user.name "github-actions[bot]"
