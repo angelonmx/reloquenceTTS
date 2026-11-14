@@ -120,7 +120,10 @@ layout.buildDirectory.set(rootProject.layout.projectDirectory.dir("app/build/$ed
 // único que lleva la edición Lite. No es "español (España)" y
 // "español (México)": `esus` es el español latinoamericano de IBM,
 // que cubre todo lo que no es España.
-val fullLangs = "lang/enus lang/eses lang/esus lang/engb lang/frfr lang/frca lang/dede lang/itit lang/jajp lang/plpl"
+// 1.1: el finés (`fifi`) y el portugués de Brasil (`ptbr`) se
+// suman a los diez módulos de 1.0. Los dos son módulos completos
+// --reglas, constantes y voces--, no variantes de otro idioma.
+val fullLangs = "lang/enus lang/eses lang/esus lang/engb lang/frfr lang/frca lang/dede lang/itit lang/jajp lang/plpl lang/fifi lang/ptbr"
 val liteLangs = "lang/eses lang/esus"
 val defaultLangs = if (isLite) liteLangs else fullLangs
 val languages = findProperty("evvdroid.langs") as String? ?: defaultLangs

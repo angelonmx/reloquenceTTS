@@ -239,6 +239,32 @@ object Punctuation {
 			'@' to "małpa", '#' to "kratka", '%' to "procent", '&' to "et",
 			'*' to "gwiazdka", '+' to "plus", '=' to "równa się",
 			'<' to "mniejsze niż", '>' to "większe niż"
+		),
+		// 1.1: finés y portugués de Brasil. Los nombres son los que
+		// usa cada idioma al dictar, no una traducción del español.
+		"fin" to mapOf(
+			'.' to "piste", ',' to "pilkku", ';' to "puolipiste", ':' to "kaksoispiste",
+			'!' to "huutomerkki", '?' to "kysymysmerkki",
+			'¡' to "ylösalainen huutomerkki", '¿' to "ylösalainen kysymysmerkki",
+			'-' to "väliviiva", '–' to "ajatusviiva", '—' to "pitkä ajatusviiva",
+			'(' to "vasen sulku", ')' to "oikea sulku",
+			'"' to "lainausmerkki", '«' to "vasen lainausmerkki", '»' to "oikea lainausmerkki",
+			'…' to "pistekolmikko", '\'' to "heittomerkki", '/' to "vinoviiva",
+			'@' to "ät-merkki", '#' to "risuaita", '%' to "prosenttimerkki", '&' to "et-merkki",
+			'*' to "tähti", '+' to "plusmerkki", '=' to "yhtä suuri kuin",
+			'<' to "pienempi kuin", '>' to "suurempi kuin"
+		),
+		"por" to mapOf(
+			'.' to "ponto", ',' to "vírgula", ';' to "ponto e vírgula", ':' to "dois pontos",
+			'!' to "ponto de exclamação", '?' to "ponto de interrogação",
+			'¡' to "ponto de exclamação invertido", '¿' to "ponto de interrogação invertido",
+			'-' to "hífen", '–' to "meia-risca", '—' to "travessão",
+			'(' to "parêntese esquerdo", ')' to "parêntese direito",
+			'"' to "aspas", '«' to "aspas de abertura", '»' to "aspas de fechamento",
+			'…' to "reticências", '\'' to "apóstrofo", '/' to "barra",
+			'@' to "arroba", '#' to "cerquilha", '%' to "por cento", '&' to "e comercial",
+			'*' to "asterisco", '+' to "mais", '=' to "igual",
+			'<' to "menor que", '>' to "maior que"
 		)
 	)
 }

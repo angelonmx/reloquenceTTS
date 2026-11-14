@@ -3,18 +3,37 @@
   "editions": {
     "full": [
       {
+        "versionName": "1.1.0",
+        "versionCode": 1100,
+        "date": "2026-11-13",
+        "notes": {
+          "es": [
+            "Se añaden las voces de finés y portugués (Brasil): la edición Full pasa a doce idiomas.",
+            "El motor arranca antes y la lectura de textos largos es más fluida: la ventana siguiente se prepara mientras suena la actual.",
+            "La voz se aplica una sola vez por ventana cuando no hay un cambio de voz en el texto, con menos trabajo en el hilo de síntesis.",
+            "Correcciones de estabilidad y rendimiento."
+          ],
+          "en": [
+            "Adds Finnish and Brazilian Portuguese voices: the Full edition now covers twelve languages.",
+            "The engine starts sooner and long texts read more smoothly: the next window is prepared while the current one plays.",
+            "The voice is applied once per window when the text does not change voices, with less work on the synthesis thread.",
+            "Stability and performance fixes."
+          ]
+        }
+      },
+      {
         "versionName": "1.0.0",
         "versionCode": 1000,
         "date": "2026-11-12",
         "notes": {
           "es": [
-            "Primera versión 1.0: motor OpenEVI integrado con diez idiomas (inglés de EE. UU. y del Reino Unido, español de España y de Latinoamérica, francés de Francia y de Canadá, alemán, italiano, japonés y polaco).",
+            "Primera versión 1.0: motor de voz integrado con diez idiomas (inglés de EE. UU. y del Reino Unido, español de España y de Latinoamérica, francés de Francia y de Canadá, alemán, italiano, japonés y polaco).",
             "Todos los parámetros de voz conectados al motor: género, velocidad, tono, inflexión, tamaño de cabeza, aspereza, respiración y volumen, con perfiles y efectos.",
             "Diccionario, importación y exportación, copias de voz, diagnóstico y actualizaciones desde la propia app.",
             "Compilación y firma automáticas en GitHub Actions, sin depender del PC."
           ],
           "en": [
-            "First 1.0 release: OpenEVI engine wired to ten languages (US and UK English, Spain and Latin American Spanish, France and Canada French, German, Italian, Japanese and Polish).",
+            "First 1.0 release: voice engine wired to ten languages (US and UK English, Spain and Latin American Spanish, France and Canada French, German, Italian, Japanese and Polish).",
             "Every voice parameter is connected to the engine: gender, speed, pitch, inflection, head size, roughness, breathiness and volume, with profiles and effects.",
             "Dictionary, import and export, voice backups, diagnostics and in-app updates.",
             "Built and signed automatically on GitHub Actions, with no local PC involved."
@@ -24,17 +43,34 @@
     ],
     "lite": [
       {
+        "versionName": "1.1.0",
+        "versionCode": 1100,
+        "date": "2026-11-13",
+        "notes": {
+          "es": [
+            "Arranque del motor y lectura de textos largos más rápidos: la ventana siguiente se prepara mientras suena la actual.",
+            "La voz se aplica una sola vez por ventana cuando no hay un cambio de voz en el texto, con menos trabajo en el hilo de síntesis.",
+            "Correcciones de estabilidad y rendimiento."
+          ],
+          "en": [
+            "Faster engine startup and long-text reading: the next window is prepared while the current one plays.",
+            "The voice is applied once per window when the text does not change voices, with less work on the synthesis thread.",
+            "Stability and performance fixes."
+          ]
+        }
+      },
+      {
         "versionName": "1.0.0",
         "versionCode": 1000,
         "date": "2026-11-12",
         "notes": {
           "es": [
-            "Primera versión 1.0 Lite: la misma app con las dos voces de español (España y Latinoamérica) del motor OpenEVI.",
+            "Primera versión 1.0 Lite: la misma app con las dos voces de español (España y Latinoamérica) del motor de voz.",
             "Todos los parámetros de voz, perfiles, efectos, diccionario y actualizaciones de la edición Full.",
             "Compilada y firmada automáticamente en GitHub Actions."
           ],
           "en": [
-            "First 1.0 Lite release: the same app with the two Spanish voices (Spain and Latin America) from the OpenEVI engine.",
+            "First 1.0 Lite release: the same app with the two Spanish voices (Spain and Latin America) from the voice engine.",
             "All voice parameters, profiles, effects, dictionary and updates from the Full edition.",
             "Built and signed automatically on GitHub Actions."
           ]

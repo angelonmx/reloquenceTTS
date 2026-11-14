@@ -384,6 +384,8 @@
 	     es el espanol latinoamericano de IBM, que cubre todo lo demas. -->
 	<string name="lang_es_es">Español (España)</string>
 	<string name="lang_es_latam">Español (Latinoamérica)</string>
+	<string name="lang_fi">Finlandés (Finlandia)</string>
+	<string name="lang_pt_br">Portugués (Brasil)</string>
 
 	<!-- 5.4: actualizaciones. Solo hay una comprobación: al abrir la app si el
 	     usuario lo deja activado. No hay comprobaciones periódicas ni intervalos. -->

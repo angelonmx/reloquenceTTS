@@ -383,6 +383,8 @@
 	     es el espanol latinoamericano de IBM, que cubre todo lo demas. -->
 	<string name="lang_es_es">Spanisch (Spanien)</string>
 	<string name="lang_es_latam">Spanisch (Lateinamerika)</string>
+	<string name="lang_fi">Finnisch (Finnland)</string>
+	<string name="lang_pt_br">Portugiesisch (Brasilien)</string>
 
 	<!-- 5.4: Aktualisierungen -->
 	<string name="updates_label">Aktualisierungen</string>

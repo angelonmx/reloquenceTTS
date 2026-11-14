@@ -78,6 +78,14 @@ object Emission {
 	 * el enganche que usa el servicio para dejar en el diagnóstico la
 	 * prueba de que [Target.prosodyReset] corrió antes de cada
 	 * `speak`, sin meter Android ni preferencias aquí dentro.
+	 *
+	 * 1.1: [preparedReset] permite reaprovechar el plan que ya se
+	 * aplicó para la ventana. Cada trozo lleva su propio reinicio de
+	 * prosodia delante, así que volver a escribir los ocho parámetros
+	 * por trozo era trabajo de más en el hilo de síntesis. Se deja en
+	 * nulo cuando el texto puede cambiar de voz a mitad de la ventana
+	 * (`` `vN `` de una entrada de diccionario); ahí sí hay que
+	 * reaplicar.
 	 */
 	fun speak(
 		target: Target,
@@ -86,10 +94,11 @@ object Emission {
 		retries: Int = 4,
 		pause: (Long) -> Unit = { Thread.sleep(it) },
 		onReset: (String) -> Unit = {},
+		preparedReset: String? = null,
 		build: (String) -> String
 	): Result {
 		if (body.isBlank()) return Result.Empty
-		val reset = prepare(target, plan, retries, pause) ?: return Result.NotApplied
+		val reset = preparedReset ?: prepare(target, plan, retries, pause) ?: return Result.NotApplied
 		onReset(reset)
 		val text = build(reset)
 		if (text.isBlank()) return Result.Empty

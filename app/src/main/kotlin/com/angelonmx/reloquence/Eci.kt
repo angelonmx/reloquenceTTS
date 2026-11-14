@@ -176,8 +176,9 @@ object Eci {
 	/** Los idiomas compilados en esta versión (ver `languages` en
 	 *  app/build.gradle.kts). El japonés es el 0x80000 de IBM.
 	 *
-	 *  Esta edición 1.0 vuelve a incluir el polaco para completar los
-	 *  diez idiomas, aunque su módulo del motor es el más flojo. */
+	 *  1.1: el finés y el portugués de Brasil completan los doce
+	 *  idiomas. Los dos son módulos del motor con sus propias reglas;
+	 *  el portugués es la variante brasileña, no la europea. */
 	private val LOCALES = mapOf(
 		0x00010000 to Triple("eng", "USA", ""),
 		0x00010001 to Triple("eng", "GBR", ""),
@@ -190,7 +191,9 @@ object Eci {
 		0x00030001 to Triple("fra", "CAN", ""),
 		0x00040000 to Triple("deu", "DEU", ""),
 		0x00050000 to Triple("ita", "ITA", ""),
+		0x00070000 to Triple("por", "BRA", ""),
 		0x00080000 to Triple("jpn", "JPN", ""),
+		0x00090000 to Triple("fin", "FIN", ""),
 		0x00110000 to Triple("pol", "POL", "")
 	)
 
@@ -310,7 +313,9 @@ object Eci {
 		0x00030001 to "fr-CA",
 		0x00040000 to "de-DE",
 		0x00050000 to "it-IT",
+		0x00070000 to "pt-BR",
 		0x00080000 to "ja-JP",
+		0x00090000 to "fi-FI",
 		0x00110000 to "pl-PL"
 	)
 
@@ -405,7 +410,8 @@ object Eci {
 		"en-US" to "USA", "en-GB" to "GBR",
 		"es-ES" to "ESP", "es-419" to "419",
 		"fr-FR" to "FRA", "fr-CA" to "CAN",
-		"de-DE" to "DEU", "it-IT" to "ITA", "ja-JP" to "JPN"
+		"de-DE" to "DEU", "it-IT" to "ITA", "ja-JP" to "JPN",
+		"pt-BR" to "BRA", "fi-FI" to "FIN"
 	)
 
 	fun tagCountry(tag: String): String? = TAG_COUNTRY[tag]
@@ -510,13 +516,19 @@ object Eci {
 	}
 
 	/**
-	 * Los dos nombres de español que el usuario pidió, y que no son
+	 * 5.2: los nombres de español que el usuario pidió, y que no son
 	 * los que decía el sistema. Están en [nameRes] para traducirlos,
 	 * y aquí para quien no tiene contexto.
+	 *
+	 * 1.1: el finés y el portugués de Brasil también tienen nombre
+	 * fijo; sin él, `Locale.getDisplayName` diría «finlandés» o
+	 * «portugués (Brasil)» según el idioma del aparato.
 	 */
 	private val FIXED_NAMES = mapOf(
 		0x00020000 to "Español (España)",
-		0x00020001 to "Español (Latinoamérica)"
+		0x00020001 to "Español (Latinoamérica)",
+		0x00070000 to "Portugués (Brasil)",
+		0x00090000 to "Finés (Finlandia)"
 	)
 
 	/** Nombre del idioma para mostrar. */
@@ -539,7 +551,9 @@ object Eci {
 	 */
 	private val NAME_RES = mapOf(
 		0x00020000 to R.string.lang_es_es,
-		0x00020001 to R.string.lang_es_latam
+		0x00020001 to R.string.lang_es_latam,
+		0x00070000 to R.string.lang_pt_br,
+		0x00090000 to R.string.lang_fi
 	)
 
 }

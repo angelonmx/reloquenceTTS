@@ -16,7 +16,7 @@ engine="$here/openevv"
 ABIS=${ABIS:-"arm64-v8a armeabi-v7a x86_64"}
 API=${API:-21}
 RULES=${RULES:-c}
-LANGS=${LANGS:-lang/enus lang/engb lang/eses lang/esus lang/frfr lang/frca lang/dede lang/itit lang/plpl lang/jajp}
+LANGS=${LANGS:-lang/enus lang/engb lang/eses lang/esus lang/frfr lang/frca lang/dede lang/itit lang/plpl lang/jajp lang/fifi lang/ptbr}
 OUT=${OUT:-"$root/app/build/native/jniLibs"}
 JOBS=${JOBS:-$(nproc 2>/dev/null || echo 4)}
 

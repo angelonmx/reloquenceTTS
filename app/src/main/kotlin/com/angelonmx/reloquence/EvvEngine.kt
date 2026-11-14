@@ -300,16 +300,10 @@ class EvvEngine internal constructor(
 		wantSpeed = baseSpeed
 		wantPitch = basePitch
 		prosodyReady = true
-		// 5.3: esto es lo que el motor tiene de verdad tras aplicar el
-		// plan (los valores leídos de vuelta, no los que se pidieron).
-		// Se registra para poder comparar antes/después de cada emisión
-		// y detectar si el motor se quedó en un estado distinto al del
-		// plan.
-		Timber.i(
-			"applyEmission aplicado: engine=%d voice=%d speed=%d pitch=%d fluct=%d head=%d rough=%d breath=%d gender=%d volume=%d wantSpeed=%d wantPitch=%d",
-			id, currentVoice, speed, pitch, fluct, head, rough, breath, gender, volume,
-			wantSpeed, wantPitch
-		)
+		// 1.1: se quitó el `Timber.i` que se escribía en cada trozo.
+		// Aplicar el plan ya no pasa por aquí en cada pieza, y cuando
+		// pasa (cambio de voz) la línea no aportaba nada nuevo: el
+		// diagnóstico de la emisión ya guarda el plan completo.
 		return true
 	}
 

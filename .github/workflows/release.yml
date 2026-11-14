@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Etiqueta de la release (ej. v1.0.0)'
+        description: 'Etiqueta de la release (ej. v1.1.0)'
         required: true
-        default: 'v1.0.0'
+        default: 'v1.1.0'
 
 permissions:
   contents: write
@@ -15,7 +15,7 @@ jobs:
   build-firmar-publicar:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del repositorio (incluye el submódulo del motor OpenEVI)
+      - name: Checkout del repositorio (incluye el submódulo del motor nativo)
         uses: actions/checkout@v5
         with:
           submodules: recursive
@@ -111,9 +111,9 @@ jobs:
           tag_name: ${{ github.event.inputs.tag }}
           name: Reloquence ${{ github.event.inputs.tag }}
           body: |
-            Versión 1.0.0 — ediciones Full y Lite, compiladas y firmadas en GitHub Actions (no en PC local).
+            Versión 1.1.0 — ediciones Full y Lite, compiladas y firmadas en GitHub Actions (no en PC local).
 
-            Incluye los idiomas del motor y todos los parámetros de voz.
+            La edición Full añade finés y portugués (Brasil). Las dos ediciones arrancan antes y leen los textos largos con menos pausas.
 
             - Full: `com.angelonmx.reloquence`
             - Lite: `com.angelonmx.reloquence.lite`

@@ -61,6 +61,24 @@ class EvvTtsService : TextToSpeechService() {
 		Thread(task, "evv-watchdog").apply { isDaemon = true }
 	}
 
+	/**
+	 * 1.1: un solo hilo para transformar la ventana siguiente mientras
+	 * suena la actual.
+	 *
+	 * Las transformaciones (emojis, símbolos, puntuación, números,
+	 * correcciones) se pagaban entre ventana y ventana, en el hilo de
+	 * síntesis, y en un texto largo eso se oía como un hueco antes de
+	 * cada frase. Un solo hilo y una sola tarea en vuelo evita que dos
+	 * ventanas compitan o que la memoria crezca con la entrada.
+	 */
+	private val prefetch = java.util.concurrent.Executors.newSingleThreadExecutor { task ->
+		Thread(task, "evv-prefetch").apply { isDaemon = true }
+	}
+
+	/** La ventana en preparación, para que [onStop] la corte. */
+	@Volatile
+	private var activePrefetch: java.util.concurrent.Future<String>? = null
+
 	/** Solo hay una emisión viva a la vez, pero `onStop` llega de otro
 	 *  hilo y no puede tocar la sesión equivocada. */
 
@@ -327,11 +345,15 @@ class EvvTtsService : TextToSpeechService() {
 
 	private fun prepareDictionary(reason: String) {
 		val s = settings ?: return
-		val languages = LinkedHashSet<Int>()
-		languages.add(s.resolvedLanguage())
-		languages.add(s.activeDictionaryLanguage)
-		for (entry in s.dictionaries) if (entry.active) languages.add(entry.language)
 		Thread({
+			// 1.1: `resolvedLanguage` y `activeDictionaryLanguage`
+			// consultan `EvvEngine.available`, que carga la biblioteca
+			// nativa la primera vez. Se resuelven aquí y no en el hilo
+			// principal.
+			val languages = LinkedHashSet<Int>()
+			languages.add(s.resolvedLanguage())
+			languages.add(s.activeDictionaryLanguage)
+			for (entry in s.dictionaries) if (entry.active) languages.add(entry.language)
 			for (language in languages) readDictionary(s, language)
 			Dictionaries.invalidateSubCache()
 		}, "evv-dict-$reason").apply { isDaemon = true }.start()
@@ -390,22 +412,29 @@ class EvvTtsService : TextToSpeechService() {
 		if (timber.log.Timber.forest().isEmpty()) timber.log.Timber.plant(timber.log.Timber.DebugTree())
 		Timber.i("servicio creado")
 		Diagnostics.install(this)
-		diag(
-			"lifecycle", "event" to "service_created",
-			"engine_version" to EvvEngine.version.ifEmpty { "?" },
-			"edition" to if (BuildConfig.LITE) "lite" else "full",
-			"app_version" to BuildConfig.VERSION_NAME,
-			"sdk" to android.os.Build.VERSION.SDK_INT.toString(),
-			"abi" to (android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "?"),
-			"service" to serviceNumber.toString(),
-			"pid" to android.os.Process.myPid().toString()
-		)
 		settings = Settings(this)
 		CldrData.install(this)
 		super.onCreate()
 		foreground = TtsForeground(this)
 		TtsHealth.service(true)
-		TtsHealth.engineVersion(EvvEngine.version)
+		// 1.1: la versión del motor se pide en segundo plano.
+		// `EvvEngine.version` carga la biblioteca nativa la primera
+		// vez, y hacerlo aquí retrasaba el enganche del servicio y el
+		// primer `onSynthesizeText`.
+		Thread({
+			val engineVersion = EvvEngine.version
+			diag(
+				"lifecycle", "event" to "service_created",
+				"engine_version" to engineVersion.ifEmpty { "?" },
+				"edition" to if (BuildConfig.LITE) "lite" else "full",
+				"app_version" to BuildConfig.VERSION_NAME,
+				"sdk" to android.os.Build.VERSION.SDK_INT.toString(),
+				"abi" to (android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "?"),
+				"service" to serviceNumber.toString(),
+				"pid" to android.os.Process.myPid().toString()
+			)
+			TtsHealth.engineVersion(engineVersion)
+		}, "evv-startup").apply { isDaemon = true }.start()
 		// 5.0: una emisión que lleve demasiado sin entregar audio no
 		// puede dejar al framework esperando para siempre.
 		watchdog.scheduleWithFixedDelay({ watch() }, 1L, 1L, java.util.concurrent.TimeUnit.SECONDS)
@@ -422,8 +451,12 @@ class EvvTtsService : TextToSpeechService() {
 		// plano: la primera frase no espera a que el motor cargue sus
 		// reglas de idioma. El diccionario se lee también, que si no
 		// lo espera la primera frase.
-		prepareDictionary("arranque")
+		//
+		// 1.1: primero el motor, que es lo que decide cuándo suena la
+		// primera palabra; el diccionario se lee en paralelo y solo
+		// hace falta antes de la sustitución.
 		prewarm()
+		prepareDictionary("arranque")
 	}
 
 	/**
@@ -553,30 +586,38 @@ class EvvTtsService : TextToSpeechService() {
 		// no vale una muerte del proceso.
 		if (memoryTight) return
 		val s = settings ?: return
-		val language = s.resolvedLanguage()
-		if (language == 0 || !EvvEngine.available.contains(language)) return
-		if (warm != null && warmLanguage == language) return
-		// 5.2: si ya hay uno abriéndose para este idioma, no se abre
-		// otro. La emisión que llegue no lo espera: abre el suyo si
-		// hace falta y el que llegue tarde se cierra al adoptarlo.
-		if (warmTicket != null && warmTicketLanguage == language) return
 		val rate = s.sampleRateHz
 		val epoch = SettingsSignal.epoch
 		// 5.2: se anuncia que hay un motor en camino antes de abrir
 		// el hilo, para que no se lance otro precalentado del mismo
 		// idioma mientras tanto.
+		//
+		// 1.1: el idioma se resuelve dentro del hilo. `resolvedLanguage`
+		// consulta `EvvEngine.available`, que carga la biblioteca
+		// nativa la primera vez; hacerlo en el hilo principal era
+		// justo la espera que se quería quitar del arranque.
 		val ticket = java.util.concurrent.CountDownLatch(1)
 		warmTicket = ticket
-		warmTicketLanguage = language
+		warmTicketLanguage = 0
 		val startedNs = System.nanoTime()
-		diag(
-			"engine", "event" to "prewarm_start",
-			"language" to (Eci.bcp47Of(language) ?: "?"),
-			"rate" to rate.toString(),
-			"epoch" to epoch.toString()
-		)
 		Thread({
+			var language = 0
 			try {
+				language = s.resolvedLanguage()
+				if (language == 0 || !EvvEngine.available.contains(language)) return@Thread
+				// Si otro precalentado tomó el relevo mientras este
+				// resolvía el idioma, este ya no manda.
+				if (warmTicket !== ticket) return@Thread
+				warmTicketLanguage = language
+				if (warm != null && warmLanguage == language) return@Thread
+				// Ya hay una instancia para ese idioma: no se abre otra.
+				if (synchronized(engines) { engines[language] != null }) return@Thread
+				diag(
+					"engine", "event" to "prewarm_start",
+					"language" to (Eci.bcp47Of(language) ?: "?"),
+					"rate" to rate.toString(),
+					"epoch" to epoch.toString()
+				)
 				// Prioriza el motor: inflar CLDR antes de eciNewEx competía
 				// con la inicialización que determina la primera voz.
 				val made = EvvEngine.open(language, rate) ?: return@Thread
@@ -715,7 +756,9 @@ class EvvTtsService : TextToSpeechService() {
 		SettingsSignal.removeEngineListener(onSettingsChanged)
 		if (activeSession?.cancel() == true) TtsHealth.cancelled()
 		activeOutput?.abandon()
+		activePrefetch?.cancel(true)
 		watchdog.shutdownNow()
+		prefetch.shutdownNow()
 		foreground.stop()
 		TtsHealth.speaking(false)
 		TtsHealth.service(false)
@@ -1388,6 +1431,8 @@ class EvvTtsService : TextToSpeechService() {
 		// el callback se abandona aquí para que una parada no espere
 		// ni un bloque más.
 		activeOutput?.abandon()
+		// 1.1: la ventana que se estaba preparando ya no hace falta.
+		activePrefetch?.cancel(true)
 		// 5.4: aquí NO se borra [dictionaryStates].
 		//
 		// Lo que guarda no es una huella de la voz: es la del
@@ -1817,6 +1862,40 @@ class EvvTtsService : TextToSpeechService() {
 			input
 		}
 
+	/** 1.1: deja la transformación de [text] encolada y anotada.
+	 *  Si el servicio ya se está yendo, el ejecutor está apagado y
+	 *  encolar lanza [java.util.concurrent.RejectedExecutionException];
+	 *  ahí se contesta `null` y [awaitWindow] transforma el texto en
+	 *  el hilo de síntesis, como antes de 1.1. */
+	private fun prefetchWindow(
+		pipeline: TtsTextPipeline,
+		text: String
+	): java.util.concurrent.Future<String>? =
+		try {
+			prefetch.submit(java.util.concurrent.Callable { pipeline.apply(text) })
+				.also { activePrefetch = it }
+		} catch (_: java.util.concurrent.RejectedExecutionException) {
+			null
+		}
+
+	/**
+	 * 1.1: recoge la ventana preparada. Si el trabajo falló, se
+	 * transforma aquí como antes; perder la mejora es preferible a
+	 * perder la emisión. Si lo canceló una parada, se devuelve el
+	 * texto tal cual: quien llama comprueba la sesión antes de usarlo
+	 * y no se paga otra transformación después de un silencio.
+	 */
+	private fun awaitWindow(
+		future: java.util.concurrent.Future<String>?,
+		pipeline: TtsTextPipeline,
+		text: String
+	): String {
+		val prepared = future?.let { runCatching { it.get() }.getOrNull() }
+		if (activePrefetch === future) activePrefetch = null
+		if (prepared == null && future?.isCancelled == true) return text
+		return prepared ?: pipeline.apply(text)
+	}
+
 	/** Habla [numbered] por ventanas: cada ventana se sustituye,
 	 *  se parte en trozos y se habla antes de mirar la siguiente.
 	 *  La primera ventana tarda milisegundos venga un párrafo o un
@@ -1835,17 +1914,26 @@ class EvvTtsService : TextToSpeechService() {
 		autoOn: Boolean, reqCountry: String?,
 		onVoiceSelect: () -> Unit
 	): Boolean {
-		val it = TextPieces.windows(rawText).iterator()
-		if (!it.hasNext()) return true
+		val windows = TextPieces.windows(rawText).iterator()
+		if (!windows.hasNext()) return true
+		if (!session.alive) return false
 		var ready = first
 		var target = ready.engine
-		var pending = it.next()
+		// 1.1: la primera ventana se transforma aquí; las siguientes
+		// se encargan mientras suena la anterior.
+		var prepared = pipeline.apply(windows.next())
 		while (true) {
 			if (!session.alive) return false
-			val lastWindow = !it.hasNext()
-			// 5.0: primero se transforma la ventana y luego se elige
-			// motor con lo que de verdad se va a decir.
-			val prepared = pipeline.apply(pending)
+			val lastWindow = !windows.hasNext()
+			// 1.1: la ventana siguiente se transforma en el hilo de
+			// prefetch mientras esta se habla. Solo hay una en vuelo.
+			var nextWindow: String? = null
+			var nextPrepared: java.util.concurrent.Future<String>? = null
+			if (!lastWindow) {
+				val next = windows.next()
+				nextWindow = next
+				nextPrepared = prefetchWindow(pipeline, next)
+			}
 			// 4.0: la ventana que cambia de idioma cambia de motor
 			// al instante, con su voz y diccionario listos. Solo
 			// heurística aquí (instantánea): ML Kit frenaría entre
@@ -1866,10 +1954,11 @@ class EvvTtsService : TextToSpeechService() {
 			// entrada de diccionario-- se limpia antes de hablar. La
 			// palabra se dice entera y la voz no se mueve.
 			val ignoreTags = s?.ignoreVoiceTags == true
-			// Se prepara el plan antes de sustituir el diccionario y se
-			// vuelve a aplicar antes de cada trozo en [Emission.speak].
-			// Ambos caminos usan los mismos reintentos para no reutilizar
-			// parámetros antiguos si el motor aún está abortando.
+			// Se prepara el plan antes de sustituir el diccionario. Si
+			// la ventana no trae un cambio de voz, ese mismo reinicio
+			// se reaprovecha en cada trozo; si lo trae, [Emission.speak]
+			// vuelve a aplicar el plan para que el `` `vN `` no deje
+			// otra voz puesta.
 			val guard = if (ignoreTags) "" else Emission.prepare(target, ready.plan)
 				?: run {
 					postponed(target, ready.plan, session)
@@ -1877,7 +1966,13 @@ class EvvTtsService : TextToSpeechService() {
 				}
 			val sub = Dictionaries.substitute(prepared, subEntries, guard)
 			val said = if (ignoreTags) Prosody.stripVoiceCodes(sub) else sub
-			if (!ignoreTags && Dictionaries.hasVoiceSelectText(said)) onVoiceSelect()
+			val voiceSelect = !ignoreTags && Dictionaries.hasVoiceSelectText(said)
+			if (voiceSelect) onVoiceSelect()
+			// 1.1: sin cambio de voz, el plan ya está aplicado. Cada
+			// trozo lleva delante el reinicio completo de prosodia, así
+			// que repetir las escrituras y lecturas del plan por trozo
+			// solo gastaba tiempo del hilo de síntesis.
+			val preparedReset = if (ignoreTags || voiceSelect) null else guard
 			if (said.isNotBlank()) {
 				val pieces = TextPieces.split(said)
 				for ((at, raw) in pieces.withIndex()) {
@@ -1892,11 +1987,12 @@ class EvvTtsService : TextToSpeechService() {
 						target.stop()
 						return false
 					}
-					// 5.3: el plan se aplica **otra vez** aquí, y el
-					// reinicio se compone con lo que el motor acaba de
-					// aceptar. No se hereda nada del trozo anterior.
+					// 5.3: el reinicio se compone con lo que el motor
+					// acaba de aceptar. 1.1: el plan se reaprovecha si
+					// la ventana no cambió de voz.
 					when (Emission.speak(
 						target, ready.plan, body,
+						preparedReset = preparedReset,
 						onReset = { reset ->
 							diag(
 								"prosody", "event" to "reset",
@@ -1929,7 +2025,7 @@ class EvvTtsService : TextToSpeechService() {
 				}
 			}
 			if (lastWindow) break
-			pending = it.next()
+			prepared = awaitWindow(nextPrepared, pipeline, nextWindow!!)
 		}
 		return true
 	}
@@ -1984,6 +2080,15 @@ class EvvTtsService : TextToSpeechService() {
 		while (true) {
 			if (!session.alive) return false
 			val lastWindow = !windows.hasNext()
+			// 1.1: la ventana siguiente se transforma mientras esta se
+			// habla; el punto terminal se añade fuera del prefetch.
+			var nextWindow: String? = null
+			var nextPrepared: java.util.concurrent.Future<String>? = null
+			if (!lastWindow) {
+				val next = windows.next()
+				nextWindow = next
+				nextPrepared = prefetchWindow(pipeline, next)
+			}
 			// Como en [speakStream]: la ventana en otro idioma cambia
 			// de motor al instante (heurística, sin frenar).
 			if (autoOn && pending.isNotBlank()) {
@@ -2067,7 +2172,9 @@ class EvvTtsService : TextToSpeechService() {
 				}
 			}
 			if (lastWindow) break
-			pending = TextFixes.terminalDot(pipeline.apply(windows.next()), terminal)
+			pending = TextFixes.terminalDot(
+				awaitWindow(nextPrepared, pipeline, nextWindow!!), terminal
+			)
 		}
 		return true
 	}

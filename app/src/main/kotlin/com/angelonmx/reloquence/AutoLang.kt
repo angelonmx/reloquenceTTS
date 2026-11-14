@@ -45,11 +45,13 @@ object AutoLang {
 	/** ISO-639-1 a ISO-639-2: el detector habla "es" y el motor
 	 *  "spa". Sin esta tabla nada casa y nada cambia nunca. */
 	private val TO_ISO3 = mapOf(
-		"en" to "eng", "es" to "spa", "fr" to "fra", "de" to "deu", "it" to "ita"
+		"en" to "eng", "es" to "spa", "fr" to "fra", "de" to "deu", "it" to "ita",
+		"fi" to "fin", "pt" to "por"
 	)
 
 	private val TO_ISO1 = mapOf(
-		"eng" to "en", "spa" to "es", "fra" to "fr", "deu" to "de", "ita" to "it"
+		"eng" to "en", "spa" to "es", "fra" to "fr", "deu" to "de", "ita" to "it",
+		"fin" to "fi", "por" to "pt"
 	)
 
 	/**
@@ -277,7 +279,71 @@ object AutoLang {
 		"consenti nega riprova aggiorna installa disinstalla cartella file immagine testo nome password " +
 		"email indirizzo numero ora data oggi domani mattina notte settimana mese indietro talkback").split(" ").toSet()
 
-	private val SETS = mapOf("en" to EN, "es" to ES, "fr" to FR, "de" to DE, "it" to IT)
+	/**
+	 * 1.1: finés. Las palabras son las que más se repiten en una
+	 * frase corriente, más las de la interfaz; el finés aglutina, así
+	 * que también van varias formas flexionadas de los pronombres y
+	 * de los verbos auxiliares.
+	 */
+	private val FI = ("minä sinä hän me te he tämä tuo se nämä nuo ne " +
+		"ja tai mutta että jos koska kun kuin myös vaan vain " +
+		"on olen olet olemme olette ovat oli olin olit olimme olitte olivat " +
+		"ei en et emme ette eivät olla ollut " +
+		"sen sitä siinä siitä siihen sillä siltä sille hänen häntä hänessä hänestä häneen hänellä häneltä hänelle " +
+		"meidän meitä meissä meistä meihin meillä meiltä meille teidän teitä teissä teistä teihin teillä teiltä teille " +
+		"heidän heitä heissä heistä heihin heillä heiltä heille " +
+		"tämän tätä tässä tästä tähän tällä tältä tälle näiden näitä näissä näistä näihin näillä näiltä näille " +
+		"tuon tuota tuossa tuosta tuohon tuolla tuolta tuolle noiden noita noissa noista noihin noilla noilta noille " +
+		"joka jonka jota jossa josta johon jolla jolta jolle jotka joiden joita joissa joista joihin joilla joilta joille " +
+		"mikä minkä mitä missä mistä mihin millä miltä mille mitkä " +
+		"kuka kenen ketä kenessä kenestä keneen kenellä keneltä kenelle ketkä keiden keitä keissä keistä keihin keillä keiltä keille " +
+		"milloin miksi miten kuinka paljon vähän " +
+		"hyvä huono iso pieni uusi vanha pitkä lyhyt nopea hidas " +
+		"kiitos anteeksi hei moi terve kyllä jo vielä nyt sitten tässä siellä täällä " +
+		"päivä yö aamu ilta viikko kuukausi vuosi tunti minuutti " +
+		"vesi ruoka talo koti koulu työ ihminen mies nainen lapsi " +
+		"aika paikka asia sana kieli ääni puhe " +
+		"lukea kirjoittaa kuunnella puhua nähdä tehdä sanoa mennä tulla " +
+		"ottaa antaa tietää haluta voida pitää laittaa " +
+		"asetukset avaa sulje poista tallenna hae äänenvoimakkuus nopeus ääni kieli " +
+		"sana sanat numero aika päivämäärä näyttö aloitus " +
+		"yksi kaksi kolme neljä viisi kuusi seitsemän kahdeksan yhdeksän kymmenen sata tuhat").split(" ").toSet()
+
+	/**
+	 * 1.1: portugués de Brasil. Además de las palabras frecuentes y
+	 * las de la interfaz, van las formas verbales que más aparecen en
+	 * una frase hablada. Las nasales (ã, õ) desempatan en [heuristic].
+	 */
+	private val PT = ("de a o que e do da em um para é com não uma os no se na por mais as dos como mas foi ao " +
+		"ele das tem à seu sua ou ser quando muito há nos já está eu também só pelo pela até isso ela entre era " +
+		"depois sem mesmo aos ter seus quem nas me esse eles estão você tinha foram essa num nem suas meu às minha " +
+		"têm numa pelos elas havia seja qual será nós tenho lhe deles essas esses pelas este fosse dele tu te vocês " +
+		"vos lhes meus minhas teu tua teus tuas nosso nossa nossos nossas dela delas esta estes estas aquele aquela " +
+		"aqueles aquelas isto aquilo " +
+		"estou estamos estive esteve estivemos estiveram estava estávamos estavam sou somos éramos são " +
+		"vou vamos ia íamos faço fazemos fiz fez digo dizemos disse tenho temos tive teve posso podemos pude " +
+		"quero queremos quis sei sabemos soube vejo vemos vi venho viemos vim ir vir ter fazer dizer poder querer " +
+		"saber ver dar " +
+		"hoje ontem amanhã agora depois antes sempre nunca talvez " +
+		"bom boa grande pequeno pequena novo nova velho velha " +
+		"obrigado obrigada favor olá oi tchau sim " +
+		"ajustes abrir fechar excluir salvar buscar volume velocidade voz idioma palavra palavras número hora data " +
+		"tela início " +
+		"um dois três quatro cinco seis sete oito nove dez cem mil " +
+		"dia noite manhã tarde semana mês ano casa água mão mundo vida homem mulher criança gente tempo " +
+		"falar ler escrever ouvir fazer dizer ter estar ser ir dar saber querer chegar passar ficar pôr sair vir voltar " +
+		"enviar cancelar aceitar reproduzir parar continuar compartilhar editar criar pronto " +
+		"chamar digitar olhar escutar próximo anterior fim ajuda sair entrar baixar atualizar " +
+		"botão botões menu janela lista item selecionado marcado desmarcado ativado desativado " +
+		"visível oculto disponível carregando erro espera tela telefone mensagem câmera foto galeria música vídeo " +
+		"relógio alarme calendário contatos teclado alto-falante brilho wifi bluetooth avião bateria carregador " +
+		"notificação notificações permissão permissões permitir negar tentar novamente instalar desinstalar pasta " +
+		"arquivo imagem texto nome senha email endereço").split(" ").toSet()
+
+	private val SETS = mapOf(
+		"en" to EN, "es" to ES, "fr" to FR, "de" to DE, "it" to IT,
+		"fi" to FI, "pt" to PT
+	)
 
 	private val TOKEN = Regex("[\\p{L}]+")
 
@@ -327,7 +393,7 @@ object AutoLang {
 	 *  etiqueta o nada. Regla: la ganadora necesita 2+ aciertos y
 	 *  ventaja sobre la segunda; con un solo acierto vale si es
 	 *  una palabra larga en un texto corto (etiquetas como
-	 *  "Settings" o "Ajustes"); las marcas (ñ, ß, ç, ¿¡)
+	 *  "Settings" o "Ajustes"); las marcas (ñ, ß, ç, ¿¡, ä/ö, ã/õ)
 	 *  desempatan. */
 	fun heuristic(text: String): String? {
 		val lower = text.lowercase(Locale.ROOT)
@@ -341,8 +407,18 @@ object AutoLang {
 		}
 		if ('ß' in lower) scores["de"] = (scores["de"] ?: 0) + 4
 		if ('ñ' in lower || '¿' in lower || '¡' in lower) scores["es"] = (scores["es"] ?: 0) + 4
-		if ('ä' in lower || 'ö' in lower) scores["de"] = (scores["de"] ?: 0) + 3
+		// 1.1: ä y ö son alemanas y finlandesas. Se le suman al
+		// idioma que ya tenga más palabras, para que «tämä» no se
+		// convierta en alemán solo por la diéresis.
+		if ('ä' in lower || 'ö' in lower) {
+			val fi = scores["fi"] ?: 0
+			val de = scores["de"] ?: 0
+			if (fi > de) scores["fi"] = fi + 3 else scores["de"] = de + 3
+		}
 		if ('ç' in lower) scores["fr"] = (scores["fr"] ?: 0) + 2
+		// 1.1: las nasales son la marca más fiel del portugués
+		// frente al español y al italiano.
+		if ('ã' in lower || 'õ' in lower) scores["pt"] = (scores["pt"] ?: 0) + 4
 		var best = 0
 		var bestTag: String? = null
 		var second = 0
