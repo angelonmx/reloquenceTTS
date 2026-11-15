@@ -2,40 +2,38 @@
   "schema": 1,
   "applicationId": "com.angelonmx.reloquence",
   "edition": "full",
-  "versionName": "1.1.1",
-  "versionCode": 1101,
+  "versionName": "1.1.2",
+  "versionCode": 1102,
   "publishedAt": "2026-11-15",
   "minSdk": 23,
   "notes": {
     "es": [
-      "La voz usa ahora la variante de banda ancha del motor: el tramo agudo que antes se perdía vuelve a sonar, con agudos cristalinos y más aire en las consonantes.",
-      "Las voces se ajustan para que los medios suenen un poco más claros, sin cambiar su identidad.",
-      "La tasa de muestreo predeterminada sube a 22.050 Hz para conservar ese brillo; quien tuviera 11.025 guardado se actualiza una vez y puede cambiarla en Ajustes."
+      "El cuerpo y el realce HD de voz vienen activados de fábrica: graves más presentes, medios más claros y agudos con más aire.",
+      "El limitador protege la salida para mantener el sonido limpio. Ambos realces se pueden apagar por separado en Ajustes; las preferencias guardadas se respetan."
     ],
     "en": [
-      "The voice now uses the engine's wideband variant: the top end that used to be lost is back, with crystalline highs and more air on consonants.",
-      "Voices are tuned so the mids sound a little clearer without losing their identity.",
-      "The default sample rate rises to 22,050 Hz to preserve that brightness; anyone with 11,025 saved is upgraded once and can change it in Settings."
+      "Voice body and HD enhancement are now enabled by default: fuller bass, clearer mids and more open highs.",
+      "The limiter protects the output to keep it clean. Both enhancements can be switched off separately in Settings; saved preferences are preserved."
     ]
   },
   "apks": [
     {
       "abi": "arm64-v8a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.1/reloquence-full-1.1.1-1101-arm64-v8a-release.apk",
-      "sha256": "0ef8f92ea8d6e8a791eaa011e7fd4227420350cc2435e42db53d2d8500a6748b",
-      "size": 26785869
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.2/reloquence-full-1.1.2-1102-arm64-v8a-release.apk",
+      "sha256": "7c8cd88a4cc383b5e32d699bee0441fba7ec4fe7c7e3c3553c288c63beacea0c",
+      "size": 26786245
     },
     {
       "abi": "armeabi-v7a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.1/reloquence-full-1.1.1-1101-armeabi-v7a-release.apk",
-      "sha256": "9e19ab39a80793df0e162fb238cba15186796a07885f5af2d26ba1edef72116c",
-      "size": 23692233
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.2/reloquence-full-1.1.2-1102-armeabi-v7a-release.apk",
+      "sha256": "43878c52f171e655de005e786637dad6594bfdb16ef96ebc46880a9756172c48",
+      "size": 23692598
     },
     {
       "abi": "universal",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.1/reloquence-full-1.1.1-1101-universal-release.apk",
-      "sha256": "da229912e3730f8b687e76e50db67c2fb546702e76bbe8f4633a2e228c229e10",
-      "size": 45380256
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.2/reloquence-full-1.1.2-1102-universal-release.apk",
+      "sha256": "febc82d002ee6413ebce7f7554d978826fff4b8389f7917362b93847b97f54fb",
+      "size": 45380632
     }
   ]
 }
