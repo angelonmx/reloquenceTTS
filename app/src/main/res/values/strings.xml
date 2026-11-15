@@ -182,6 +182,7 @@
 	<string name="notif_text_missing">Faltan permisos: %1$s. Toca para abrir los ajustes.</string>
 
 	<string name="sample_rate_label">Frecuencia de muestreo</string>
+	<string name="sample_rate_hint">A 22.050 Hz se conserva toda la banda ancha de la voz. Tasas mayores aumentan la resolución de salida, pero no añaden detalle nuevo al motor.</string>
 	<string name="hertz">%1$d Hz</string>
 
 	<string name="eq_label">Ecualizador</string>

@@ -12,10 +12,10 @@ class AudioFxClarityTest {
 	@Test
 	fun hdImprovesSpeechBandBalanceWithoutDependingOnOutputRate() {
 		for (rate in intArrayOf(16000, 22050, 32000, 44100, 48000)) {
-			val untreatedLow = toneAmplitude(rate, 250, hd = false)
-			val untreatedSpeech = toneAmplitude(rate, 3000, hd = false)
-			val clearLow = toneAmplitude(rate, 250, hd = true)
-			val clearSpeech = toneAmplitude(rate, 3000, hd = true)
+			val untreatedLow = toneAmplitude(rate, 250, 250, hd = false, body = false)
+			val untreatedSpeech = toneAmplitude(rate, 3000, 3000, hd = false, body = false)
+			val clearLow = toneAmplitude(rate, 250, 250, hd = true, body = false)
+			val clearSpeech = toneAmplitude(rate, 3000, 3000, hd = true, body = false)
 
 			val untreatedRatio = untreatedSpeech / untreatedLow
 			val clearRatio = clearSpeech / clearLow
@@ -26,11 +26,36 @@ class AudioFxClarityTest {
 		}
 	}
 
-	private fun toneAmplitude(rate: Int, frequency: Int, hd: Boolean): Double {
+	@Test
+	fun bodyAddsAudibleFundamentalAndHarmonicDensityAcrossRates() {
+		for (rate in intArrayOf(8000, 11025, 16000, 22050, 32000, 44100, 48000)) {
+			val plainFundamental = toneAmplitude(rate, 150, 150, hd = false, body = false)
+			val bodyFundamental = toneAmplitude(rate, 150, 150, hd = false, body = true)
+			val plainHarmonic = toneAmplitude(rate, 150, 450, hd = false, body = false)
+			val bodyHarmonic = toneAmplitude(rate, 150, 450, hd = false, body = true)
+
+			assertTrue(
+				"$rate Hz body should strengthen the voice fundamental: $bodyFundamental <= $plainFundamental",
+				bodyFundamental > plainFundamental * 1.3
+			)
+			assertTrue(
+				"$rate Hz body should add harmonic definition",
+				bodyHarmonic > plainHarmonic + 10.0
+			)
+		}
+	}
+
+	private fun toneAmplitude(
+		rate: Int,
+		toneFrequency: Int,
+		measureFrequency: Int,
+		hd: Boolean,
+		body: Boolean
+	): Double {
 		val frames = rate
 		val bytes = ByteArray(frames * 2)
 		for (frame in 0 until frames) {
-			val sample = (8000.0 * sin(2.0 * PI * frequency * frame / rate)).toInt()
+			val sample = (8000.0 * sin(2.0 * PI * toneFrequency * frame / rate)).toInt()
 			bytes[frame * 2] = (sample and 0xFF).toByte()
 			bytes[frame * 2 + 1] = ((sample shr 8) and 0xFF).toByte()
 		}
@@ -39,7 +64,7 @@ class AudioFxClarityTest {
 			rateHz = rate,
 			eqDb = null,
 			reverbMix = 0,
-			body = false,
+			body = body,
 			hdEnhance = hd
 		).process(bytes, bytes.size)
 
@@ -51,7 +76,7 @@ class AudioFxClarityTest {
 			val offset = frame * 2
 			val sample = ((bytes[offset].toInt() and 0xFF) or
 				(bytes[offset + 1].toInt() shl 8)).toShort().toInt()
-			val phase = 2.0 * PI * frequency * frame / rate
+			val phase = 2.0 * PI * measureFrequency * frame / rate
 			inPhase += sample * sin(phase)
 			quadrature += sample * cos(phase)
 		}

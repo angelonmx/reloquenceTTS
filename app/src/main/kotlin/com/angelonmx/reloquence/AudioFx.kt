@@ -163,7 +163,7 @@ object AudioFx {
 	/** Las diez bandas del ecualizador, en hercios. Las que queden
 	 *  por encima de lo que la tasa actual da (Nyquist) se saltan. */
 	val EQ_FREQS = intArrayOf(60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000)
-	private val CLARITY_EQ_DB = intArrayOf(0, -1, -1, 0, 0, 2, 1, 0, 0, 0)
+	private val CLARITY_EQ_DB = intArrayOf(0, -1, -1, 0, 0, 3, 1, 0, 0, 0)
 
 	/** Realce HD moderado. No se debe aumentar el brillo solo porque
 	 *  suba la tasa de muestreo: eso no crea detalle en la síntesis
@@ -300,12 +300,13 @@ object AudioFx {
 		private val deess: Deesser? = if (deesser && deesserDepth > 0) Deesser(rateHz, deesserDepth) else null
 		private val driveFx: Drive? = if (drive) Drive() else null
 		private val normFx: Normalizer? = if (normalizer) Normalizer(rateHz) else null
-		// Cuerpo natural: evita una subida grande de graves que tape
-		// las consonantes, manteniendo un leve realce cálido.
-		private val bodyBass: Shelf? = if (body) Shelf.low(rateHz, 2) else null
+		// El cuerpo combina fundamento, calidez armónica y un toque
+		// de presencia; no depende solo de subir los graves.
+		private val bodyBass: Shelf? = if (body) Shelf.low(rateHz, 4, 200.0) else null
 		private val bodyTop: Shelf? = if (body) Shelf.high(rateHz, 1) else null
+		private val bodyHarmonics: BodyHarmonics? = if (body) BodyHarmonics(rateHz) else null
 		private val bodyAir: Exciter? = if (body && exciterMix == 0) {
-			Exciter(rateHz, if (hd == 0) 0.16 else 0.08)
+			Exciter(rateHz, if (hd == 0) 0.18 else 0.12)
 		} else null
 		// Curva de inteligibilidad: despeja suavemente los medios
 		// bajos y realza la zona de consonantes. El EQ del usuario,
@@ -335,7 +336,8 @@ object AudioFx {
 			tarsosEffects == null && phaserFx == null && phone == null && lowcut == null &&
 			reverb == null && exciter == null && warm == null && clarity == null && hdPresence == null &&
 			deess == null && driveFx == null && normFx == null &&
-			bodyBass == null && bodyTop == null && bodyAir == null && boost == 1.0
+			bodyBass == null && bodyTop == null && bodyHarmonics == null &&
+			bodyAir == null && boost == 1.0
 
 		fun process(buffer: ByteArray, n: Int) {
 			if (idle) return
@@ -347,6 +349,7 @@ object AudioFx {
 			val fLowcut = lowcut
 			val fBodyBass = bodyBass
 			val fBodyTop = bodyTop
+			val fBodyHarmonics = bodyHarmonics
 			val fBodyAir = bodyAir
 			val fClarity = clarity
 			val fCrush = crush
@@ -390,6 +393,7 @@ object AudioFx {
 				if (fLowcut != null) s = fLowcut.run(s)
 				if (fBodyBass != null) s = fBodyBass.run(s)
 				if (fBodyTop != null) s = fBodyTop.run(s)
+				if (fBodyHarmonics != null) s = fBodyHarmonics.run(s)
 				if (fBodyAir != null) s = fBodyAir.run(s)
 				if (fClarity != null) s = fClarity.run(s)
 				if (fCrush != null) s = fCrush.run(s)
@@ -572,9 +576,9 @@ object AudioFx {
 			companion object {
 				private const val SLOPE = 0.9
 
-				fun low(rateHz: Int, db: Int): Shelf? {
+				fun low(rateHz: Int, db: Int, freq: Double = 120.0): Shelf? {
 					if (db == 0) return null
-					return shelf(rateHz, 120.0, db, true)
+					return shelf(rateHz, freq, db, true)
 				}
 
 				fun high(rateHz: Int, db: Int): Shelf? {
@@ -852,9 +856,8 @@ object AudioFx {
 			}
 		}
 
-		/** Excitador de claridad: realza armónicos agudos con
-		 *  saturación suave sobre la banda alta. [mix] de 0 a 1.
-		 *  Es lo que hace que 32k/48k suenen con más aire que 11k. */
+		/** Excitador de claridad: realza armónicos con saturación
+		 *  suave sobre la banda alta. [mix] de 0 a 1. */
 		private class Exciter(rateHz: Int, private val mix: Double) {
 			// La banda a excitar, de 3 a 7 kHz. Antes era un paso
 			// alto de 4 kHz con el coeficiente invertido, asi que
@@ -876,6 +879,19 @@ object AudioFx {
 				val b = band.run(norm)
 				val added = fastTanh(b * 3.0) - b
 				return (norm + added * mix) * 32768.0
+			}
+		}
+
+		/** A small amount of harmonic structure in the voice's body
+		 *  band adds density without relying on a bass-only boost. */
+		private class BodyHarmonics(rateHz: Int) {
+			private val band = Band(rateHz, 140.0, minOf(2200.0, rateHz * 0.12))
+
+			fun run(s: Double): Double {
+				val voiceBand = band.run(s / 32768.0)
+				val driven = voiceBand * 2.2
+				val harmonics = fastTanh(driven) - driven
+				return s + harmonics * 0.65 * 32768.0
 			}
 		}
 
