@@ -2,38 +2,38 @@
   "schema": 1,
   "applicationId": "com.angelonmx.reloquence.lite",
   "edition": "lite",
-  "versionName": "1.1.2",
-  "versionCode": 1102,
+  "versionName": "1.1.3",
+  "versionCode": 1103,
   "publishedAt": "2026-11-15",
   "minSdk": 23,
   "notes": {
     "es": [
-      "El cuerpo y el realce HD de voz vienen activados de fábrica: graves más presentes, medios más claros y agudos con más aire.",
-      "El limitador protege la salida para mantener el sonido limpio. Ambos realces se pueden apagar por separado en Ajustes; las preferencias guardadas se respetan."
+      "Voces más nítidas e inteligibles en todos los idiomas: se equilibran graves, medios y consonantes para que las palabras se distingan mejor.",
+      "El realce HD ahora es más suave y natural; reduce el exceso de agudos y sibilancias durante lecturas largas."
     ],
     "en": [
-      "Voice body and HD enhancement are now enabled by default: fuller bass, clearer mids and more open highs.",
-      "The limiter protects the output to keep it clean. Both enhancements can be switched off separately in Settings; saved preferences are preserved."
+      "Clearer, more intelligible voices across all languages: bass, mids and consonants are balanced so words stand out better.",
+      "HD enhancement is now smoother and more natural, reducing excessive treble and sibilance during long reads."
     ]
   },
   "apks": [
     {
       "abi": "arm64-v8a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.2/reloquence-lite-1.1.2-1102-arm64-v8a-release.apk",
-      "sha256": "4aeb15e11350324dda8a062d3739ab898078e57a773f6c9ca041facd616a5edb",
-      "size": 7195430
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.3/reloquence-lite-1.1.3-1103-arm64-v8a-release.apk",
+      "sha256": "5f97e99e4a4e416a0853e4b965e1316e2961a3a9d470d2116c7dd18b1dbd45c7",
+      "size": 7195663
     },
     {
       "abi": "armeabi-v7a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.2/reloquence-lite-1.1.2-1102-armeabi-v7a-release.apk",
-      "sha256": "a4f52677561671f3fa57c0e1c72730b114448a623d1155babe13f11dfa1c8613",
-      "size": 6761114
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.3/reloquence-lite-1.1.3-1103-armeabi-v7a-release.apk",
+      "sha256": "bb2203a8aa87cb9194dfcab66ed6f1532db6e345dab85967c591f9912702cd6f",
+      "size": 6761343
     },
     {
       "abi": "universal",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.2/reloquence-lite-1.1.2-1102-universal-release.apk",
-      "sha256": "917102200c1273fa6faef322a30980e2822a7839c9bbf222ce9c45af43b413b8",
-      "size": 9203727
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.3/reloquence-lite-1.1.3-1103-universal-release.apk",
+      "sha256": "d7b21cc82f6948e04e30f066b7b369dea46d551710128c3f0e734627e1eeb496",
+      "size": 9203953
     }
   ]
 }
