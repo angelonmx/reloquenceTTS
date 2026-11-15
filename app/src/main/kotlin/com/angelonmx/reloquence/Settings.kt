@@ -45,6 +45,7 @@ class Settings(context: Context) {
 		dropLegacyKeys()
 		carryOverTheOldKeys()
 		carryOverMixInterval()
+		carryOverSampleRate()
 		carryOverDictionaryLibrary()
 		prefs.registerOnSharedPreferenceChangeListener(watcher)
 	}
@@ -862,6 +863,27 @@ class Settings(context: Context) {
 			.apply()
 	}
 
+	/**
+	 * 1.1.1: sube una sola vez la tasa de quien se quedó con la de
+	 * fábrica anterior (11.025 Hz) a la nueva (22.050 Hz).
+	 *
+	 * La tasa vieja no era una elección de casi nadie: era el valor
+	 * de fábrica, y a 11.025 la variante de banda ancha no puede
+	 * sonar. Solo se toca el 11.025 exacto; 8.000, 16.000 y las demás
+	 * se respetan tal cual, y una elección posterior de 11.025
+	 * tampoco se vuelve a subir porque la marca queda puesta. La
+	 * tasa sigue siendo ajustable en Ajustes.
+	 */
+	private fun carryOverSampleRate() {
+		if (prefs.getBoolean(KEY_SAMPLE_RATE_MIGRATED, false)) return
+		val edit = prefs.edit()
+		if (prefs.getInt(KEY_SAMPLE_RATE, -1) == 11025) {
+			edit.putInt(KEY_SAMPLE_RATE, Eci.DEFAULT_SAMPLE_RATE)
+		}
+		edit.putBoolean(KEY_SAMPLE_RATE_MIGRATED, true)
+			.apply()
+	}
+
 	private fun carryOverDictionaryLibrary() {
 		if (prefs.contains(KEY_DICTIONARY_LIBRARY)) return
 		val path = dictionaryPath ?: return
@@ -1311,6 +1333,8 @@ class Settings(context: Context) {
 		const val KEY_MIX_PARTNER = "mix_partner"
 		const val KEY_MIX_INTERVAL = "mix_interval"
 		const val KEY_MIX_MIGRATED = "mix_words_migrated"
+		/** 1.1.1: la tasa de fábrica anterior ya se subió una vez. */
+		const val KEY_SAMPLE_RATE_MIGRATED = "sample_rate_clarity_migrated"
 		const val MIN_MIX_WORDS = 5
 		const val MAX_MIX_WORDS = 1000
 		const val DEFAULT_MIX_WORDS = 20
@@ -1331,7 +1355,7 @@ class Settings(context: Context) {
 		const val KEY_DICTIONARY_WORDS = "dictionary_words"
 		const val KEY_DICTIONARY_LIBRARY = "dictionary_library"
 		const val KEY_DICTIONARY_LANGUAGE = "dictionary_language"
-		const val DEFAULT_SAMPLE_RATE = 11025
+		const val DEFAULT_SAMPLE_RATE = Eci.DEFAULT_SAMPLE_RATE
 		const val DEFAULT_PAUSE_MS = 80
 
 /** Los ocho parámetros en el orden que la pantalla de ajustes los muestra. */

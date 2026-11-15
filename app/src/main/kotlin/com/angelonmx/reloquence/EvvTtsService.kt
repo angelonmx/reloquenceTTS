@@ -1108,7 +1108,7 @@ class EvvTtsService : TextToSpeechService() {
 		// recién abierto se guarda antes, [prewarm] descarta el suyo al
 		// verlo. Se paga una apertura de más, nunca un silencio. Se
 		// prefiere eso a retrasar lo que el usuario ya pidió decir.
-		val rate = settings?.sampleRateHz ?: Eci.sampleRateHz(1)
+		val rate = settings?.sampleRateHz ?: Eci.DEFAULT_SAMPLE_RATE
 		var made: EvvEngine? = null
 		synchronized(engines) {
 			val held = warm

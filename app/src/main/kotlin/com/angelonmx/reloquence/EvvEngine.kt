@@ -131,7 +131,7 @@ class EvvEngine internal constructor(
 		 * usuario quiere. Se configura de inmediato, sin pasar por
 		 * la tasa nativa del motor primero.
 		 */
-		fun open(language: Int, desiredSampleRateHz: Int = Eci.sampleRateHz(1)): EvvEngine? {
+		fun open(language: Int, desiredSampleRateHz: Int = Eci.DEFAULT_SAMPLE_RATE): EvvEngine? {
 			if (!EvvNative.loaded) {
 				Timber.e(EvvNative.loadError, "la biblioteca nativa no se cargó")
 				return null
@@ -192,6 +192,14 @@ class EvvEngine internal constructor(
 		val index = Eci.sampleRateIndex(desiredSampleRateHz)
 		native.setParam(handle, Eci.PARAM_SAMPLE_RATE, index)
 		sampleRateHz = Eci.sampleRateHz(index)
+		// 1.1.1: la variante de banda ancha, que es la mejora de voz
+		// de esta versión. Va después de la tasa, igual que en la
+		// herramienta del motor: el convertidor de salida ya existe
+		// con el formato definitivo y la variante lo reconstruye para
+		// su propio flujo. Puesto aquí, toda instancia nueva la lleva,
+		// incluida la vista previa de Ajustes, y ninguna emisión
+		// puede quedarse con la voz de antes.
+		native.setParam(handle, Eci.PARAM_WIDEBAND, 1)
 	}
 
 	fun setSampleRate(hz: Int) = synchronized(guard) {

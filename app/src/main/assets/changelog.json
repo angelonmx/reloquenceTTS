@@ -3,6 +3,23 @@
   "editions": {
     "full": [
       {
+        "versionName": "1.1.1",
+        "versionCode": 1101,
+        "date": "2026-11-14",
+        "notes": {
+          "es": [
+            "La voz usa ahora la variante de banda ancha del motor: el tramo agudo que antes se perdía vuelve a sonar, con agudos cristalinos y más aire en las consonantes.",
+            "Las voces se ajustan para que los medios suenen un poco más claros, sin cambiar su identidad.",
+            "La tasa de muestreo predeterminada sube a 22.050 Hz para conservar ese brillo; quien tuviera 11.025 guardado se actualiza una vez y puede cambiarla en Ajustes."
+          ],
+          "en": [
+            "The voice now uses the engine's wideband variant: the top end that used to be lost is back, with crystalline highs and more air on consonants.",
+            "Voices are tuned so the mids sound a little clearer without losing their identity.",
+            "The default sample rate rises to 22,050 Hz to preserve that brightness; anyone with 11,025 saved is upgraded once and can change it in Settings."
+          ]
+        }
+      },
+      {
         "versionName": "1.1.0",
         "versionCode": 1100,
         "date": "2026-11-13",
@@ -42,6 +59,23 @@
       }
     ],
     "lite": [
+      {
+        "versionName": "1.1.1",
+        "versionCode": 1101,
+        "date": "2026-11-14",
+        "notes": {
+          "es": [
+            "La voz usa ahora la variante de banda ancha del motor: el tramo agudo que antes se perdía vuelve a sonar, con agudos cristalinos y más aire en las consonantes.",
+            "Las voces se ajustan para que los medios suenen un poco más claros, sin cambiar su identidad.",
+            "La tasa de muestreo predeterminada sube a 22.050 Hz para conservar ese brillo; quien tuviera 11.025 guardado se actualiza una vez y puede cambiarla en Ajustes."
+          ],
+          "en": [
+            "The voice now uses the engine's wideband variant: the top end that used to be lost is back, with crystalline highs and more air on consonants.",
+            "Voices are tuned so the mids sound a little clearer without losing their identity.",
+            "The default sample rate rises to 22,050 Hz to preserve that brightness; anyone with 11,025 saved is upgraded once and can change it in Settings."
+          ]
+        }
+      },
       {
         "versionName": "1.1.0",
         "versionCode": 1100,

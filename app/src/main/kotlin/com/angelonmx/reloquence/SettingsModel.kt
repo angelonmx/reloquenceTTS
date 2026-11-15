@@ -2596,7 +2596,7 @@ class SettingsModel(private val app: Application) : ViewModel() {
 		// y entonces los deslizadores enseñaban valores que no son
 		// los de esta voz. Solo si el motor aún no abrió se lee la
 		// voz actual como último recurso.
-		preview?.presetShape(voice)?.get(param)?.let { return it }
+		preview?.presetShape(voice)?.let { VoicePlan.presetValue(param, it) }?.let { return it }
 		// 5.3: el mismo valor de sistema que aplica [VoicePlan], para
 		// que el deslizador no enseñe un cero que el motor no va a
 		// usar. Antes caía en 0 y la fluctuación se veía apagada

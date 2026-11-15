@@ -21,6 +21,23 @@ object Eci {
 	const val PARAM_NUMBER_MODE = 10
 
 	/**
+	 * 1.1.1: la variante de banda ancha del motor. Encendida, toda tasa
+	 * por encima de 11.025 Hz deja de ser la voz de 11.025 subida con
+	 * un sinc y pasa a ser esa misma voz por debajo de ~5,4 kHz más un
+	 * segundo sintetizador a 22.050 Hz por encima. Es lo que devuelve
+	 * el tramo agudo que la tasa de antes tiraba: medido en el motor,
+	 * la banda de 5,4 a 8 kHz sube unos 17 dB y la de 8 a 11 kHz
+	 * deja de estar prácticamente vacía. No es un ecualizador; es otra
+	 * variante de la voz.
+	 *
+	 * El número es el de `eciWideband` en el motor (32) y queda lejos
+	 * de los parámetros de IBM y ETI, así que nada escrito para ellos
+	 * lo alcanza. `eciReset` lo devuelve a cero, por eso se afirma al
+	 * abrir la instancia y no una sola vez al instalar.
+	 */
+	const val PARAM_WIDEBAND = 32
+
+	/**
 	 * 4.2: cómo se lee el texto en sí. El motor tiene cuatro modos
 	 * (`ev_paramRange[2]` es 0..3) y el que trae de fábrica no es
 	 * siempre el de "léelo como texto": hay un modo que deletrea.
@@ -150,15 +167,22 @@ object Eci {
 
 	/** Lo que el índice de eciSampleRate significa en hercios, en el
 	 *  orden que el motor los numera. Los primeros cuatro son la
-	 *  numeración de IBM y el resto son de openevv. */
+	 *  numeración de IBM y el resto son de openevv.
+	 *
+	 *  1.1.1: 22.050 es ahora la tasa de fábrica. Es la tasa a la que
+	 *  el motor genera su variante de banda ancha y la primera en la
+	 *  que el realce de claridad de [AudioFx] tiene banda que
+	 *  realzar; 11.025 sigue disponible para quien la prefiera. */
+	const val DEFAULT_SAMPLE_RATE = 22050
+
 	val SAMPLE_RATES = intArrayOf(8000, 11025, 22050, 16000, 32000, 44100, 48000)
 
 	fun sampleRateHz(index: Int): Int =
-		SAMPLE_RATES.getOrElse(index) { SAMPLE_RATES[1] }
+		SAMPLE_RATES.getOrElse(index) { DEFAULT_SAMPLE_RATE }
 
 	fun sampleRateIndex(hz: Int): Int {
 		val at = SAMPLE_RATES.indexOf(hz)
-		return if (at >= 0) at else 1
+		return if (at >= 0) at else SAMPLE_RATES.indexOf(DEFAULT_SAMPLE_RATE)
 	}
 
 	/** Los nombres que los ocho presets han llevado desde que Eloquence

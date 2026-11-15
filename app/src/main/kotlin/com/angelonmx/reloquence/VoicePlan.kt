@@ -36,6 +36,18 @@ object VoicePlan {
 	/** Tamaño de cabeza cuando el usuario no eligió uno. */
 	const val DEFAULT_HEAD_SIZE = 50
 
+	/**
+	 * 1.1.1: cuánto se baja el tamaño de cabeza del preset cuando el
+	 * usuario no lo ha tocado. Acortar un poco el tracto sube los
+	 * formantes: medido en el motor con la variante de banda ancha,
+	 * cinco puntos abren alrededor de 1 dB la banda de 2 a 4 kHz y
+	 * casi 2 dB la de 4 a 5,4 kHz, que es donde vive la claridad de
+	 * los medios. No es un ecualizador: es el parámetro de voz que el
+	 * motor ya tiene, y solo se aplica al valor de fábrica. En cuanto
+	 * alguien mueve el deslizador, manda su valor tal cual.
+	 */
+	const val PRESET_CLARITY_HEAD_SHIFT = -5
+
 	/** Tono base de último recurso si el preset no lo dice. */
 	const val DEFAULT_PITCH = 50
 
@@ -175,7 +187,7 @@ object VoicePlan {
 				Eci.VOICE_GENDER ->
 					shape[param] ?: preset[param] ?: 0
 				Eci.VOICE_HEAD_SIZE ->
-					shape[param] ?: preset[param] ?: DEFAULT_HEAD_SIZE
+					shape[param] ?: presetValue(param, preset) ?: DEFAULT_HEAD_SIZE
 				Eci.VOICE_PITCH_BASELINE ->
 					shape[param] ?: preset[param] ?: DEFAULT_PITCH
 				Eci.VOICE_PITCH_FLUCTUATION ->
@@ -227,7 +239,7 @@ object VoicePlan {
 		useSystemVolume: Boolean = true
 	): Int = when (param) {
 		Eci.VOICE_GENDER -> preset[param] ?: 0
-		Eci.VOICE_HEAD_SIZE -> preset[param] ?: DEFAULT_HEAD_SIZE
+		Eci.VOICE_HEAD_SIZE -> presetValue(param, preset) ?: DEFAULT_HEAD_SIZE
 		Eci.VOICE_PITCH_BASELINE -> preset[param] ?: DEFAULT_PITCH
 		Eci.VOICE_PITCH_FLUCTUATION -> preset[param] ?: DEFAULT_FLUCTUATION
 		Eci.VOICE_ROUGHNESS -> preset[param] ?: 0
@@ -236,6 +248,24 @@ object VoicePlan {
 		Eci.VOICE_VOLUME ->
 			if (useSystemVolume) NEUTRAL_PERCENT else preset[param] ?: DEFAULT_VOLUME
 		else -> 0
+	}
+
+	/**
+	 * 1.1.1: el valor de [param] en un preset **crudo del motor**, con
+	 * el ajuste de claridad aplicado donde toca. Es el único sitio
+	 * donde se decide, para que el plan de la emisión, la vista
+	 * previa y el deslizador de Ajustes enseñen y suenen igual.
+	 *
+	 * [preset] tiene que venir de `EvvEngine.presetShape`; si ya
+	 * viniera ajustado, el tamaño de cabeza se bajaría dos veces.
+	 */
+	fun presetValue(param: Int, preset: Map<Int, Int>): Int? {
+		val value = preset[param] ?: return null
+		return if (param == Eci.VOICE_HEAD_SIZE) {
+			Eci.clampVoice(param, value + PRESET_CLARITY_HEAD_SHIFT)
+		} else {
+			value
+		}
 	}
 
 	/** El nombre corto del parámetro, para el registro. */

@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Etiqueta de la release (ej. v1.1.0)'
+        description: 'Etiqueta de la release (ej. v1.1.1)'
         required: true
-        default: 'v1.1.0'
+        default: 'v1.1.1'
 
 permissions:
   contents: write
@@ -111,9 +111,9 @@ jobs:
           tag_name: ${{ github.event.inputs.tag }}
           name: Reloquence ${{ github.event.inputs.tag }}
           body: |
-            Versión 1.1.0 — ediciones Full y Lite, compiladas y firmadas en GitHub Actions (no en PC local).
+            Versión 1.1.1 — ediciones Full y Lite, compiladas y firmadas en GitHub Actions (no en PC local).
 
-            La edición Full añade finés y portugués (Brasil). Las dos ediciones arrancan antes y leen los textos largos con menos pausas.
+            La voz suena más cristalina: usa la variante de banda ancha del motor, que recupera el tramo agudo, y las voces se ajustan para que los medios sean un poco más claros. La tasa de muestreo predeterminada pasa a 22.050 Hz para conservar ese brillo.
 
             - Full: `com.angelonmx.reloquence`
             - Lite: `com.angelonmx.reloquence.lite`

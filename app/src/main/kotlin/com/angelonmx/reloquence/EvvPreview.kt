@@ -70,7 +70,7 @@ class EvvPreview(private val language: Int) {
 
 	fun open(then: (() -> Unit)? = null) {
 		work.post {
-			if (engine == null) engine = EvvEngine.open(language, Eci.sampleRateHz(1))
+			if (engine == null) engine = EvvEngine.open(language, Eci.DEFAULT_SAMPLE_RATE)
 			then?.let { Handler(android.os.Looper.getMainLooper()).post(it) }
 		}
 	}
@@ -98,7 +98,7 @@ class EvvPreview(private val language: Int) {
 		val mine = generation
 		work.post {
 			if (mine != generation) return@post
-			val e = engine ?: EvvEngine.open(language, Eci.sampleRateHz(1))?.also { engine = it } ?: return@post
+			val e = engine ?: EvvEngine.open(language, Eci.DEFAULT_SAMPLE_RATE)?.also { engine = it } ?: return@post
 			e.setSampleRate(rateHz)
 			// 5.4.2: la lista se sustituye en el texto antes de hablar,
 			// así que no se enseña al motor ni hay estado que olvidar.
@@ -149,7 +149,7 @@ class EvvPreview(private val language: Int) {
 		val mine = generation
 		work.post {
 			if (mine != generation) return@post
-			val e = engine ?: EvvEngine.open(language, Eci.sampleRateHz(1))?.also { engine = it } ?: return@post
+			val e = engine ?: EvvEngine.open(language, Eci.DEFAULT_SAMPLE_RATE)?.also { engine = it } ?: return@post
 			e.setSampleRate(rateHz)
 			// 5.4.2: ver [say]; la sustitución cubre la lista.
 			for ((at, triple) in segments.withIndex()) {
