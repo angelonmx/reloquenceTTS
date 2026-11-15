@@ -422,10 +422,9 @@ class Settings(context: Context) {
 		get() = prefs.getBoolean(KEY_WARMTH, false)
 		set(value) = prefs.edit().putBoolean(KEY_WARMTH, value).apply()
 
-	/** Si el realce HD automático por tasa está en vigor (cada
-	 *  salto de tasa suena más abierto: 16k +3 dB, 22k +5 dB,
-	 *  32k +6 dB, 44k +8 dB, 48k +9 dB más excitador). Apagado
-	 *  explícitamente por quien prefiera el sonido original. */
+	/** Si están activados la curva moderada de inteligibilidad y el
+	 *  realce HD. Apagado explícitamente devuelve el audio a la voz
+	 *  natural del motor. */
 	var hdEnhance: Boolean
 		get() = prefs.getBoolean(KEY_HD_ENHANCE, true)
 		set(value) = prefs.edit().putBoolean(KEY_HD_ENHANCE, value).apply()
@@ -906,9 +905,8 @@ class Settings(context: Context) {
 		write { putInt(KEY_DICTIONARY_LANGUAGE, language) }
 	}
 
-	/** Cuerpo de voz: realce notable (graves +5 dB, agudos +2 dB,
-	 *  aire propio), activado de fábrica para dar presencia sin
-	 *  encender otros efectos. */
+	/** Cuerpo de voz: un toque de graves y agudos, sin enmascarar
+	 *  consonantes. Activado de fábrica. */
 	var bodyEnabled: Boolean
 		get() = prefs.getBoolean(KEY_BODY, true)
 		set(value) = prefs.edit().putBoolean(KEY_BODY, value).apply()
