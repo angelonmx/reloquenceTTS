@@ -2,42 +2,40 @@
   "schema": 1,
   "applicationId": "com.angelonmx.reloquence",
   "edition": "full",
-  "versionName": "1.1.0",
-  "versionCode": 1100,
-  "publishedAt": "2026-11-14",
+  "versionName": "1.1.1",
+  "versionCode": 1101,
+  "publishedAt": "2026-11-15",
   "minSdk": 23,
   "notes": {
     "es": [
-      "Se añaden las voces de finés y portugués (Brasil): la edición Full pasa a doce idiomas.",
-      "El motor arranca antes y la lectura de textos largos es más fluida: la ventana siguiente se prepara mientras suena la actual.",
-      "La voz se aplica una sola vez por ventana cuando no hay un cambio de voz en el texto, con menos trabajo en el hilo de síntesis.",
-      "Correcciones de estabilidad y rendimiento."
+      "La voz usa ahora la variante de banda ancha del motor: el tramo agudo que antes se perdía vuelve a sonar, con agudos cristalinos y más aire en las consonantes.",
+      "Las voces se ajustan para que los medios suenen un poco más claros, sin cambiar su identidad.",
+      "La tasa de muestreo predeterminada sube a 22.050 Hz para conservar ese brillo; quien tuviera 11.025 guardado se actualiza una vez y puede cambiarla en Ajustes."
     ],
     "en": [
-      "Adds Finnish and Brazilian Portuguese voices: the Full edition now covers twelve languages.",
-      "The engine starts sooner and long texts read more smoothly: the next window is prepared while the current one plays.",
-      "The voice is applied once per window when the text does not change voices, with less work on the synthesis thread.",
-      "Stability and performance fixes."
+      "The voice now uses the engine's wideband variant: the top end that used to be lost is back, with crystalline highs and more air on consonants.",
+      "Voices are tuned so the mids sound a little clearer without losing their identity.",
+      "The default sample rate rises to 22,050 Hz to preserve that brightness; anyone with 11,025 saved is upgraded once and can change it in Settings."
     ]
   },
   "apks": [
     {
       "abi": "arm64-v8a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.0/reloquence-full-1.1.0-1100-arm64-v8a-release.apk",
-      "sha256": "bf7aa970e74cd90c33461c0084a005aa752614effcafb51ea6a67d6e196a7e88",
-      "size": 26785226
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.1/reloquence-full-1.1.1-1101-arm64-v8a-release.apk",
+      "sha256": "0ef8f92ea8d6e8a791eaa011e7fd4227420350cc2435e42db53d2d8500a6748b",
+      "size": 26785869
     },
     {
       "abi": "armeabi-v7a",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.0/reloquence-full-1.1.0-1100-armeabi-v7a-release.apk",
-      "sha256": "a59395ee01663181b7634755e49a8e8a2f93b782fbd027c83b0eb9dc75b35b04",
-      "size": 23691588
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.1/reloquence-full-1.1.1-1101-armeabi-v7a-release.apk",
+      "sha256": "9e19ab39a80793df0e162fb238cba15186796a07885f5af2d26ba1edef72116c",
+      "size": 23692233
     },
     {
       "abi": "universal",
-      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.0/reloquence-full-1.1.0-1100-universal-release.apk",
-      "sha256": "f49485fc86f74dc34ab31c6c779a384b21e7ba3185a8a16eb11c40b0da54e750",
-      "size": 45379614
+      "url": "https://github.com/angelonmx/reloquenceTTS/releases/download/v1.1.1/reloquence-full-1.1.1-1101-universal-release.apk",
+      "sha256": "da229912e3730f8b687e76e50db67c2fb546702e76bbe8f4633a2e228c229e10",
+      "size": 45380256
     }
   ]
 }
