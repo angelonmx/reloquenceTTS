@@ -163,39 +163,24 @@ object AudioFx {
 	/** Las diez bandas del ecualizador, en hercios. Las que queden
 	 *  por encima de lo que la tasa actual da (Nyquist) se saltan. */
 	val EQ_FREQS = intArrayOf(60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000)
+	private val CLARITY_EQ_DB = intArrayOf(0, -1, -1, 0, 0, 2, 1, 0, 0, 0)
 
-	/** Realce HD por tasa: a más hercios, más aire. El motor
-	 *  sintetiza hasta ~5 kHz; subir la tasa con sinc limpio suena
-	 *  igual porque no hay nada nuevo arriba. Este realce añade
-	 *  armónicos y brillo proporcional a la tasa para que cada
-	 *  salto (11k -> 16k -> 22k -> 32k -> 44k -> 48k) se distinga
-	 *  del anterior. 0 en 11k o menos: ahí no hay banda aguda
-	 *  que realzar y solo se escucharía más siseo.
-	 *
-	 *  En 4.2 los escalones son grandes a propósito (antes apenas
-	 *  se notaba el cambio de 16k en adelante): cada tasa suena
-	 *  claramente más abierta que la anterior. El limitador final
-	 *  cuida que no sature. */
+	/** Realce HD moderado. No se debe aumentar el brillo solo porque
+	 *  suba la tasa de muestreo: eso no crea detalle en la síntesis
+	 *  y terminaba exagerando siseos y sibilantes. */
 	fun hdAmount(rateHz: Int): Int = when {
-		rateHz >= 48000 -> 100
-		rateHz >= 44100 -> 95
-		rateHz >= 32000 -> 85
-		rateHz >= 22050 -> 65
-		rateHz >= 16000 -> 45
+		rateHz >= 48000 -> 35
+		rateHz >= 44100 -> 32
+		rateHz >= 32000 -> 28
+		rateHz >= 22050 -> 24
+		rateHz >= 16000 -> 20
 		else -> 0
 	}
 
-	/** Presencia HD en dB según la tasa: el brillo lineal que
-	 *  acompaña al excitador. Escalonado para que cada tasa
-	 *  suene un punto más abierta que la anterior (16k +3,
-	 *  22k +5, 32k +6, 44k +8, 48k +9). 0 cuando no hay HD.
-	 *  4.2: escalones más grandes para que el salto se note. */
+	/** Presencia HD suave. La inteligibilidad se realza en la banda
+	 *  de consonantes, no con una subida amplia de agudos. */
 	fun hdPresenceDb(rateHz: Int): Int = when {
-		rateHz >= 48000 -> 9
-		rateHz >= 44100 -> 8
-		rateHz >= 32000 -> 6
-		rateHz >= 22050 -> 5
-		rateHz >= 16000 -> 3
+		rateHz >= 16000 -> 2
 		else -> 0
 	}
 
@@ -304,34 +289,32 @@ object AudioFx {
 		private val reverb: Reverb? = if (reverbMix.coerceIn(0, 100) > 0) {
 			Reverb(rateHz, reverbMix.coerceIn(0, 100) / 100.0, reverbSize)
 		} else null
-		// Excitador pedido + realce HD automático por tasa. En 4.2
-		// el HD aporta hasta 80 puntos para que 48k suene
-		// claramente más abierto que 22k; el limitador final
-		// cuida que no sature.
+		// Excitador pedido + realce HD moderado. La tasa de salida no
+		// debe convertirse en una subida desproporcionada de agudos.
 		private val hd = if (hdEnhance) hdAmount(rateHz) else 0
 		private val exciter: Exciter? = run {
-			val total = exciterMix.coerceIn(0, 100) + hd * 80 / 100
+			val total = exciterMix.coerceIn(0, 100) + hd * 30 / 100
 			if (total > 0) Exciter(rateHz, total.coerceIn(0, 100) / 100.0) else null
 		}
 		private val warm: Warmth? = if (warmth) Warmth(rateHz) else null
 		private val deess: Deesser? = if (deesser && deesserDepth > 0) Deesser(rateHz, deesserDepth) else null
 		private val driveFx: Drive? = if (drive) Drive() else null
 		private val normFx: Normalizer? = if (normalizer) Normalizer(rateHz) else null
-		// Cuerpo base 3.3: graves +5 dB, agudos +2 dB y aire
-		// propio. Antes era +2/+1 dB con una pizca de excitador
-		// y apenas se notaba; ahora engorda de verdad sin
-		// embarrar (el limitador jamás lo nota).
-		private val bodyBass: Shelf? = if (body) Shelf.low(rateHz, 5) else null
-		private val bodyTop: Shelf? = if (body) Shelf.high(rateHz, 2) else null
+		// Cuerpo natural: evita una subida grande de graves que tape
+		// las consonantes, manteniendo un leve realce cálido.
+		private val bodyBass: Shelf? = if (body) Shelf.low(rateHz, 2) else null
+		private val bodyTop: Shelf? = if (body) Shelf.high(rateHz, 1) else null
 		private val bodyAir: Exciter? = if (body && exciterMix == 0) {
-			// Con HD activo se baja a la mitad para no duplicar
-			// brillo (antes se apagaba del todo y el cuerpo se
-			// quedaba sin aire justo cuando más falta hacía).
-			Exciter(rateHz, if (hd == 0) 0.22 else 0.12)
+			Exciter(rateHz, if (hd == 0) 0.16 else 0.08)
 		} else null
-		// Presencia automática HD: +3 a +9 dB según tasa, si el
-		// usuario no puso presencia propia. Cada salto de tasa abre
-		// más; a 48k el aire es evidente sin forzar la salida.
+		// Curva de inteligibilidad: despeja suavemente los medios
+		// bajos y realza la zona de consonantes. El EQ del usuario,
+		// que corre después, puede ajustar o revertir estas bandas.
+		private val clarity: Peaking? = if (hd > 0) {
+			Peaking(rateHz, CLARITY_EQ_DB)
+		} else null
+		// Presencia automática HD, limitada a +2 dB para no acentuar
+		// sibilantes ni fatigar durante lecturas largas.
 		private val hdPresence: Shelf? = if (hd > 0 && presenceDb == 0) {
 			Shelf.high(rateHz, hdPresenceDb(rateHz))
 		} else null
@@ -350,7 +333,7 @@ object AudioFx {
 			wah == null && maximizer == null && chorusFx == null && crush == null &&
 			tape == null && sub == null &&
 			tarsosEffects == null && phaserFx == null && phone == null && lowcut == null &&
-			reverb == null && exciter == null && warm == null && hdPresence == null &&
+			reverb == null && exciter == null && warm == null && clarity == null && hdPresence == null &&
 			deess == null && driveFx == null && normFx == null &&
 			bodyBass == null && bodyTop == null && bodyAir == null && boost == 1.0
 
@@ -365,6 +348,7 @@ object AudioFx {
 			val fBodyBass = bodyBass
 			val fBodyTop = bodyTop
 			val fBodyAir = bodyAir
+			val fClarity = clarity
 			val fCrush = crush
 			val fWarm = warm
 			val fBass = bass
@@ -407,6 +391,7 @@ object AudioFx {
 				if (fBodyBass != null) s = fBodyBass.run(s)
 				if (fBodyTop != null) s = fBodyTop.run(s)
 				if (fBodyAir != null) s = fBodyAir.run(s)
+				if (fClarity != null) s = fClarity.run(s)
 				if (fCrush != null) s = fCrush.run(s)
 				if (fWarm != null) s = fWarm.run(s)
 				if (fBass != null) s = fBass.run(s)

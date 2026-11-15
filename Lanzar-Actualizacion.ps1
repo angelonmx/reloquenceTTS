@@ -4,5 +4,5 @@ git commit -m "Agrega workflow de release para compilar en la nube"
 git push origin main
 
 # 2. Lanza el workflow (compila en la nube, no en tu PC)
-gh workflow run release.yml --repo angelonmx/reloquenceTTS -f tag=v1.1.2
+gh workflow run release.yml --repo angelonmx/reloquenceTTS -f tag=v1.1.3
 gh run watch --repo angelonmx/reloquenceTTS

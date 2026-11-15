@@ -3,6 +3,21 @@
   "editions": {
     "full": [
       {
+        "versionName": "1.1.3",
+        "versionCode": 1103,
+        "date": "2026-11-15",
+        "notes": {
+          "es": [
+            "Voces más nítidas e inteligibles en todos los idiomas: se equilibran graves, medios y consonantes para que las palabras se distingan mejor.",
+            "El realce HD ahora es más suave y natural; reduce el exceso de agudos y sibilancias durante lecturas largas."
+          ],
+          "en": [
+            "Clearer, more intelligible voices across all languages: bass, mids and consonants are balanced so words stand out better.",
+            "HD enhancement is now smoother and more natural, reducing excessive treble and sibilance during long reads."
+          ]
+        }
+      },
+      {
         "versionName": "1.1.2",
         "versionCode": 1102,
         "date": "2026-11-14",
@@ -74,6 +89,21 @@
       }
     ],
     "lite": [
+      {
+        "versionName": "1.1.3",
+        "versionCode": 1103,
+        "date": "2026-11-15",
+        "notes": {
+          "es": [
+            "Voces más nítidas e inteligibles en todos los idiomas: se equilibran graves, medios y consonantes para que las palabras se distingan mejor.",
+            "El realce HD ahora es más suave y natural; reduce el exceso de agudos y sibilancias durante lecturas largas."
+          ],
+          "en": [
+            "Clearer, more intelligible voices across all languages: bass, mids and consonants are balanced so words stand out better.",
+            "HD enhancement is now smoother and more natural, reducing excessive treble and sibilance during long reads."
+          ]
+        }
+      },
       {
         "versionName": "1.1.2",
         "versionCode": 1102,
