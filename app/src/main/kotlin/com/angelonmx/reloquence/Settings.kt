@@ -425,10 +425,9 @@ class Settings(context: Context) {
 	/** Si el realce HD automático por tasa está en vigor (cada
 	 *  salto de tasa suena más abierto: 16k +3 dB, 22k +5 dB,
 	 *  32k +6 dB, 44k +8 dB, 48k +9 dB más excitador). Apagado
-	 *  por defecto: el motor tal como es, y quien quiera lo
-	 *  enciende. */
+	 *  explícitamente por quien prefiera el sonido original. */
 	var hdEnhance: Boolean
-		get() = prefs.getBoolean(KEY_HD_ENHANCE, false)
+		get() = prefs.getBoolean(KEY_HD_ENHANCE, true)
 		set(value) = prefs.edit().putBoolean(KEY_HD_ENHANCE, value).apply()
 
 	/** Nombre del perfil de efectos en vigor, o nada (manual). */
@@ -765,8 +764,8 @@ class Settings(context: Context) {
 				.putBoolean(KEY_MIX_ENABLED, false)
 				.putInt(KEY_MIX_PARTNER, 1)
 				.putInt(KEY_MIX_INTERVAL, DEFAULT_MIX_WORDS)
-				.putBoolean(KEY_BODY, false)
-				.putBoolean(KEY_HD_ENHANCE, false)
+				.putBoolean(KEY_BODY, true)
+				.putBoolean(KEY_HD_ENHANCE, true)
 		}
 	}
 
@@ -907,12 +906,11 @@ class Settings(context: Context) {
 		write { putInt(KEY_DICTIONARY_LANGUAGE, language) }
 	}
 
-	/** Cuerpo de voz: realce notable siempre activo (graves +5 dB,
-	 *  agudos +2 dB, aire propio) para que la voz tenga presencia
-	 *  sin encender ningún efecto. Apagado por defecto: el motor
-	 *  tal como es, y quien quiera lo enciende. */
+	/** Cuerpo de voz: realce notable (graves +5 dB, agudos +2 dB,
+	 *  aire propio), activado de fábrica para dar presencia sin
+	 *  encender otros efectos. */
 	var bodyEnabled: Boolean
-		get() = prefs.getBoolean(KEY_BODY, false)
+		get() = prefs.getBoolean(KEY_BODY, true)
 		set(value) = prefs.edit().putBoolean(KEY_BODY, value).apply()
 
 	// ---- copia de seguridad ----------------------------------------

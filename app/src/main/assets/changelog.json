@@ -3,6 +3,21 @@
   "editions": {
     "full": [
       {
+        "versionName": "1.1.2",
+        "versionCode": 1102,
+        "date": "2026-11-14",
+        "notes": {
+          "es": [
+            "El cuerpo y el realce HD de voz vienen activados de fábrica: graves más presentes, medios más claros y agudos con más aire.",
+            "El limitador protege la salida para mantener el sonido limpio. Ambos realces se pueden apagar por separado en Ajustes; las preferencias guardadas se respetan."
+          ],
+          "en": [
+            "Voice body and HD enhancement are now enabled by default: fuller bass, clearer mids and more open highs.",
+            "The limiter protects the output to keep it clean. Both enhancements can be switched off separately in Settings; saved preferences are preserved."
+          ]
+        }
+      },
+      {
         "versionName": "1.1.1",
         "versionCode": 1101,
         "date": "2026-11-14",
@@ -59,6 +74,21 @@
       }
     ],
     "lite": [
+      {
+        "versionName": "1.1.2",
+        "versionCode": 1102,
+        "date": "2026-11-14",
+        "notes": {
+          "es": [
+            "El cuerpo y el realce HD de voz vienen activados de fábrica: graves más presentes, medios más claros y agudos con más aire.",
+            "El limitador protege la salida para mantener el sonido limpio. Ambos realces se pueden apagar por separado en Ajustes; las preferencias guardadas se respetan."
+          ],
+          "en": [
+            "Voice body and HD enhancement are now enabled by default: fuller bass, clearer mids and more open highs.",
+            "The limiter protects the output to keep it clean. Both enhancements can be switched off separately in Settings; saved preferences are preserved."
+          ]
+        }
+      },
       {
         "versionName": "1.1.1",
         "versionCode": 1101,
