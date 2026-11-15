@@ -439,14 +439,19 @@ val renameApks = tasks.register("renameApks") {
 		val dir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
 		dir.listFiles(object : java.io.FileFilter {
 			override fun accept(f: java.io.File): Boolean =
-				f.name.endsWith("-release.apk") && f.name.startsWith("app-")
+				f.name.startsWith("app-") &&
+					(f.name.endsWith("-release.apk") || f.name.endsWith("-release-unsigned.apk"))
 		})?.forEach { file ->
-			val base = file.name.removeSuffix("-release.apk")
+			val unsigned = file.name.endsWith("-release-unsigned.apk")
+			val base = file.name.removeSuffix(
+				if (unsigned) "-release-unsigned.apk" else "-release.apk"
+			)
 			val abi = base.removePrefix("app-")
+			val suffix = if (unsigned) "-release-unsigned.apk" else "-release.apk"
 			val newName = if (abi == "universal") {
-				"reloquence-$edition-$versionName-$versionCode-universal-release.apk"
+				"reloquence-$edition-$versionName-$versionCode-universal$suffix"
 			} else {
-				"reloquence-$edition-$versionName-$versionCode-$abi-release.apk"
+				"reloquence-$edition-$versionName-$versionCode-$abi$suffix"
 			}
 			val target = file.toPath().resolveSibling(newName)
 				Files.move(file.toPath(), target, StandardCopyOption.REPLACE_EXISTING)

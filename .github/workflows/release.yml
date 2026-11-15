@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Etiqueta de la release (ej. v1.1.1)'
+        description: 'Etiqueta de la release (ej. v1.1.2)'
         required: true
-        default: 'v1.1.1'
+        default: 'v1.1.2'
 
 permissions:
   contents: write
@@ -102,6 +102,14 @@ jobs:
           ls -l dist/lite/release/
           test -n "$(ls -A dist/lite/release/*.apk 2>/dev/null)"
 
+      - name: Verifica que los APKs estén firmados
+        run: |
+          set -euo pipefail
+          for apk in dist/full/release/*.apk dist/lite/release/*.apk; do
+            test -f "$apk"
+            "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify "$apk"
+          done
+
       - name: Crea la release y sube los APKs
         id: create_release
         uses: softprops/action-gh-release@v2
@@ -111,9 +119,9 @@ jobs:
           tag_name: ${{ github.event.inputs.tag }}
           name: Reloquence ${{ github.event.inputs.tag }}
           body: |
-            Versión 1.1.1 — ediciones Full y Lite, compiladas y firmadas en GitHub Actions (no en PC local).
+            Versión 1.1.2 — ediciones Full y Lite, compiladas y firmadas en GitHub Actions (no en PC local).
 
-            La voz suena más cristalina: usa la variante de banda ancha del motor, que recupera el tramo agudo, y las voces se ajustan para que los medios sean un poco más claros. La tasa de muestreo predeterminada pasa a 22.050 Hz para conservar ese brillo.
+            El cuerpo y el realce HD de voz vienen activados de fábrica: graves más presentes, medios más claros y agudos con más aire. El limitador protege la salida para mantener el sonido limpio; ambos realces se pueden apagar por separado en Ajustes y se respetan las preferencias guardadas.
 
             - Full: `com.angelonmx.reloquence`
             - Lite: `com.angelonmx.reloquence.lite`
