@@ -431,6 +431,12 @@ private fun VozScreen(state: SettingsModel, modifier: Modifier = Modifier, onBac
 			chosen = SettingsModel.RATES.indexOf(state.sampleRateHz).coerceAtLeast(0),
 			onChoose = { state.chooseSampleRate(SettingsModel.RATES[it]) }
 		)
+		Text(
+			text = stringResource(R.string.sample_rate_hint),
+			style = MaterialTheme.typography.bodySmall,
+			color = MaterialTheme.colorScheme.onSurfaceVariant,
+			modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+		)
 		SwitchRow(
 			label = stringResource(R.string.hd_enhance_label),
 			checked = state.hdEnhance,

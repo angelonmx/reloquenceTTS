@@ -173,6 +173,7 @@
 	<string name="notif_text_missing">Missing permissions: %1$s. Tap to open settings.</string>
 
 	<string name="sample_rate_label">Sample rate</string>
+	<string name="sample_rate_hint">At 22,050 Hz the full wideband voice is preserved. Higher rates increase output resolution but do not add new detail to the speech engine.</string>
 	<string name="hertz">%1$d Hz</string>
 
 	<string name="eq_label">Equalizer</string>
