@@ -3,6 +3,21 @@
   "editions": {
     "full": [
       {
+        "versionName": "1.1.5",
+        "versionCode": 1105,
+        "date": "2026-11-19",
+        "notes": {
+          "es": [
+            "Voces más nítidas en todos los idiomas y variantes: el realce de consonantes también funciona con las salidas de 8.000 y 11.025 Hz, sin alterar los graves.",
+            "Las pausas ahora distinguen comas, separadores y finales de frase para una lectura más natural."
+          ],
+          "en": [
+            "Clearer voices across languages and variants: consonant enhancement now also works at 8,000 and 11,025 Hz, without changing bass.",
+            "Pauses now distinguish commas, clause separators and sentence endings for more natural reading."
+          ]
+        }
+      },
+      {
         "versionName": "1.1.4",
         "versionCode": 1104,
         "date": "2026-11-15",
@@ -106,6 +121,21 @@
       }
     ],
     "lite": [
+      {
+        "versionName": "1.1.5",
+        "versionCode": 1105,
+        "date": "2026-11-19",
+        "notes": {
+          "es": [
+            "Voces más nítidas en todas las variantes: el realce de consonantes también funciona con las salidas de 8.000 y 11.025 Hz, sin alterar los graves.",
+            "Las pausas ahora distinguen comas, separadores y finales de frase para una lectura más natural."
+          ],
+          "en": [
+            "Clearer voices across variants: consonant enhancement now also works at 8,000 and 11,025 Hz, without changing bass.",
+            "Pauses now distinguish commas, clause separators and sentence endings for more natural reading."
+          ]
+        }
+      },
       {
         "versionName": "1.1.4",
         "versionCode": 1104,

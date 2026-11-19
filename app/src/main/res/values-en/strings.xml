@@ -173,7 +173,7 @@
 	<string name="notif_text_missing">Missing permissions: %1$s. Tap to open settings.</string>
 
 	<string name="sample_rate_label">Sample rate</string>
-	<string name="sample_rate_hint">At 22,050 Hz the full wideband voice is preserved. Higher rates increase output resolution but do not add new detail to the speech engine.</string>
+	<string name="sample_rate_hint">At 22,050 Hz the full wideband voice is preserved, and consonant enhancement adapts to each rate. 8,000 and 11,025 Hz limit high frequencies. Higher rates cannot add detail the engine does not generate.</string>
 	<string name="hertz">%1$d Hz</string>
 
 	<string name="eq_label">Equalizer</string>
@@ -307,7 +307,7 @@
 	<string name="exciter_label">Exciter (clarity)</string>
 	<string name="deesser_label">De-esser (tames s and sh)</string>
 	<string name="warmth_label">Tape warmth</string>
-	<string name="hd_enhance_label">HD enhance by rate (more quality at higher Hz)</string>
+	<string name="hd_enhance_label">HD clarity enhancement</string>
 	<string name="category_profiles">Profiles</string>
 	<string name="category_profiles_hint">Save and manage your profiles: all settings</string>
 	<string name="profile_save">Create new profile</string>

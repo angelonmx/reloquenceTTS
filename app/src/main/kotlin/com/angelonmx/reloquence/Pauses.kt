@@ -78,8 +78,11 @@ object Pauses {
 		var out = text
 		val brief = punctMs.coerceIn(0, 2000)
 		if (mode == ALL && brief > 0) {
-			val tag = "`p$brief"
-			out = AT_A_MARK.replace(out) { m -> "${m.groupValues[1]} $tag${m.groupValues[2]}${m.groupValues[3]}${m.groupValues[4]}" }
+			out = AT_A_MARK.replace(out) { m ->
+				val mark = m.groupValues[2].first()
+				val duration = durationFor(mark, brief)
+				"${m.groupValues[1]} `p$duration${m.groupValues[2]}${m.groupValues[3]}${m.groupValues[4]}"
+			}
 		}
 		// El motor pausa al final de una emisión pida algo ahí o no.
 		// Una marca al final ya se trató.
@@ -87,5 +90,11 @@ object Pauses {
 			out = "$out $AT_THE_END${endMs.coerceIn(1, 2000)}"
 		}
 		return out
+	}
+
+	private fun durationFor(mark: Char, brief: Int): Int = when (mark) {
+		',', '-', '–', '—' -> brief
+		';', ':' -> (brief * 3 / 2).coerceIn(1, 2000)
+		else -> (brief * 5 / 2).coerceIn(1, 2000)
 	}
 }

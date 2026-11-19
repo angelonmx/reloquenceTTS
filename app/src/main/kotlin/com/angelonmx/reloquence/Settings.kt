@@ -118,8 +118,10 @@ class Settings(context: Context) {
 		set(value) = write { putInt(KEY_VOICE, value) }
 
 	var sampleRateHz: Int
-		get() = prefs.getInt(KEY_SAMPLE_RATE, DEFAULT_SAMPLE_RATE)
-		set(value) = write { putInt(KEY_SAMPLE_RATE, value) }
+		get() = Eci.sampleRateHz(Eci.sampleRateIndex(prefs.getInt(KEY_SAMPLE_RATE, DEFAULT_SAMPLE_RATE)))
+		set(value) = write {
+			putInt(KEY_SAMPLE_RATE, Eci.sampleRateHz(Eci.sampleRateIndex(value)))
+		}
 
 	/** El idioma predeterminado del motor, como palabra de idioma ECI.
 	 *  Cero significa el primero disponible. */
@@ -136,12 +138,11 @@ class Settings(context: Context) {
 
 	/** Cuánto de las pausas propias del motor conservar. Uno de
 	 *  los constantes de Pauses, y no es asunto de una voz.
-	 *  4.1: por defecto intactas. Recortarlas todas apresura la
-	 *  frase y suena raro a la vez que natural; el hueco final se
-	 *  puede acortar aparte y la puntuación la manda el motor.
-	 *  Quien quiera el recorte total lo elige. */
+	 *  Por defecto, la puntuación recibe pausas breves distintas
+	 *  según su función; quien prefiera el ritmo propio del motor
+	 *  puede elegir no acortarlas. */
 	var pauses: Int
-		get() = prefs.getInt(KEY_PAUSES, Pauses.KEEP).coerceIn(Pauses.KEEP, Pauses.ALL)
+		get() = prefs.getInt(KEY_PAUSES, DEFAULT_PAUSES).coerceIn(Pauses.KEEP, Pauses.ALL)
 		set(value) = write { putInt(KEY_PAUSES, value.coerceIn(Pauses.KEEP, Pauses.ALL)) }
 
 	/** Cuántos milisegundos dura la pausa al final de cada texto.
@@ -771,7 +772,7 @@ class Settings(context: Context) {
 	/** Vuelve toda la categoría de lectura a sus valores iniciales. */
 	fun resetReadingCategory() {
 		write {
-			putInt(KEY_PAUSES, Pauses.KEEP)
+			putInt(KEY_PAUSES, DEFAULT_PAUSES)
 				.putInt(KEY_PAUSE_DURATION_MS, DEFAULT_PAUSE_MS)
 				.putBoolean(KEY_ABBREVIATIONS, false)
 				.putBoolean(KEY_IGNORE_VOICE_TAGS, false)
@@ -1352,7 +1353,8 @@ class Settings(context: Context) {
 		const val KEY_DICTIONARY_LIBRARY = "dictionary_library"
 		const val KEY_DICTIONARY_LANGUAGE = "dictionary_language"
 		const val DEFAULT_SAMPLE_RATE = Eci.DEFAULT_SAMPLE_RATE
-		const val DEFAULT_PAUSE_MS = 80
+		const val DEFAULT_PAUSES = Pauses.ALL
+		const val DEFAULT_PAUSE_MS = 140
 
 /** Los ocho parámetros en el orden que la pantalla de ajustes los muestra. */
 	val SHAPE = listOf(

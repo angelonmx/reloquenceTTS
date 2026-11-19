@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Etiqueta de la release (ej. v1.1.4)'
+        description: 'Etiqueta de la release (ej. v1.1.5)'
         required: true
-        default: 'v1.1.4'
+        default: 'v1.1.5'
 
 permissions:
   contents: write
@@ -119,9 +119,9 @@ jobs:
           tag_name: ${{ github.event.inputs.tag }}
           name: Reloquence ${{ github.event.inputs.tag }}
           body: |
-            Versión 1.1.4 — ediciones Full y Lite, compiladas y firmadas en GitHub Actions (no en PC local).
+            Versión 1.1.5 — ediciones Full y Lite, compiladas y firmadas en GitHub Actions (no en PC local).
 
-            Mejora general de definición en Full y Lite: claridad en medios y consonantes, cuerpo más lleno con armónicos naturales, y control de picos para conservar una voz limpia. El ajuste Cuerpo aporta una diferencia más notoria en el fundamento y la textura, no solo en los graves. La voz de banda ancha conserva su detalle completo a 22.050 Hz; las tasas superiores aumentan la resolución de salida, no la información que genera el motor.
+            Voces más nítidas en todos los idiomas y variantes: el realce de consonantes también funciona a 8.000 y 11.025 Hz, sin alterar los graves. Las pausas distinguen comas, separadores y finales de frase para una lectura más natural.
 
             - Full: `com.angelonmx.reloquence`
             - Lite: `com.angelonmx.reloquence.lite`

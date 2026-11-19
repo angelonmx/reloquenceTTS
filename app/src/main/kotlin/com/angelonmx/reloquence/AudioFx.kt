@@ -174,13 +174,14 @@ object AudioFx {
 		rateHz >= 32000 -> 28
 		rateHz >= 22050 -> 24
 		rateHz >= 16000 -> 20
-		else -> 0
+		else -> 12
 	}
 
 	/** Presencia HD suave. La inteligibilidad se realza en la banda
 	 *  de consonantes, no con una subida amplia de agudos. */
 	fun hdPresenceDb(rateHz: Int): Int = when {
 		rateHz >= 16000 -> 2
+		rateHz >= 11025 -> 1
 		else -> 0
 	}
 

@@ -1629,7 +1629,7 @@ class EvvTtsService : TextToSpeechService() {
 		val skipParens = s?.skipParentheses == true
 		val numOn = s?.numberForceEnabled == true
 		val numGroup = s?.numberGroup ?: 1
-		val pauses = s?.pauses ?: Pauses.KEEP
+		val pauses = s?.pauses ?: Settings.DEFAULT_PAUSES
 		val pauseMs = s?.pauseDurationMs ?: Settings.DEFAULT_PAUSE_MS
 		// 4.2: con el nivel NINGUNA la puntuación se quita de verdad
 		// (ver [Punctuation.silence]) y el final de cada trozo es una

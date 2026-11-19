@@ -182,7 +182,7 @@
 	<string name="notif_text_missing">Faltan permisos: %1$s. Toca para abrir los ajustes.</string>
 
 	<string name="sample_rate_label">Frecuencia de muestreo</string>
-	<string name="sample_rate_hint">A 22.050 Hz se conserva toda la banda ancha de la voz. Tasas mayores aumentan la resolución de salida, pero no añaden detalle nuevo al motor.</string>
+	<string name="sample_rate_hint">A 22.050 Hz se conserva la banda ancha completa y el realce de consonantes se adapta a cada tasa. 8.000 y 11.025 Hz limitan los agudos. Las tasas mayores no añaden detalle que el motor no genere.</string>
 	<string name="hertz">%1$d Hz</string>
 
 	<string name="eq_label">Ecualizador</string>
@@ -318,7 +318,7 @@
 	<string name="exciter_label">Excitador (claridad)</string>
 	<string name="deesser_label">Anti-siseo (doma s y sh)</string>
 	<string name="warmth_label">Calidez de cinta</string>
-	<string name="hd_enhance_label">Realce HD por tasa (más calidad a más Hz)</string>
+	<string name="hd_enhance_label">Realce HD de claridad</string>
 	<string name="category_profiles">Perfiles</string>
 	<string name="category_profiles_hint">Guarda y administra tus perfiles: toda la configuración</string>
 	<string name="profile_save">Crear nuevo perfil</string>

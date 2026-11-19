@@ -11,7 +11,7 @@ class AudioFxClarityTest {
 
 	@Test
 	fun hdImprovesSpeechBandBalanceWithoutDependingOnOutputRate() {
-		for (rate in intArrayOf(16000, 22050, 32000, 44100, 48000)) {
+		for (rate in intArrayOf(8000, 11025, 16000, 22050, 32000, 44100, 48000)) {
 			val untreatedLow = toneAmplitude(rate, 250, 250, hd = false, body = false)
 			val untreatedSpeech = toneAmplitude(rate, 3000, 3000, hd = false, body = false)
 			val clearLow = toneAmplitude(rate, 250, 250, hd = true, body = false)
